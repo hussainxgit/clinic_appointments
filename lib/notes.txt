@@ -1,0 +1,35 @@
+- doctors/
+  - doc_123/
+    - id: "doc_123"
+    - name: "Dr. John Doe"
+    - specialty: "Cardiology"
+    - phoneNumber: "+1234567890"
+    - email: "johndoe@example.com"
+    - isAvailable: true
+
+- patients/
+  - pat_456/
+    - id: "pat_456"
+    - name: "Jane Smith"
+    - phone: "+9876543210"
+    - registeredAt: "2023-10-01T00:00:00Z"
+    - notes: "Allergic to penicillin"
+
+- appointments/
+  - app_789/
+    - id: "app_789"
+    - patientId: "pat_456"
+    - doctorId: "doc_123"
+    - dateTime: "2023-10-25T10:00:00Z"
+    - status: "scheduled"
+    - paymentStatus: "unpaid"
+
+- doctorAvailability/
+  - avail_101/
+    - id: "avail_101"
+    - doctorId: "doc_123"
+    - date: "2023-10-25"
+    - startTime: "09:00"
+    - endTime: "10:00"
+    - maxPatients: 3
+    - bookedPatients: 0
