@@ -1,28 +1,12 @@
+import 'package:clinic_appointments/features/appointment_slot/view/appointment_slot_list_view.dart';
+import 'package:clinic_appointments/features/dashboard/view/recent_appointments_list_view.dart';
 import 'package:clinic_appointments/shared/provider/clinic_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../appointment/models/appointment.dart';
-import '../../appointment/view/appointments_list_view.dart';
 import 'stat_card.dart';
 
 class DashboardScreen extends StatelessWidget {
-  final int totalPatients;
-  final int totalAppointments;
-  final int activeAppointmentsToday;
-  final int completedAppointments;
-  final int cancelledAppointments;
-  final List<Appointment> appointments;
-
-  const DashboardScreen({
-    super.key,
-    required this.totalPatients,
-    required this.totalAppointments,
-    required this.activeAppointmentsToday,
-    required this.completedAppointments,
-    required this.cancelledAppointments,
-    required this.appointments,
-  });
+  const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -30,16 +14,20 @@ class DashboardScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildStatsRow(context),
-            _buildActionsAndAppointments(context),
+            StatsRow(),
+            AppointmentListAndAppointmentSlotList(),
           ],
         ),
       ),
     );
   }
+}
 
-  /// Builds the row of statistical cards.
-  Widget _buildStatsRow(BuildContext context) {
+class StatsRow extends StatelessWidget {
+  const StatsRow({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     final clinicService = Provider.of<ClinicService>(context);
     final stats = [
       StatData(
@@ -103,81 +91,84 @@ class DashboardScreen extends StatelessWidget {
       },
     );
   }
+}
 
-  /// Builds the actions grid and recent appointments list.
-  Widget _buildActionsAndAppointments(BuildContext context) {
-    return Consumer<ClinicService>(
-      builder: (context, clinicService, child) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Flexible(
-                flex: 1,
-                child: _buildActionsGrid(context),
-              ),
-              const SizedBox(width: 16),
-              Flexible(
-                flex: 1,
-                child: _buildRecentAppointments(context, clinicService),
-              ),
-            ],
+class AppointmentListAndAppointmentSlotList extends StatelessWidget {
+  const AppointmentListAndAppointmentSlotList({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Flexible(
+            flex: 1,
+            child: RecentAppointmentSlotList(),
           ),
-        );
-      },
+          const SizedBox(width: 16),
+          Consumer<ClinicService>(
+              builder: (context, clinicServiecProvider, child) {
+            final combinedAppointments =
+                clinicServiecProvider.getCombinedAppointments();
+
+            return Flexible(
+              flex: 1,
+              child: RecentAppointments(
+                  combinedAppointments: combinedAppointments),
+            );
+          }),
+        ],
+      ),
     );
   }
+}
 
-  /// Builds the actions grid.
-  Widget _buildActionsGrid(BuildContext context) {
+class RecentAppointmentSlotList extends StatelessWidget {
+  const RecentAppointmentSlotList({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Text(
-            "Actions",
+            "Recent Appointment Slots",
             style: Theme.of(context).textTheme.titleMedium!.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.grey[800],
                 ),
           ),
         ),
-        Row(
-          spacing: 16,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                print('pressed');
-              },
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.zero, // Square buttons
-                ),
+        Consumer<ClinicService>(
+          builder: (context, clinicService, child) {
+            return SizedBox(
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: AppointmentSlotListView(
+                appointmentSlots:
+                    clinicService.getAllAppointmentSlotsForDoctor('D1'),
               ),
-              child: Text('Button 1'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                print('pressed');
-              },
-              style: ElevatedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.zero, // Square buttons
-                ),
-              ),
-              child: Text('Button 2'),
-            )
-          ],
-        )
+            );
+          },
+        ),
       ],
     );
   }
+}
 
-  /// Builds the recent appointments list.
-  Widget _buildRecentAppointments(
-      BuildContext context, ClinicService clinicService) {
+class RecentAppointments extends StatelessWidget {
+  final List<Map<String, dynamic>> combinedAppointments;
+
+  const RecentAppointments({
+    super.key,
+    required this.combinedAppointments,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -193,16 +184,14 @@ class DashboardScreen extends StatelessWidget {
         ),
         SizedBox(
           height: MediaQuery.of(context).size.height * 0.6,
-          child: AppointmentsListView(
-            appointments: clinicService.appointmentProvider.appointments,
-          ),
+          child: RecentAppointmentsListView(
+              combinedAppointments: combinedAppointments),
         ),
       ],
     );
   }
 }
 
-/// Helper class to hold stat card data.
 class StatData {
   final String title;
   final String value;

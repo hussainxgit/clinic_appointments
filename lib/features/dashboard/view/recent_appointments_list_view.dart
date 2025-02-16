@@ -2,14 +2,17 @@ import 'package:clinic_appointments/shared/provider/clinic_service.dart';
 import 'package:clinic_appointments/shared/utilities/utility.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../appointment/models/appointment.dart';
 import '../../patient/models/patient.dart';
-import 'edit_appointment_dialog.dart';
-import '../models/appointment.dart';
+import '../../appointment/view/edit_appointment_dialog.dart';
 
-class AppointmentsListView extends StatelessWidget {
+class RecentAppointmentsListView extends StatelessWidget {
   final List<Map<String, dynamic>> combinedAppointments;
 
-  const AppointmentsListView({super.key, required this.combinedAppointments});
+  const RecentAppointmentsListView({
+    super.key,
+    required this.combinedAppointments,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +29,6 @@ class AppointmentsListView extends StatelessWidget {
           final appointment =
               combinedAppointments[index]['appointment'] as Appointment;
           final patient = combinedAppointments[index]['patient'] as Patient;
-
           return LayoutBuilder(
             builder: (context, constraints) {
               final bool isSmallScreen = constraints.maxWidth < 600;
@@ -45,7 +47,7 @@ class AppointmentsListView extends StatelessWidget {
                             children: [
                               const SizedBox(height: 4),
                               Text(
-                                'Appointment: ${appointment.dateTime.dateOnly()}',
+                                'Appointment: ${appointment.dateTime.dateOnly()} - ${appointment.status}',
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                               const SizedBox(height: 4),
@@ -67,7 +69,7 @@ class AppointmentsListView extends StatelessWidget {
                         : Row(
                             children: [
                               Text(
-                                _formatDateTime(appointment.dateTime),
+                                'Appointment: ${appointment.dateTime.dateOnly()}',
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                               const SizedBox(width: 16),
@@ -119,11 +121,6 @@ class AppointmentsListView extends StatelessWidget {
         },
       ),
     );
-  }
-
-  static String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}  '
-        '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
   static Widget _buildStatusChip(String status) {

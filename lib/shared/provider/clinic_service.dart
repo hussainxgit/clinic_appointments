@@ -1,5 +1,5 @@
-import 'package:clinic_appointments/features/doctor_availability/controller/doctor_availability_provdier.dart';
-import 'package:clinic_appointments/features/doctor_availability/models/doctor_availability.dart';
+import 'package:clinic_appointments/features/appointment_slot/controller/appointment_slot_provdier.dart';
+import 'package:clinic_appointments/features/appointment_slot/models/appointment_slot.dart';
 
 import '../../features/appointment/controller/appointment_provider.dart';
 import '../../features/appointment/models/appointment.dart';
@@ -12,60 +12,74 @@ class ClinicService {
   final AppointmentProvider appointmentProvider;
   final PatientProvider patientProvider;
   final DoctorProvider doctorProvider;
-  final DoctorAvailabilityProvider doctorAvailabilityProvider;
+  final AppointmentSlotProvider appointmentSlotProvider;
 
   ClinicService({
     required this.appointmentProvider,
     required this.patientProvider,
     required this.doctorProvider,
-    required this.doctorAvailabilityProvider,
+    required this.appointmentSlotProvider,
   });
 
   // Add a new appointment and update the patient if necessary
-  void addAppointment(Appointment appointment) {
-    // Check if the patient already exists
-    final existingPatient = patientProvider.patients.firstWhere(
-      (patient) => patient.id == appointment.patient.id,
-      orElse: () => appointment.patient,
-    );
+  Future<void> createAppointment(Appointment appointment) async {
+    try {
+      // Validate patient exists
+      patientProvider.patients.firstWhere((p) => p.id == appointment.patientId);
 
-    if (existingPatient.id != appointment.patient.id) {
-      patientProvider.addPatient(appointment.patient);
-    }
+      // Validate slot availability
+      final slot = appointmentSlotProvider.slots
+          .firstWhere((s) => s.id == appointment.appointmentSlotId);
 
-    // check if the doctor is available at the selected date
-    final isDoctorAvailable = doctorAvailabilityProvider.isDoctorAvailable(
-      appointment.doctor.id,
-      appointment.dateTime,
-    );
-    if (!isDoctorAvailable) {
-      throw Exception('Doctor is not available at the selected time');
+      if (slot.isFullyBooked) {
+        throw Exception('Slot is fully booked');
+      }
+
+      // Transactional update
+      appointmentSlotProvider.bookSlot(slot.id);
+      appointmentProvider.addAppointment(appointment);
+    } on StateError catch (_) {
+      throw Exception('Invalid patient or slot');
     }
-    doctorAvailabilityProvider.bookPatient(appointment.doctorAvailabilityId);
-    appointmentProvider.addAppointment(appointment);
   }
 
   // Update an appointment and its associated patient
   void updateAppointmentAndPatient(
       Appointment updatedAppointment, Appointment oldAppointment) {
     appointmentProvider.updateAppointment(updatedAppointment);
-    patientProvider.updatePatient(updatedAppointment.patient);
-    doctorAvailabilityProvider
-        .cancelBooking(oldAppointment.doctorAvailabilityId);
-    doctorAvailabilityProvider
-        .bookPatient(updatedAppointment.doctorAvailabilityId);
+    appointmentSlotProvider.cancelBooking(oldAppointment.appointmentSlotId);
+    appointmentSlotProvider.bookPatient(updatedAppointment.appointmentSlotId);
   }
 
   // Remove an appointment
   void removeAppointment(String appointmentId, String availabilityId) {
     appointmentProvider.removeAppointment(appointmentId);
-    doctorAvailabilityProvider.cancelBooking(availabilityId);
+    appointmentSlotProvider.cancelBooking(availabilityId);
+  }
+
+  // Combine appointments with patient details
+  List<Map<String, dynamic>> getCombinedAppointments() {
+    return appointmentProvider.appointments.map((appointment) {
+      final patient = patientProvider.patients.firstWhere(
+        (p) => p.id == appointment.patientId,
+        orElse: () => Patient(
+          id: 'unknown',
+          name: 'Unknown Patient',
+          phone: '',
+          registeredAt: DateTime.now(),
+        ),
+      );
+      return {
+        'appointment': appointment,
+        'patient': patient,
+      };
+    }).toList();
   }
 
   // Get all appointments for a specific patient
   List<Appointment> getAppointmentsForPatient(String patientId) {
     return appointmentProvider.appointments
-        .where((appointment) => appointment.patient.id == patientId)
+        .where((appointment) => appointment.patientId == patientId)
         .toList();
   }
 
@@ -114,31 +128,26 @@ class ClinicService {
     patientProvider.updatePatient(updatedPatient);
 
     // ✅ Ensure all related appointments reflect this update
-    appointmentProvider.updateAppointmentPatient(updatedPatient);
+    appointmentProvider.updatePatientInAppointments(updatedPatient);
   }
 
   List<Doctor> getAvailableDoctors() {
     return doctorProvider.getAvailableDoctors();
   }
 
-  List<DoctorAvailability> getAvailabitiesForDoctor(String doctorId) {
-    return doctorAvailabilityProvider
-        .getAvailabilitiesForDoctor(doctorId)
+  List<AppointmentSlot> getAppointmentSlotsForDoctor(String doctorId) {
+    return appointmentSlotProvider
+        .getAppointmentSlotsForDoctor(doctorId)
         .where((availability) =>
             availability.isFullyBooked == false &&
             availability.date.isAfter(DateTime.now()))
         .toList();
   }
 
-  List<DateTime> getAvailableDatesForDoctor(String doctorId) {
-    final availabilities =
-        doctorAvailabilityProvider.getAvailabilitiesForDoctor(doctorId);
-    return availabilities
-        .where((availability) => availability.isFullyBooked == false)
-        .toList()
-        .map((availability) => availability.date)
-        .toSet()
-        .toList();
+  List<AppointmentSlot> getAllAppointmentSlotsForDoctor(String doctorId) {
+    final appointmentSlots =
+        appointmentSlotProvider.getAppointmentSlotsForDoctor(doctorId);
+    return appointmentSlots;
   }
 
   List<Patient> getPatients() {
@@ -149,16 +158,15 @@ class ClinicService {
     return doctorProvider.doctors;
   }
 
-  void createAvailability(DoctorAvailability availability) {
-    doctorAvailabilityProvider.createAvailability(availability);
+  void createAppointmentSlot(AppointmentSlot availability) {
+    appointmentSlotProvider.createAppointmentSlot(availability);
   }
 
-  void updateAvailability(DoctorAvailability updatedAvailability) {
-    doctorAvailabilityProvider.updateAvailability(updatedAvailability);
+  void updateAppointmentSlot(AppointmentSlot updatedAppointmentSlot) {
+    appointmentSlotProvider.updateAppointmentSlot(updatedAppointmentSlot);
   }
 
-  void removeAvailability(String availabilityId) {
-    doctorAvailabilityProvider.removeAvailability(availabilityId);
+  void removeAppointmentSlot(String appointmentSlotId) {
+    appointmentSlotProvider.removeAppointmentSlot(appointmentSlotId);
   }
-
 }

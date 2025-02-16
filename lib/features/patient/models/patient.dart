@@ -4,6 +4,7 @@ class Patient {
   String phone;
   DateTime registeredAt;
   String? notes;
+  
   Patient({
     required this.id,
     required this.name,

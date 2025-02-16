@@ -48,6 +48,15 @@ extension BoAliDateTimePackage on DateTime {
 
     return DateTime(newYear, newMonth, day);
   }
+
+  bool isWithinNextWeek(DateTime today) {
+    final nextWeek = today.add(Duration(days: 7));
+    return isAfter(today) && isBefore(nextWeek);
+  }
+
+  bool isSameDay(DateTime date1) {
+    return date1.year == year && date1.month == month && date1.day == day;
+  }
 }
 
 extension BoAliStringParsing on String {
@@ -67,6 +76,10 @@ extension BoAliStringParsing on String {
       if (word.isEmpty) return word;
       return word[0].toUpperCase() + word.substring(1).toLowerCase();
     }).join(' ');
+  }
+
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 
   DateTime? getBirthDateFromCivilID() {

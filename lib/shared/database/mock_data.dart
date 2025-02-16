@@ -1,4 +1,4 @@
-import '../../features/doctor_availability/models/doctor_availability.dart';
+import '../../features/appointment_slot/models/appointment_slot.dart';
 import '../../features/appointment/models/appointment.dart';
 import '../../features/doctor/models/doctor.dart';
 import '../../features/patient/models/patient.dart';
@@ -86,124 +86,68 @@ List<Patient> mockPatients = [
 List<Appointment> mockAppointments = [
   Appointment(
       id: 'A1',
-      patient: mockPatients[0],
-      doctor: mockDoctors[0],
-      doctorAvailabilityId: '1',
+      patientId: mockPatients[0].id,
+      doctorId: mockDoctors[0].id,
+      appointmentSlotId: '1',
       dateTime: DateTime(2024, 2, 7, 10, 30),
       status: 'scheduled',
       paymentStatus: 'unpaid'),
   Appointment(
       id: 'A3',
-      patient: mockPatients[2],
-      doctor: mockDoctors[0],
-      doctorAvailabilityId: '1',
+      patientId: mockPatients[2].id,
+      doctorId: mockDoctors[0].id,
+      appointmentSlotId: '1',
       dateTime: DateTime(2024, 2, 7, 9, 15),
       status: 'cancelled',
       paymentStatus: 'unpaid'),
   Appointment(
       id: 'A4',
-      patient: mockPatients[3],
-      doctor: mockDoctors[0],
-      doctorAvailabilityId: '1',
+      patientId: mockPatients[3].id,
+      doctorId: mockDoctors[0].id,
+      appointmentSlotId: '1',
       dateTime: DateTime(2024, 2, 7, 11, 45),
       status: 'scheduled',
       paymentStatus: 'paid'),
   Appointment(
       id: 'A5',
-      patient: mockPatients[4],
-      doctor: mockDoctors[0],
-      doctorAvailabilityId: '1',
+      patientId: mockPatients[4].id,
+      doctorId: mockDoctors[0].id,
+      appointmentSlotId: '1',
       dateTime: DateTime(2024, 2, 7, 16, 30),
       status: 'completed',
       paymentStatus: 'paid'),
-  Appointment(
-      id: 'A6',
-      patient: mockPatients[5],
-      doctor: mockDoctors[0],
-      doctorAvailabilityId: '1',
-      dateTime: DateTime(2024, 2, 7, 13, 0),
-      status: 'scheduled',
-      paymentStatus: 'unpaid'),
-  Appointment(
-      id: 'A7',
-      patient: mockPatients[6],
-      doctor: mockDoctors[0],
-      doctorAvailabilityId: '1',
-      dateTime: DateTime(2024, 2, 7, 15, 30),
-      status: 'cancelled',
-      paymentStatus: 'unpaid'),
-  Appointment(
-      id: 'A8',
-      patient: mockPatients[7],
-      doctor: mockDoctors[1],
-      doctorAvailabilityId: '2',
-      dateTime: DateTime(2024, 4, 8, 12, 0),
-      status: 'completed',
-      paymentStatus: 'paid'),
-  Appointment(
-      id: 'A9',
-      patient: mockPatients[8],
-      doctor: mockDoctors[1],
-      doctorAvailabilityId: '2',
-      dateTime: DateTime(2024, 4, 9, 17, 45),
-      status: 'scheduled',
-      paymentStatus: 'unpaid'),
-  Appointment(
-      id: 'A10',
-      patient: mockPatients[9],
-      doctor: mockDoctors[1],
-      doctorAvailabilityId: '2',
-      dateTime: DateTime(2024, 4, 10, 10, 0),
-      status: 'completed',
-      paymentStatus: 'paid'),
-  Appointment(
-      id: 'A11',
-      patient: mockPatients[1],
-      doctor: mockDoctors[1],
-      doctorAvailabilityId: '2',
-      dateTime: DateTime(2024, 4, 11, 11, 30),
-      status: 'scheduled',
-      paymentStatus: 'unpaid'),
-  Appointment(
-      id: 'A12',
-      patient: mockPatients[2],
-      doctor: mockDoctors[1],
-      doctorAvailabilityId: '2',
-      dateTime: DateTime(2024, 4, 12, 14, 15),
-      status: 'cancelled',
-      paymentStatus: 'unpaid'),
 ];
 
-List<DoctorAvailability> mockDoctorAvailability = [
-  DoctorAvailability(
+List<AppointmentSlot> mockAppointmentSlots = [
+  AppointmentSlot(
     id: '1',
     doctorId: 'D1',
     date: DateTime(2025, 02, 07),
     maxPatients: 7,
     bookedPatients: 7,
   ),
-  DoctorAvailability(
+  AppointmentSlot(
     id: '3',
     doctorId: 'D1',
     date: DateTime(2025, 02, 16),
     maxPatients: 12,
     bookedPatients: 0,
   ),
-  DoctorAvailability(
+  AppointmentSlot(
     id: '4',
     doctorId: 'D1',
     date: DateTime(2025, 02, 17),
     maxPatients: 6,
     bookedPatients: 0,
   ),
-  DoctorAvailability(
+  AppointmentSlot(
     id: '5',
     doctorId: 'D2',
     date: DateTime(2025, 02, 17),
     maxPatients: 10,
     bookedPatients: 0,
   ),
-  DoctorAvailability(
+  AppointmentSlot(
     id: '2',
     doctorId: 'D2',
     date: DateTime(2025, 02, 15),

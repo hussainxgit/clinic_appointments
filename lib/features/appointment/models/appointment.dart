@@ -7,44 +7,63 @@ enum PaymentStatus { paid, unpaid }
 
 class Appointment {
   final String id;
-  Patient patient;
+  final String patientId;
   final DateTime dateTime;
   final String status; // 'scheduled', 'completed', 'cancelled'
   final String paymentStatus; // 'paid', 'unpaid'
-  Doctor doctor;
-  final String doctorAvailabilityId;
+  final String doctorId;
+  final String appointmentSlotId;
 
   Appointment({
     required this.id,
-    required this.patient,
+    required this.patientId,
     required this.dateTime,
     this.status = 'scheduled',
     this.paymentStatus = 'unpaid',
-    required this.doctor,
-    required this.doctorAvailabilityId,
+    required this.doctorId,
+    required this.appointmentSlotId,
   });
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
     return Appointment(
       id: json['id'],
-      patient: Patient.fromJson(json['patient']),
+      patientId: json['patientId'],
       dateTime: DateTime.parse(json['dateTime']),
-      doctor: Doctor.fromJson(json['doctor']),
+      doctorId: json['doctorId'],
       status: json['status'],
       paymentStatus: json['paymentStatus'],
-      doctorAvailabilityId: json['doctorAvailabilityId'],
+      appointmentSlotId: json['appointmentSlotId'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'patient': patient.toJson(),
+      'patientId': patientId,
       'dateTime': dateTime.toIso8601String(),
-      'doctor': doctor.toJson(),
+      'doctorId': doctorId,
       'status': status,
       'paymentStatus': paymentStatus,
-      'doctorAvailabilityId': doctorAvailabilityId,
+      'appointmentSlotId': appointmentSlotId,
     };
+  }
+
+  copyWith({
+    Patient? patient,
+    DateTime? dateTime,
+    String? status,
+    String? paymentStatus,
+    Doctor? doctor,
+    String? appointmentSlotId,
+  }) {
+    return Appointment(
+      id: id,
+      patientId: patientId,
+      dateTime: dateTime ?? this.dateTime,
+      status: status ?? this.status,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      doctorId: doctorId,
+      appointmentSlotId: appointmentSlotId ?? this.appointmentSlotId,
+    );
   }
 }

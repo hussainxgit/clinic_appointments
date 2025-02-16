@@ -1,0 +1,78 @@
+digraph ClinicSystem {
+    rankdir=LR; // Left-to-right layout
+    node [shape=box, style=rounded]; // Rounded boxes for nodes
+
+    // Class names
+    AppointmentProvider [label="AppointmentProvider\n(ChangeNotifier)", shape=ellipse, style=filled, fillcolor=lightblue];
+    DoctorProvider [label="DoctorProvider\n(ChangeNotifier)", shape=ellipse, style=filled, fillcolor=lightblue];
+    DoctorAvailabilityProvider [label="DoctorAvailabilityProvider\n(ChangeNotifier)", shape=ellipse, style=filled, fillcolor=lightblue];
+    PatientProvider [label="PatientProvider\n(ChangeNotifier)", shape=ellipse, style=filled, fillcolor=lightblue];
+    ClinicService [label="ClinicService", shape=ellipse, style=filled, fillcolor=lightgreen];
+
+    // Attributes
+    AppointmentProvider -> _appointments [label="_appointments: List<Appointment>", style=filled, fillcolor=lightyellow];
+    AppointmentProvider -> appointments [label="appointments: List<Appointment> (getter)", style=filled, fillcolor=lightyellow];
+
+    DoctorProvider -> _doctors [label="_doctors: List<Doctor>", style=filled, fillcolor=lightyellow];
+    DoctorProvider -> doctors [label="doctors: List<Doctor> (getter)", style=filled, fillcolor=lightyellow];
+
+    DoctorAvailabilityProvider -> _availabilities [label="_availabilities: List<DoctorAvailability>", style=filled, fillcolor=lightyellow];
+    DoctorAvailabilityProvider -> availabilities [label="availabilities: List<DoctorAvailability> (getter)", style=filled, fillcolor=lightyellow];
+
+    PatientProvider -> _patients [label="_patients: List<Patient>", style=filled, fillcolor=lightyellow];
+    PatientProvider -> patients [label="patients: List<Patient> (getter)", style=filled, fillcolor=lightyellow];
+
+    // Relationships between ClinicService and Providers
+    ClinicService -> AppointmentProvider [label="appointmentProvider"];
+    ClinicService -> PatientProvider [label="patientProvider"];
+    ClinicService -> DoctorProvider [label="doctorProvider"];
+    ClinicService -> DoctorAvailabilityProvider [label="doctorAvailabilityProvider"];
+
+    // Methods for AppointmentProvider
+    AppointmentProvider -> addAppointment [label="addAppointment(Appointment appointment)"];
+    AppointmentProvider -> removeAppointment [label="removeAppointment(String appointmentId)"];
+    AppointmentProvider -> updateAppointment [label="updateAppointment(Appointment appointment)"];
+    AppointmentProvider -> updateAppointmentPatient [label="updateAppointmentPatient(Patient updatedPatient)"];
+
+    // Methods for DoctorProvider
+    DoctorProvider -> addDoctor [label="addDoctor(Doctor doctor)"];
+    DoctorProvider -> removeDoctor [label="removeDoctor(String doctorId)"];
+    DoctorProvider -> updateDoctor [label="updateDoctor(Doctor doctor)"];
+    DoctorProvider -> getAllDoctors [label="getAllDoctors()"];
+    DoctorProvider -> getAvailableDoctors [label="getAvailableDoctors()"];
+
+    // Methods for DoctorAvailabilityProvider
+    DoctorAvailabilityProvider -> createAvailability [label="createAvailability(DoctorAvailability availability)"];
+    DoctorAvailabilityProvider -> removeAvailability [label="removeAvailability(String availabilityId)"];
+    DoctorAvailabilityProvider -> updateAvailability [label="updateAvailability(DoctorAvailability updatedAvailability)"];
+    DoctorAvailabilityProvider -> getAvailabilitiesForDoctor [label="getAvailabilitiesForDoctor(String doctorId)"];
+    DoctorAvailabilityProvider -> isDoctorAvailable [label="isDoctorAvailable(String doctorId, DateTime date)"];
+    DoctorAvailabilityProvider -> cancelBooking [label="cancelBooking(String availabilityId)"];
+    DoctorAvailabilityProvider -> bookPatient [label="bookPatient(String availabilityId)"];
+
+    // Methods for PatientProvider
+    PatientProvider -> addPatient [label="addPatient(Patient patient)"];
+    PatientProvider -> removePatient [label="removePatient(String patientId)"];
+    PatientProvider -> updatePatient [label="updatePatient(Patient patient)"];
+
+    // Methods for ClinicService
+    ClinicService -> addAppointment [label="addAppointment(Appointment appointment)"];
+    ClinicService -> updateAppointmentAndPatient [label="updateAppointmentAndPatient(Appointment updatedAppointment, Appointment oldAppointment)"];
+    ClinicService -> removeAppointment [label="removeAppointment(String appointmentId, String availabilityId)"];
+    ClinicService -> getAppointmentsForPatient [label="getAppointmentsForPatient(String patientId)"];
+    ClinicService -> getTotalPatients [label="getTotalPatients()"];
+    ClinicService -> getTotalAppointments [label="getTotalAppointments()"];
+    ClinicService -> getTodaysAppointments [label="getTodaysAppointments()"];
+    ClinicService -> getCancelledAppointments [label="getCancelledAppointments()"];
+    ClinicService -> addPatient [label="addPatient(Patient patient)"];
+    ClinicService -> removePatient [label="removePatient(String patientId)"];
+    ClinicService -> updatePatient [label="updatePatient(Patient updatedPatient)"];
+    ClinicService -> getAvailableDoctors [label="getAvailableDoctors()"];
+    ClinicService -> getAvailabitiesForDoctor [label="getAvailabitiesForDoctor(String doctorId)"];
+    ClinicService -> getAvailableDatesForDoctor [label="getAvailableDatesForDoctor(String doctorId)"];
+    ClinicService -> getPatients [label="getPatients()"];
+    ClinicService -> getDoctors [label="getDoctors()"];
+    ClinicService -> createAvailability [label="createAvailability(DoctorAvailability availability)"];
+    ClinicService -> updateAvailability [label="updateAvailability(DoctorAvailability updatedAvailability)"];
+    ClinicService -> removeAvailability [label="removeAvailability(String availabilityId)"];
+}

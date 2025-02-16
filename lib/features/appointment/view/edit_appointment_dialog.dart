@@ -5,10 +5,12 @@ import '../models/appointment.dart';
 
 class EditAppointmentDialog extends StatefulWidget {
   final Appointment appointment;
+  final String patientName;
 
   const EditAppointmentDialog({
     super.key,
     required this.appointment,
+    required this.patientName,
   });
 
   @override
@@ -30,15 +32,16 @@ class _EditAppointmentDialogState extends State<EditAppointmentDialog> {
     _selectedDate = widget.appointment.dateTime;
     _status = widget.appointment.status;
     _paymentStatus = widget.appointment.paymentStatus;
-    _doctorId = widget.appointment.doctor.id;
-    _availabilityId = widget.appointment.doctorAvailabilityId;
+    _doctorId = widget.appointment.doctorId;
+    _availabilityId = widget.appointment.appointmentSlotId;
   }
 
   Future<void> _selectDate(BuildContext context, String doctorId) async {
-  final availabilities = Provider.of<ClinicService>(context, listen: false)
-      .getAvailabitiesForDoctor(doctorId);
+    final availabilities = Provider.of<ClinicService>(context, listen: false)
+        .getAppointmentSlotsForDoctor(doctorId);
 
-  final datesOnly = availabilities.map((availability) => availability.date).toList();
+    final datesOnly =
+        availabilities.map((availability) => availability.date).toList();
 
     // Ensure that availableDates is not empty before accessing its elements
     DateTime? initialDate = DateTime.now();
@@ -47,33 +50,32 @@ class _EditAppointmentDialogState extends State<EditAppointmentDialog> {
         initialDate = datesOnly.first; // Set to the first available date
       }
 
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: initialDate,
-      lastDate: DateTime(2101),
-      selectableDayPredicate: (DateTime day) {
-        return datesOnly.contains(day);
-      },
-    );
+      final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: initialDate,
+        firstDate: initialDate,
+        lastDate: DateTime(2101),
+        selectableDayPredicate: (DateTime day) {
+          return datesOnly.contains(day);
+        },
+      );
 
-    if (picked != null && picked != _selectedDate) {
-      _availabilityId = availabilities
-          .firstWhere((availability) => availability.date == picked)
-          .id;
-      setState(() {
-        _selectedDate = picked;
-      });
+      if (picked != null && picked != _selectedDate) {
+        _availabilityId = availabilities
+            .firstWhere((availability) => availability.date == picked)
+            .id;
+        setState(() {
+          _selectedDate = picked;
+        });
+      }
+    } else {
+      // Handle the case when there are no available dates
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('No available dates for the selected doctor.')),
+      );
     }
-  } else {
-    // Handle the case when there are no available dates
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No available dates for the selected doctor.')),
-    );
   }
-}
-
-
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
@@ -88,17 +90,20 @@ class _EditAppointmentDialogState extends State<EditAppointmentDialog> {
       // Update the appointment details
       final updatedAppointment = Appointment(
         id: widget.appointment.id,
-        patient: widget.appointment.patient,
+        patientId: widget.appointment.patientId,
         dateTime: _selectedDate!,
         status: _status,
         paymentStatus: _paymentStatus,
-        doctor: widget.appointment.doctor,
-        doctorAvailabilityId: _availabilityId,
+        doctorId: widget.appointment.doctorId,
+        appointmentSlotId: _availabilityId,
       );
 
       // Update the patient and appointment in the providers
       Provider.of<ClinicService>(context, listen: false)
-          .updateAppointmentAndPatient(updatedAppointment, widget.appointment);
+          .updateAppointmentAndPatient(
+        updatedAppointment,
+        widget.appointment,
+      );
 
       Navigator.of(context).pop();
     }
@@ -116,7 +121,7 @@ class _EditAppointmentDialogState extends State<EditAppointmentDialog> {
             spacing: 16.0,
             children: [
               Text(
-                widget.appointment.patient.name,
+                widget.patientName,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               DropdownButtonFormField<String>(

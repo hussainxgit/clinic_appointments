@@ -23,7 +23,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   String _status = 'scheduled';
   String _paymentStatus = 'unpaid';
   String _doctorId = '';
-  String _availabilityId = '';
+  String appointmentSlotId = '';
 
   @override
   void initState() {
@@ -57,11 +57,10 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
   Future<void> _selectDate(BuildContext context, String doctorId) async {
     final availabilities = Provider.of<ClinicService>(context, listen: false)
-        .getAvailabitiesForDoctor(doctorId);
+        .getAppointmentSlotsForDoctor(doctorId);
 
-    final datesOnly = availabilities
-        .map((availability) => availability.date)
-        .toList();
+    final datesOnly =
+        availabilities.map((availability) => availability.date).toList();
 
     // Ensure that availableDates is not empty before accessing its elements
     DateTime? initialDate = DateTime.now();
@@ -81,7 +80,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       );
 
       if (picked != null && picked != _selectedDate) {
-        _availabilityId = availabilities
+        appointmentSlotId = availabilities
             .firstWhere((availability) => availability.date == picked)
             .id;
         setState(() {
@@ -120,17 +119,15 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       if (_selectedDate != null) {
         final appointment = Appointment(
           id: DateTime.now().toString(),
-          patient: patient,
+          patientId: patient.id,
           dateTime: _selectedDate!,
           status: _status,
           paymentStatus: _paymentStatus,
-          doctorAvailabilityId: _availabilityId,
-          doctor: Provider.of<ClinicService>(context, listen: false)
-              .getAvailableDoctors()
-              .firstWhere((d) => d.id == _doctorId), // Get selected doctor
+          appointmentSlotId: appointmentSlotId,
+          doctorId: _doctorId, // Get selected doctor
         );
         Provider.of<ClinicService>(context, listen: false)
-            .addAppointment(appointment);
+            .createAppointment(appointment);
       }
 
       Navigator.of(context).pop();
@@ -197,7 +194,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                 onChanged: (value) {
                   setState(() {
                     _selectedDate = null; // Reset selected date
-                    _availabilityId = ''; // Reset availability ID
+                    appointmentSlotId = ''; // Reset availability ID
                     _doctorId = value!;
                   });
                 },

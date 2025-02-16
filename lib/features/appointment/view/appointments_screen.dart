@@ -11,9 +11,9 @@ class AppointmentsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Consumer<ClinicService>(
-          builder: (context, appointmentProvider, child) {
+          builder: (context, clinicServiceProvider, child) {
         return AppointmentsListView(
-            appointments: appointmentProvider.appointmentProvider.appointments);
+            combinedAppointments: clinicServiceProvider.getCombinedAppointments());
       }),
     );
   }

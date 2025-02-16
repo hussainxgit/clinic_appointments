@@ -2,7 +2,8 @@ import 'package:clinic_appointments/features/doctor/controller/doctor_provider.d
 import 'package:clinic_appointments/features/doctor/view/doctor_profile.dart';
 
 import 'features/appointment/controller/appointment_provider.dart';
-import 'features/doctor_availability/controller/doctor_availability_provdier.dart';
+import 'features/appointment_slot/controller/appointment_slot_provdier.dart';
+import 'features/appointment_slot/view/appointment_slot_screen.dart';
 import 'features/patient/controller/patient_provider.dart';
 import 'features/patient/view/patients_screen.dart';
 import 'shared/utilities/my_theme.dart';
@@ -21,7 +22,7 @@ void main() async {
   final appointmentProvider = AppointmentProvider();
   final patientProvider = PatientProvider();
   final doctorProvider = DoctorProvider();
-  final doctorAvailabilityProvider = DoctorAvailabilityProvider();
+  final appointmentSlotProvider = AppointmentSlotProvider();
 
   runApp(
     MultiProvider(
@@ -29,17 +30,17 @@ void main() async {
         ChangeNotifierProvider(create: (_) => appointmentProvider),
         ChangeNotifierProvider(create: (_) => patientProvider),
         ChangeNotifierProvider(create: (_) => doctorProvider),
-        ChangeNotifierProvider(create: (_) => doctorAvailabilityProvider),
+        ChangeNotifierProvider(create: (_) => appointmentSlotProvider),
         // Using ProxyProvider to pass updated providers to ClinicService
         ProxyProvider4<AppointmentProvider, PatientProvider, DoctorProvider,
-            DoctorAvailabilityProvider, ClinicService>(
+            AppointmentSlotProvider, ClinicService>(
           update: (_, appointmentProvider, patientProvider, doctorProvider,
-                  doctorAvailabilityProvider, __) =>
+                  appointmentSlotProvider, __) =>
               ClinicService(
             appointmentProvider: appointmentProvider,
             patientProvider: patientProvider,
             doctorProvider: doctorProvider,
-            doctorAvailabilityProvider: doctorAvailabilityProvider,
+            appointmentSlotProvider: appointmentSlotProvider,
           ),
         ),
       ],
@@ -66,17 +67,16 @@ class _MainNavigationState extends State<MainNavigation> {
   // Define your tabs here
   final List<TabItem> _tabs = [
     TabItem(
-      screen: DashboardScreen(
-        totalPatients: 50,
-        totalAppointments: 50,
-        activeAppointmentsToday: 25,
-        completedAppointments: 25,
-        cancelledAppointments: 0,
-        appointments: [],
-      ),
+      screen: DashboardScreen(),
       title: 'Dashboard',
       icon: Icons.dashboard_outlined,
       selectedIcon: Icons.dashboard,
+    ),
+    TabItem(
+      screen: const AppointmentSlotScreen(),
+      title: 'Appoint. Slots',
+      icon: Icons.calendar_today_outlined,
+      selectedIcon: Icons.calendar_today,
     ),
     TabItem(
       screen: const AppointmentsScreen(),
