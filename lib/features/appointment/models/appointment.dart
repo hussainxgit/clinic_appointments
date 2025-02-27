@@ -1,6 +1,3 @@
-import '../../doctor/models/doctor.dart';
-import '../../patient/models/patient.dart';
-
 enum AppointmentStatus { scheduled, completed, cancelled }
 
 enum PaymentStatus { paid, unpaid }
@@ -49,20 +46,20 @@ class Appointment {
   }
 
   copyWith({
-    Patient? patient,
+    String? patientId,
     DateTime? dateTime,
     String? status,
     String? paymentStatus,
-    Doctor? doctor,
+    String? doctorId,
     String? appointmentSlotId,
   }) {
     return Appointment(
       id: id,
-      patientId: patientId,
+      patientId: patientId ?? this.patientId,
       dateTime: dateTime ?? this.dateTime,
       status: status ?? this.status,
       paymentStatus: paymentStatus ?? this.paymentStatus,
-      doctorId: doctorId,
+      doctorId: doctorId ?? this.doctorId,
       appointmentSlotId: appointmentSlotId ?? this.appointmentSlotId,
     );
   }

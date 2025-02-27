@@ -86,7 +86,7 @@ class _EditAppointmentSlotState extends State<EditAppointmentSlot> {
 
   void _updateSeriesSlots(ClinicService clinicService, String originalDoctor) {
     final slots = clinicService
-        .getAllAppointmentSlotsForDoctor(originalDoctor)
+        .getAppointmentSlots(doctorId: originalDoctor)
         .where((slot) => slot.id.startsWith(widget.initialSlot.id))
         .toList();
 

@@ -6,139 +6,127 @@ import '../models/appointment_slot.dart';
 import 'edit_appointment_slot_dialog.dart';
 
 class AppointmentSlotListView extends StatelessWidget {
-  final List<AppointmentSlot> appointmentSlots;
 
-  const AppointmentSlotListView({super.key, required this.appointmentSlots});
+  const AppointmentSlotListView({super.key,});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListView.builder(
-        shrinkWrap: true,
-        itemCount: appointmentSlots.length,
-        itemBuilder: (context, index) {
-          final appointment = appointmentSlots[index];
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final bool isSmallScreen = constraints.maxWidth < 600;
-              return Column(
-                children: [
-                  ListTile(
+    return Padding(
+      padding: const EdgeInsets.all(16.0), // Consistent spacing
+      child: Card(
+        elevation: 2, // Subtle elevation per Material 3
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16), // Softer corners
+        ),
+        child: Consumer<ClinicService>(builder: (context, clinicService, child){
+          List<AppointmentSlot> appointmentSlots = clinicService.getAllAppointmentSlots();
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(), // Nested scrolling
+              itemCount: appointmentSlots.length,
+              separatorBuilder: (context, index) => Divider(
+                height: 1,
+                thickness: 1,
+                indent: 16,
+                endIndent: 16,
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+              itemBuilder: (context, index) {
+                final appointment = appointmentSlots[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: ListTile(
+                    leading: _buildStatusChip(context, appointment),
                     title: Text(
-                      'Date: ${appointment.date.dateOnly()}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                      appointment.date.dateOnly(),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600, // Bold but not too heavy
                           ),
                     ),
-                    subtitle: isSmallScreen
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              Text(
-                                'Booked slots: ${appointment.bookedPatients}/${appointment.maxPatients}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              const SizedBox(height: 4),
-                              _buildStatusChip(appointment),
-                            ],
-                          )
-                        : Row(
-                            children: [
-                              Text(
-                                'Booked slots: ${appointment.bookedPatients}/${appointment.maxPatients}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              const SizedBox(width: 8),
-                              _buildStatusChip(appointment),
-                            ],
-                          ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        'Booked: ${appointment.bookedPatients}/${appointment.maxPatients}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
-                          onPressed: () {
-                            showDialog(
+                        if (appointment.date.isAfter(DateTime.now()) ||
+                            appointment.date.isSameDay(DateTime.now()))
+                          IconButton(
+                            onPressed: () {
+                              showDialog(
                                 context: context,
-                                builder: (context) {
-                                  return EditAppointmentSlot(
-                                      initialSlot: appointment);
-                                });
-                          },
-                          icon: const Icon(Icons.edit),
-                          tooltip: 'Edit',
-                        ),
+                                builder: (context) =>
+                                    EditAppointmentSlot(initialSlot: appointment),
+                              );
+                            },
+                            icon: Icon(Icons.edit_outlined, size: 24),
+                            color: Theme.of(context).colorScheme.primary,
+                            tooltip: 'Edit',
+                          ),
                         IconButton(
                           onPressed: () {
                             Provider.of<ClinicService>(context, listen: false)
                                 .removeAppointmentSlot(appointment.id);
                           },
-                          icon: const Icon(Icons.delete),
+                          icon: Icon(Icons.delete_outline, size: 24),
+                          color: Theme.of(context).colorScheme.error,
                           tooltip: 'Delete',
                         ),
                       ],
                     ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
                   ),
-                  if (index < appointmentSlots.length - 1)
-                    const Divider(height: 1, indent: 16, endIndent: 16),
-                ],
-              );
-            },
-          );
-        },
+                );
+              },
+            );
+          }
+        ),
       ),
     );
   }
 
-  Widget _buildStatusChip(AppointmentSlot appointment) {
+  Widget _buildStatusChip(context, AppointmentSlot appointment) {
     final DateTime now = DateTime.now();
     final DateTime appointmentDate = appointment.date;
     final DateTime today = DateTime(now.year, now.month, now.day);
 
-    final List<String> statuses = [];
-    final List<Color> colors = [];
+    String label;
+    Color color;
 
     if (appointmentDate.isBefore(today)) {
-      statuses.add('DONE');
-      colors.add(Colors.grey);
+      label = 'Done';
+      color = Colors.grey;
+    } else if (appointment.bookedPatients >= appointment.maxPatients) {
+      label = 'Full';
+      color = Theme.of(context).colorScheme.error;
+    } else if (appointmentDate.isSameDay(today)) {
+      label = 'Today';
+      color = Theme.of(context).colorScheme.secondary;
+    } else if (appointment.bookedPatients > 0) {
+      label = 'Partially Booked';
+      color = Theme.of(context).colorScheme.tertiary;
     } else {
-      if (appointment.bookedPatients >= appointment.maxPatients) {
-        statuses.add('FULL');
-        colors.add(Colors.red);
-      }
-      if (appointmentDate.isSameDay(today)) {
-        statuses.add('TODAY');
-        colors.add(Colors.orange);
-      }
-      if (appointment.bookedPatients > 0 &&
-          appointment.bookedPatients < appointment.maxPatients) {
-        statuses.add('PARTIALLY BOOKED');
-        colors.add(Colors.orange);
-      }
-      if (appointmentDate.isWithinNextWeek(today)) {
-        statuses.add('UPCOMING');
-        colors.add(Colors.blue);
-      }
-      if (statuses.isEmpty) {
-        statuses.add('AVAILABLE');
-        colors.add(Colors.green);
-      }
+      label = 'Available';
+      color = Theme.of(context).colorScheme.primary;
     }
 
-    return Wrap(
-        spacing: 8.0,
-        children: List<Widget>.generate(statuses.length, (index) {
-          return Chip(
-            label: Text(statuses[index]),
-            backgroundColor: colors[index].withOpacity(0.2),
-            labelStyle: TextStyle(color: colors[index]),
-            side: BorderSide.none,
-          );
-        }));
+    return Chip(
+      label: Text(label.toUpperCase()),
+      backgroundColor: color.withOpacity(0.1),
+      labelStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w500,
+          ),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+    );
   }
 }

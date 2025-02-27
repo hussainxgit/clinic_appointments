@@ -23,12 +23,6 @@ class _CreateAppointmentSlotState extends State<CreateAppointmentSlot> {
 
   final List<String> _repeatTypes = ['daily', 'weekly'];
 
-  void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
-    );
-  }
-
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
@@ -59,9 +53,11 @@ class _CreateAppointmentSlotState extends State<CreateAppointmentSlot> {
 
     try {
       for (final slot in slots) {
-        clinicService.createAppointmentSlot(slot);
+        clinicService.createAppointmentSlot(
+          slot,
+        );
       }
-      _showSuccess('Successfully created ${slots.length} appointment slots');
+      // _showSuccess('Successfully created ${slots.length} appointment slots');
       Navigator.of(context).pop();
     } catch (e) {
       _showError('Error creating slots: ${e.toString()}');

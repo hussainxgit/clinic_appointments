@@ -124,12 +124,12 @@ List<AppointmentSlot> mockAppointmentSlots = [
     doctorId: 'D1',
     date: DateTime(2025, 02, 07),
     maxPatients: 7,
-    bookedPatients: 7,
+    bookedPatients: 4,
   ),
   AppointmentSlot(
     id: '3',
     doctorId: 'D1',
-    date: DateTime(2025, 02, 16),
+    date: DateTime(2025, 02, 25),
     maxPatients: 12,
     bookedPatients: 0,
   ),
@@ -150,8 +150,8 @@ List<AppointmentSlot> mockAppointmentSlots = [
   AppointmentSlot(
     id: '2',
     doctorId: 'D2',
-    date: DateTime(2025, 02, 15),
+    date: DateTime(2025, 02, 28),
     maxPatients: 8,
-    bookedPatients: 5,
+    bookedPatients: 0,
   ),
 ];

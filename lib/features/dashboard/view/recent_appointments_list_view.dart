@@ -16,143 +16,153 @@ class RecentAppointmentsListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 1,
-      margin: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListView.builder(
-        shrinkWrap: true,
-        itemCount: combinedAppointments.length,
-        itemBuilder: (context, index) {
-          final appointment =
-              combinedAppointments[index]['appointment'] as Appointment;
-          final patient = combinedAppointments[index]['patient'] as Patient;
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final bool isSmallScreen = constraints.maxWidth < 600;
-              return Column(
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: ListView.separated(
+          shrinkWrap: true,
+          itemCount: combinedAppointments.length,
+          separatorBuilder: (context, index) => Divider(
+            height: 1,
+            thickness: 1,
+            indent: 16,
+            endIndent: 16,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+          itemBuilder: (context, index) {
+            final appointment =
+                combinedAppointments[index]['appointment'] as Appointment;
+            final patient = combinedAppointments[index]['patient'] as Patient;
+
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundColor: _getAvatarColor(index),
+                child: Text(
+                  patient.name[0].toUpperCase(),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+              ),
+              title: Text(
+                patient.name,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Wrap(
+                  spacing: 8.0,
+                  runSpacing: 4.0,
+                  children: [
+                    Text(
+                      appointment.dateTime.dateOnly(),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                    _buildPaymentStatusChip(appointment.paymentStatus, context),
+                    _buildStatusChip(appointment.status, context),
+                  ],
+                ),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  ListTile(
-                    title: Text(
-                      'Patient: ${patient.name}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    subtitle: isSmallScreen
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              Text(
-                                'Appointment: ${appointment.dateTime.dateOnly()} - ${appointment.status}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                appointment.patientId,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  _buildPaymentStatusChip(
-                                      appointment.paymentStatus),
-                                  const SizedBox(width: 8),
-                                  _buildStatusChip(appointment.status),
-                                ],
-                              ),
-                            ],
-                          )
-                        : Row(
-                            children: [
-                              Text(
-                                'Appointment: ${appointment.dateTime.dateOnly()}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              const SizedBox(width: 16),
-                              Text(
-                                appointment.patientId,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              const SizedBox(width: 16),
-                              _buildPaymentStatusChip(
-                                  appointment.paymentStatus),
-                              const SizedBox(width: 8),
-                              _buildStatusChip(appointment.status),
-                            ],
-                          ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => EditAppointmentDialog(
-                                appointment: appointment,
-                                patientName: patient.name,
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.edit),
-                          tooltip: 'Edit',
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            Provider.of<ClinicService>(context, listen: false)
-                                .removeAppointment(appointment.id,
-                                    appointment.appointmentSlotId);
-                          },
-                          icon: const Icon(Icons.delete),
-                          tooltip: 'Delete',
-                        ),
-                      ],
-                    ),
+                    if (appointment.dateTime.isAfter(DateTime.now()))
+                      IconButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => EditAppointmentDialog(
+                              appointment: appointment,
+                              patientName: patient.name,
+                            ),
+                          );
+                        },
+                        icon: Icon(Icons.edit_outlined, size: 24),
+                        color: Theme.of(context).colorScheme.primary,
+                        tooltip: 'Edit',
+                      ),
+                  IconButton(
+                    onPressed: () {
+                      Provider.of<ClinicService>(context, listen: false)
+                          .removeAppointment(
+                              appointment.id, appointment.appointmentSlotId);
+                    },
+                    icon: Icon(Icons.delete_outline, size: 24),
+                    color: Theme.of(context).colorScheme.error,
+                    tooltip: 'Delete',
                   ),
-                  if (index < combinedAppointments.length - 1)
-                    const Divider(height: 1, indent: 16, endIndent: 16),
                 ],
-              );
-            },
-          );
-        },
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            );
+          },
+        ),
       ),
     );
   }
 
-  static Widget _buildStatusChip(String status) {
-    Color color;
-    switch (status.toLowerCase()) {
-      case 'completed':
-        color = Colors.green;
-        break;
-      case 'pending':
-        color = Colors.orange;
-        break;
-      case 'canceled':
-        color = Colors.red;
-        break;
-      default:
-        color = Colors.grey;
-    }
+  Color _getAvatarColor(int index) {
+    const List<Color> colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.purple,
+      Colors.orange,
+      Colors.teal,
+      Colors.pink,
+      Colors.indigo,
+      Colors.amber,
+      Colors.cyan,
+    ];
+    return colors[index % colors.length]; // Deterministic color assignment
+  }
+
+  Widget _buildStatusChip(String status, BuildContext context) {
+    final Map<String, Color> statusColors = {
+      'completed': Theme.of(context).colorScheme.primary,
+      'pending': Theme.of(context).colorScheme.secondary,
+      'canceled': Theme.of(context).colorScheme.error,
+    };
+    final color = statusColors[status.toLowerCase()] ?? Colors.grey;
+
     return Chip(
-      label: Text(status),
-      backgroundColor: color.withOpacity(0.2),
-      labelStyle: TextStyle(color: color),
-      side: BorderSide.none,
+      label: Text(status.toUpperCase()),
+      backgroundColor: color.withOpacity(0.1),
+      labelStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w500,
+          ),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
     );
   }
 
-  static Widget _buildPaymentStatusChip(String status) {
-    Color color = (status.toLowerCase() == 'paid') ? Colors.green : Colors.red;
+  Widget _buildPaymentStatusChip(String status, BuildContext context) {
+    final bool isPaid = status.toLowerCase() == 'paid';
+    final color = isPaid
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).colorScheme.error;
+
     return Chip(
-      label: Text(status),
-      backgroundColor: color.withOpacity(0.2),
-      labelStyle: TextStyle(color: color),
-      side: BorderSide.none,
+      label: Text(status.toUpperCase()),
+      backgroundColor: color.withOpacity(0.1),
+      labelStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w500,
+          ),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
     );
   }
 }

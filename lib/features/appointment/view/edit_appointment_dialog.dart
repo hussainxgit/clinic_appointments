@@ -38,7 +38,7 @@ class _EditAppointmentDialogState extends State<EditAppointmentDialog> {
 
   Future<void> _selectDate(BuildContext context, String doctorId) async {
     final availabilities = Provider.of<ClinicService>(context, listen: false)
-        .getAppointmentSlotsForDoctor(doctorId);
+        .getAppointmentSlots(doctorId: doctorId);
 
     final datesOnly =
         availabilities.map((availability) => availability.date).toList();

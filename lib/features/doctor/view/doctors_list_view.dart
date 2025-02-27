@@ -1,15 +1,10 @@
-import 'package:clinic_appointments/features/patient/view/edit_patient_dialog.dart';
-import 'package:clinic_appointments/shared/provider/clinic_service.dart';
-import 'package:clinic_appointments/shared/utilities/utility.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/patient.dart';
-import 'patient_screen.dart';
+import '../models/doctor.dart';
 
-class PatientsListView extends StatelessWidget {
-  final List<Patient> patients;
+class DoctorsListView extends StatelessWidget {
+  final List<Doctor> doctors;
 
-  const PatientsListView({super.key, required this.patients});
+  const DoctorsListView({super.key, required this.doctors});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +17,8 @@ class PatientsListView extends StatelessWidget {
         ),
         child: ListView.separated(
           shrinkWrap: true,
-          itemCount: patients.length,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: doctors.length,
           separatorBuilder: (context, index) => Divider(
             height: 1,
             thickness: 1,
@@ -31,16 +27,12 @@ class PatientsListView extends StatelessWidget {
             color: Theme.of(context).colorScheme.outlineVariant,
           ),
           itemBuilder: (context, index) {
-            final patient = patients[index];
+            final doctor = doctors[index];
             return ListTile(
-              onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => PatientProfileScreen(patient: patient,)));
-              },
               leading: CircleAvatar(
                 backgroundColor: _getAvatarColor(index),
                 child: Text(
-                  patient.name[0].toUpperCase(),
+                  doctor.name[0].toUpperCase(),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w500,
@@ -48,7 +40,7 @@ class PatientsListView extends StatelessWidget {
                 ),
               ),
               title: Text(
-                patient.name,
+                doctor.name,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -59,7 +51,7 @@ class PatientsListView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      patient.phone,
+                      doctor.phoneNumber,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -67,7 +59,7 @@ class PatientsListView extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Registered at: ${patient.registeredAt.dateOnly()}${patient.notes != null ? ' - ${patient.notes}' : ''}',
+                      '${doctor.specialty}${doctor.email != null ? ' - ${doctor.email}' : ''}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -81,11 +73,11 @@ class PatientsListView extends StatelessWidget {
                 children: [
                   IconButton(
                     onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) =>
-                            EditPatientDialog(patient: patient),
-                      );
+                      // TODO: Implement Edit Doctor Dialog
+                      // showDialog(
+                      //   context: context,
+                      //   builder: (context) => EditDoctorDialog(doctor: doctor),
+                      // );
                     },
                     icon: Icon(Icons.edit_outlined, size: 24),
                     color: Theme.of(context).colorScheme.primary,
@@ -93,8 +85,9 @@ class PatientsListView extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () {
-                      Provider.of<ClinicService>(context, listen: false)
-                          .removePatient(patient.id);
+                      // TODO: Implement Doctor Removal via ClinicService
+                      // Provider.of<ClinicService>(context, listen: false)
+                      //     .removeDoctor(doctor.id);
                     },
                     icon: Icon(Icons.delete_outline, size: 24),
                     color: Theme.of(context).colorScheme.error,

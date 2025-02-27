@@ -31,13 +31,13 @@ class StatsRow extends StatelessWidget {
     final clinicService = Provider.of<ClinicService>(context);
     final stats = [
       StatData(
-        title: 'Total Patients',
+        title: 'Number Of Patients',
         value: clinicService.getTotalPatients().toString(),
         icon: Icons.people,
         color: Colors.blue,
       ),
       StatData(
-        title: 'Total Appointments',
+        title: 'Number Of Appointments',
         value: clinicService.getTotalAppointments().toString(),
         icon: Icons.calendar_today,
         color: Colors.green,
@@ -108,17 +108,7 @@ class AppointmentListAndAppointmentSlotList extends StatelessWidget {
             child: RecentAppointmentSlotList(),
           ),
           const SizedBox(width: 16),
-          Consumer<ClinicService>(
-              builder: (context, clinicServiecProvider, child) {
-            final combinedAppointments =
-                clinicServiecProvider.getCombinedAppointments();
-
-            return Flexible(
-              flex: 1,
-              child: RecentAppointments(
-                  combinedAppointments: combinedAppointments),
-            );
-          }),
+          Flexible(flex: 1, child: RecentAppointments()),
         ],
       ),
     );
@@ -143,16 +133,9 @@ class RecentAppointmentSlotList extends StatelessWidget {
                 ),
           ),
         ),
-        Consumer<ClinicService>(
-          builder: (context, clinicService, child) {
-            return SizedBox(
-              height: MediaQuery.of(context).size.height * 0.6,
-              child: AppointmentSlotListView(
-                appointmentSlots:
-                    clinicService.getAllAppointmentSlotsForDoctor('D1'),
-              ),
-            );
-          },
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: AppointmentSlotListView(),
         ),
       ],
     );
@@ -160,11 +143,8 @@ class RecentAppointmentSlotList extends StatelessWidget {
 }
 
 class RecentAppointments extends StatelessWidget {
-  final List<Map<String, dynamic>> combinedAppointments;
-
   const RecentAppointments({
     super.key,
-    required this.combinedAppointments,
   });
 
   @override
@@ -184,8 +164,13 @@ class RecentAppointments extends StatelessWidget {
         ),
         SizedBox(
           height: MediaQuery.of(context).size.height * 0.6,
-          child: RecentAppointmentsListView(
-              combinedAppointments: combinedAppointments),
+          child: Consumer<ClinicService>(
+              builder: (context, clinicServiecProvider, child) {
+            final combinedAppointments =
+                clinicServiecProvider.getCombinedAppointments();
+            return RecentAppointmentsListView(
+                combinedAppointments: combinedAppointments);
+          }),
         ),
       ],
     );
