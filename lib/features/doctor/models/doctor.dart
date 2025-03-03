@@ -4,7 +4,10 @@ class Doctor {
   final String specialty;
   final String phoneNumber;
   String? email;
+  String? imageUrl;
+  String? bio;
   bool isAvailable = true;
+  final Map<String, String>? socialMedia;
 
   Doctor({
     required this.id,
@@ -12,7 +15,10 @@ class Doctor {
     required this.specialty,
     required this.phoneNumber,
     this.email,
+    this.imageUrl,
     this.isAvailable = true,
+    this.socialMedia,
+    this.bio,
   });
 
   factory Doctor.fromJson(Map<String, dynamic> json) {
@@ -22,7 +28,10 @@ class Doctor {
       specialty: json['specialty'],
       phoneNumber: json['phoneNumber'],
       email: json['email'],
+      imageUrl: json['imageUrl'],
       isAvailable: json['isAvailable'],
+      bio: json['bio'],
+      //TODO: add socialMedia to fromJson
     );
   }
 
@@ -33,7 +42,10 @@ class Doctor {
       'specialty': specialty,
       'phoneNumber': phoneNumber,
       'email': email,
+      'imageUrl': imageUrl,
       'isAvailable': isAvailable,
+      'bio': isAvailable,
+      //TODO: add socialMedia to toJson
     };
   }
 }

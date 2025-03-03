@@ -1,9 +1,9 @@
-import 'package:clinic_appointments/features/appointment_slot/view/appointment_slot_list_view.dart';
 import 'package:clinic_appointments/features/dashboard/view/recent_appointments_list_view.dart';
 import 'package:clinic_appointments/shared/provider/clinic_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'stat_card.dart';
+import 'upcoming_slots_list_view.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -135,7 +135,7 @@ class RecentAppointmentSlotList extends StatelessWidget {
         ),
         SizedBox(
           height: MediaQuery.of(context).size.height * 0.6,
-          child: AppointmentSlotListView(),
+          child: UpcomingSlotsListView(),
         ),
       ],
     );

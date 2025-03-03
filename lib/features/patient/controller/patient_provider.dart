@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../models/patient.dart';
 
 class PatientProvider with ChangeNotifier {
-  //TODO: mock data
   final List<Patient> _patients = mockPatients;
 
   List<Patient> get patients => _patients;
@@ -32,6 +31,16 @@ class PatientProvider with ChangeNotifier {
     if (cleanQuery.isEmpty) return [];
     return _patients
         .where((patient) => patient.phone.toLowerCase().contains(cleanQuery))
+        .toList();
+  }
+
+  List<Patient> searchPatientsByQuery(String query) {
+    final cleanQuery = query.trim().toLowerCase();
+    if (cleanQuery.isEmpty) return [];
+    return _patients
+        .where((patient) =>
+            patient.name.toLowerCase().contains(cleanQuery) ||
+            patient.phone.toLowerCase().contains(cleanQuery))
         .toList();
   }
 

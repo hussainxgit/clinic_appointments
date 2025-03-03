@@ -4,11 +4,19 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    
         {
             "name": "clinic_appointments",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "skipFiles": [
+                "<unoptimized>", // Skips unoptimized frames (useful for Dart internals)
+                "package:flutter/**", // Skips Flutter framework code
+                "package:dart:/**", // Skips Dart core libraries (e.g., dart:core, dart:async)
+                "package:collection/**", // Skips collection package internals
+                "package:meta/**", // Skips meta package internals
+                "package:async/**", // Skips async package internals
+                "package:http/**" // Skips HTTP package internals, if used
+            ]
         },
         {
             "name": "clinic_appointments (profile mode)",

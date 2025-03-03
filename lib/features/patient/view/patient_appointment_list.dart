@@ -14,6 +14,7 @@ class PatientAppointmentList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final today = DateTime.now();
     return Consumer<ClinicService>(builder: (context, provider, child) {
       final compindeAppointments =
           provider.getCombinedAppointments(patientId: patient.id);
@@ -96,7 +97,7 @@ class PatientAppointmentList extends StatelessWidget {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (appointment.dateTime.isAfter(DateTime.now()))
+                      if (appointment.dateTime.isSameDayOrAfter(today))
                         IconButton(
                           onPressed: () {
                             showDialog(
@@ -141,7 +142,7 @@ class PatientAppointmentList extends StatelessWidget {
 
     return Chip(
       label: Text(status.toUpperCase()),
-      backgroundColor: color.withOpacity(0.1),
+      backgroundColor: color.withAlpha((0.1 * 255).toInt()),
       labelStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: color,
             fontWeight: FontWeight.w500,
@@ -159,7 +160,7 @@ class PatientAppointmentList extends StatelessWidget {
 
     return Chip(
       label: Text(status.toUpperCase()),
-      backgroundColor: color.withOpacity(0.1),
+      backgroundColor: color.withAlpha((0.1 * 255).toInt()),
       labelStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: color,
             fontWeight: FontWeight.w500,

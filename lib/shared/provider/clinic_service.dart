@@ -1,5 +1,6 @@
 import 'package:clinic_appointments/features/appointment_slot/controller/appointment_slot_provdier.dart';
 import 'package:clinic_appointments/features/appointment_slot/models/appointment_slot.dart';
+import 'package:clinic_appointments/shared/utilities/utility.dart';
 import 'package:flutter/material.dart';
 import '../../features/appointment/controller/appointment_provider.dart';
 import '../../features/appointment/models/appointment.dart';
@@ -7,7 +8,7 @@ import '../../features/doctor/controller/doctor_provider.dart';
 import '../../features/doctor/models/doctor.dart';
 import '../../features/patient/controller/patient_provider.dart';
 import '../../features/patient/models/patient.dart';
-import '../utilities/globals.dart'; // Adjust path to your globals.dart
+import '../utilities/globals.dart';
 
 class ClinicService {
   final AppointmentProvider appointmentProvider;
@@ -110,6 +111,46 @@ class ClinicService {
     }).toList();
   }
 
+  List<Map<String, dynamic>> getCombinedAppointmentsByDate(DateTime date) {
+    return appointmentProvider.appointments
+        .where((appointment) =>
+            appointment.dateTime.isSameDay(date))
+        .map((appointment) {
+      // Find patient details
+      final patient = patientProvider.patients.firstWhere(
+        (p) => p.id == appointment.patientId,
+        orElse: () => Patient(
+          id: 'unknown',
+          name: 'Unknown Patient',
+          phone: '',
+          registeredAt: DateTime.now(),
+        ),
+      );
+
+      // Find doctor details
+      final doctor = doctorProvider.doctors.firstWhere(
+        (d) =>
+            d.id ==
+            appointment.doctorId, // Fixed: Use doctorId instead of patientId
+        orElse: () => Doctor(
+          id: 'unknown',
+          name: 'Unknown Doctor',
+          specialty: '',
+          phoneNumber: '',
+          email: '',
+          isAvailable: false,
+        ),
+      );
+
+      // Return combined data
+      return {
+        'appointment': appointment,
+        'patient': patient,
+        'doctor': doctor,
+      };
+    }).toList();
+  }
+
   List<Appointment> getAppointmentsForPatient(String patientId) {
     return appointmentProvider.appointments
         .where((appointment) => appointment.patientId == patientId)
@@ -120,13 +161,11 @@ class ClinicService {
   int getTotalAppointments() => appointmentProvider.appointments.length;
 
   List<Appointment> getTodaysAppointments() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    return appointmentProvider.appointments.where((appointment) {
-      final appointmentDate = DateTime(appointment.dateTime.year,
-          appointment.dateTime.month, appointment.dateTime.day);
-      return appointmentDate == today;
-    }).toList();
+    final today = DateTime.now().toLocal().removeTime();
+    return appointmentProvider.appointments
+        .where((appointment) =>
+            appointment.dateTime.toLocal().removeTime().isAtSameMomentAs(today))
+        .toList();
   }
 
   List<Appointment> getCancelledAppointments() {
@@ -165,15 +204,56 @@ class ClinicService {
     }
   }
 
-  List<Doctor> getAvailableDoctors() => doctorProvider.getAvailableDoctors();
+  List<Doctor> getAvailableDoctorsWithSlots() {
+    final availableDoctors = doctorProvider.getAvailableDoctors();
+    return availableDoctors.where((doctor) {
+      return appointmentSlotProvider.getSlots(doctorId: doctor.id).any((slot) =>
+          !slot.isFullyBooked && slot.date.isSameDayOrAfter(DateTime.now()));
+    }).toList();
+  }
 
-  List<AppointmentSlot> getAppointmentSlots({String? doctorId}) {
+  List<AppointmentSlot> getAppointmentSlots(
+      {String? doctorId, DateTime? date}) {
+    final today = DateTime.now();
     return appointmentSlotProvider
         .getSlots(doctorId: doctorId)
-        .where((availability) =>
-            !availability.isFullyBooked &&
-            availability.date.isAfter(DateTime.now()))
+        .where(
+            (slot) => !slot.isFullyBooked && slot.date.isSameDayOrAfter(today))
         .toList();
+  }
+
+  List<AppointmentSlot> getSlotsByDate({required DateTime date}) =>
+      appointmentSlotProvider.getSlots(date: date);
+
+  List<Map<String, dynamic>> getCombinedSlotsWithDoctors({DateTime? date}) {
+    // Get all slots from the provider
+    final slots = appointmentSlotProvider.getSlots();
+
+    // Filter slots by date if provided
+    final filteredSlots = date != null
+        ? slots.where((slot) {
+            final slotDate = slot.date;
+            return slotDate.year == date.year &&
+                slotDate.month == date.month &&
+                slotDate.day == date.day;
+          }).toList()
+        : slots;
+
+    // Map filtered slots to include their corresponding doctors
+    return filteredSlots.map((slot) {
+      final doctor = doctorProvider.doctors.firstWhere(
+        (d) => d.id == slot.doctorId,
+        orElse: () => Doctor(
+          id: 'unknown',
+          name: 'Unknown Doctor',
+          specialty: '',
+          phoneNumber: '',
+          email: '',
+          isAvailable: false,
+        ),
+      );
+      return {'slot': slot, 'doctor': doctor};
+    }).toList();
   }
 
   List<AppointmentSlot> getAllAppointmentSlots({String? doctorId}) =>
@@ -276,5 +356,57 @@ class ClinicService {
     } catch (e) {
       _showMessage('Failed to create appointment: $e', isError: true);
     }
+  }
+
+  void deleteDoctor(String doctorId) {
+    try {
+      doctorProvider.removeDoctor(doctorId);
+      appointmentSlotProvider.removeSlotsByDoctorId(doctorId);
+      _showMessage('Doctor removed successfully');
+    } catch (e) {
+      _showMessage('Failed to remove doctor: $e', isError: true);
+    }
+  }
+
+  List<AppointmentSlot> getUpcomingSlots() {
+    return appointmentSlotProvider.getSlots().where((slot) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final slotDate = DateTime(slot.date.year, slot.date.month, slot.date.day);
+      return !slot.isFullyBooked && slotDate.isSameDayOrAfter(today);
+    }).toList();
+  }
+
+  List<Patient> searchPatientByQuery(String searchQuery) {
+    return patientProvider.patients.where((patient) {
+      final query = searchQuery.toLowerCase();
+      return patient.name.toLowerCase().contains(query) ||
+          patient.id.toLowerCase().contains(query) ||
+          patient.phone.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  List<Doctor> searchDoctorByQuery(String searchQuery) {
+    return doctorProvider.doctors.where((doctor) {
+      final query = searchQuery.toLowerCase();
+      return doctor.name.toLowerCase().contains(query) ||
+          doctor.id.toLowerCase().contains(query) ||
+          doctor.phoneNumber.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> searchAppointmentsByQuery(String searchQuery) {
+    final matchingPatients = patientProvider.searchPatientsByQuery(searchQuery);
+    final patientIds = matchingPatients.map((p) => p.id).toList();
+    final appointments =
+        appointmentProvider.getAppointmentsByPatientIds(patientIds);
+    return appointments.map((appointment) {
+      final patient = matchingPatients.firstWhere(
+        (p) => p.id == appointment.patientId,
+        orElse: () => Patient(
+            id: '', name: 'Unknown', phone: '', registeredAt: DateTime.now()),
+      );
+      return {'appointment': appointment, 'patient': patient};
+    }).toList();
   }
 }

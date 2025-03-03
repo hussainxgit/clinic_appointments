@@ -10,6 +10,7 @@ class Appointment {
   final String paymentStatus; // 'paid', 'unpaid'
   final String doctorId;
   final String appointmentSlotId;
+  final String? notes;
 
   Appointment({
     required this.id,
@@ -19,6 +20,7 @@ class Appointment {
     this.paymentStatus = 'unpaid',
     required this.doctorId,
     required this.appointmentSlotId,
+    this.notes,
   });
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
@@ -30,6 +32,7 @@ class Appointment {
       status: json['status'],
       paymentStatus: json['paymentStatus'],
       appointmentSlotId: json['appointmentSlotId'],
+      notes: json['notes'],
     );
   }
 
@@ -42,6 +45,7 @@ class Appointment {
       'status': status,
       'paymentStatus': paymentStatus,
       'appointmentSlotId': appointmentSlotId,
+      'notes': notes,
     };
   }
 
@@ -52,6 +56,7 @@ class Appointment {
     String? paymentStatus,
     String? doctorId,
     String? appointmentSlotId,
+    String? notes,
   }) {
     return Appointment(
       id: id,
@@ -61,6 +66,7 @@ class Appointment {
       paymentStatus: paymentStatus ?? this.paymentStatus,
       doctorId: doctorId ?? this.doctorId,
       appointmentSlotId: appointmentSlotId ?? this.appointmentSlotId,
+      notes: notes ?? this.notes,
     );
   }
 }

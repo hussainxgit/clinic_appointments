@@ -16,6 +16,7 @@ class RecentAppointmentsListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final today = DateTime.now();
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Card(
@@ -76,31 +77,31 @@ class RecentAppointmentsListView extends StatelessWidget {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                    if (appointment.dateTime.isAfter(DateTime.now()))
-                      IconButton(
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => EditAppointmentDialog(
-                              appointment: appointment,
-                              patientName: patient.name,
-                            ),
-                          );
-                        },
-                        icon: Icon(Icons.edit_outlined, size: 24),
-                        color: Theme.of(context).colorScheme.primary,
-                        tooltip: 'Edit',
-                      ),
-                  IconButton(
-                    onPressed: () {
-                      Provider.of<ClinicService>(context, listen: false)
-                          .removeAppointment(
-                              appointment.id, appointment.appointmentSlotId);
-                    },
-                    icon: Icon(Icons.delete_outline, size: 24),
-                    color: Theme.of(context).colorScheme.error,
-                    tooltip: 'Delete',
-                  ),
+                  if (appointment.dateTime.removeTime().isSameDayOrAfter(today))
+                    IconButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => EditAppointmentDialog(
+                            appointment: appointment,
+                            patientName: patient.name,
+                          ),
+                        );
+                      },
+                      icon: Icon(Icons.edit_outlined, size: 24),
+                      color: Theme.of(context).colorScheme.primary,
+                      tooltip: 'Edit',
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        Provider.of<ClinicService>(context, listen: false)
+                            .removeAppointment(
+                                appointment.id, appointment.appointmentSlotId);
+                      },
+                      icon: Icon(Icons.delete_outline, size: 24),
+                      color: Theme.of(context).colorScheme.error,
+                      tooltip: 'Delete',
+                    ),
                 ],
               ),
               contentPadding:
@@ -138,7 +139,7 @@ class RecentAppointmentsListView extends StatelessWidget {
 
     return Chip(
       label: Text(status.toUpperCase()),
-      backgroundColor: color.withOpacity(0.1),
+      backgroundColor: color.withAlpha((0.1 * 255).toInt()),
       labelStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: color,
             fontWeight: FontWeight.w500,
@@ -156,7 +157,7 @@ class RecentAppointmentsListView extends StatelessWidget {
 
     return Chip(
       label: Text(status.toUpperCase()),
-      backgroundColor: color.withOpacity(0.1),
+      backgroundColor: color.withAlpha((0.1 * 255).toInt()),
       labelStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: color,
             fontWeight: FontWeight.w500,

@@ -29,14 +29,6 @@ class AppointmentProvider extends ChangeNotifier {
 
   /// Remove an existing appointment
   void removeAppointment(String appointmentId) {
-    final appointment = _appointments.firstWhere(
-      (a) => a.id == appointmentId,
-      orElse: () => throw AppointmentNotFoundException(appointmentId),
-    );
-    if (appointment.dateTime.isBefore(DateTime.now())) {
-      throw AppointmentDateInPastException(
-          appointment.dateTime); // Prevent removing past appointments
-    }
     _appointments.removeWhere((a) => a.id == appointmentId);
     notifyListeners();
   }
@@ -61,7 +53,7 @@ class AppointmentProvider extends ChangeNotifier {
   /// Get appointments by patient IDs
   List<Appointment> getAppointmentsByPatientIds(List<String> patientIds) {
     if (patientIds.isEmpty) {
-      throw InvalidAppointmentDataException('Patient IDs list cannot be empty');
+      // throw InvalidAppointmentDataException('Patient IDs list cannot be empty');
     }
     return _appointments
         .where((appointment) => patientIds.contains(appointment.patientId))

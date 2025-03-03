@@ -51,11 +51,19 @@ extension BoAliDateTimePackage on DateTime {
 
   bool isWithinNextWeek(DateTime today) {
     final nextWeek = today.add(Duration(days: 7));
-    return isAfter(today) && isBefore(nextWeek);
+    return isSameDayOrAfter(today) && isBefore(nextWeek);
   }
 
   bool isSameDay(DateTime date1) {
     return date1.year == year && date1.month == month && date1.day == day;
+  }
+
+  bool isSameDayOrAfter(DateTime date1) {
+    return isSameDay(date1) || isAfter(date1);
+  }
+
+  DateTime removeTime() {
+    return DateTime(year, month, day);
   }
 }
 

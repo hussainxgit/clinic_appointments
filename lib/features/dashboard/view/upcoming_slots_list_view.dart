@@ -1,14 +1,13 @@
-import 'package:clinic_appointments/shared/provider/clinic_service.dart';
 import 'package:clinic_appointments/shared/utilities/utility.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/appointment_slot.dart';
-import 'edit_appointment_slot_dialog.dart';
 
-class AppointmentSlotListView extends StatelessWidget {
-  const AppointmentSlotListView({
-    super.key,
-  });
+import '../../../shared/provider/clinic_service.dart';
+import '../../appointment_slot/models/appointment_slot.dart';
+import '../../appointment_slot/view/edit_appointment_slot_dialog.dart';
+
+class UpcomingSlotsListView extends StatelessWidget {
+  const UpcomingSlotsListView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,8 +22,7 @@ class AppointmentSlotListView extends StatelessWidget {
         child:
             Consumer<ClinicService>(builder: (context, clinicService, child) {
           List<AppointmentSlot> appointmentSlots =
-              clinicService.getAllAppointmentSlots();
-
+              clinicService.getUpcomingSlots();
           return ListView.separated(
             shrinkWrap: true,
             itemCount: appointmentSlots.length,

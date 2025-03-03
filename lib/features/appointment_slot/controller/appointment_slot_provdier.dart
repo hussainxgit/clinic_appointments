@@ -1,3 +1,4 @@
+import 'package:clinic_appointments/shared/utilities/utility.dart';
 import 'package:flutter/material.dart';
 import '../models/appointment_slot.dart';
 import '../models/slot_exception.dart';
@@ -93,9 +94,10 @@ class AppointmentSlotProvider extends ChangeNotifier {
   /// Select a slot date for a doctor
   Future<Map<String, dynamic>?> selectSlotForDoctor(
       BuildContext context, String doctorId) async {
+    final today = DateTime.now();
     final slots = getSlots(doctorId: doctorId)
         .where(
-            (slot) => !slot.isFullyBooked && slot.date.isAfter(DateTime.now()))
+            (slot) => !slot.isFullyBooked && slot.date.isSameDayOrAfter(today))
         .toList();
     if (slots.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -141,8 +143,12 @@ class AppointmentSlotProvider extends ChangeNotifier {
       throw InvalidSlotDataException(
           'Booked patients cannot exceed max patients');
     }
-    if (slot.date.isBefore(DateTime.now())) {
-      throw SlotDateInPastException(slot.date);
-    }
+  }
+
+  void removeSlotsByDoctorId(String doctorId) {
+    final now = DateTime.now();
+    _slots.removeWhere(
+        (slot) => slot.doctorId == doctorId && slot.date.isSameDayOrAfter(now));
+    notifyListeners();
   }
 }

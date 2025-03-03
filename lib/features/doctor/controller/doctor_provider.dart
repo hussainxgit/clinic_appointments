@@ -22,10 +22,6 @@ class DoctorProvider extends ChangeNotifier {
 
   /// Remove an existing doctor
   void removeDoctor(String doctorId) {
-    final doctor = _doctors.firstWhere(
-      (d) => d.id == doctorId,
-      orElse: () => throw DoctorNotFoundException(doctorId),
-    );
     _doctors.removeWhere((d) => d.id == doctorId);
     notifyListeners();
   }

@@ -49,7 +49,6 @@ class TextFieldValidator {
 
   // Numbers-only validation (optional flag)
   static String? numbersOnly(String? value, {bool isOptional = false}) {
-    print('numbersOnly triggered');
     if (!isOptional && (value == null || value.isEmpty)) {
       return 'This field is required';
     }

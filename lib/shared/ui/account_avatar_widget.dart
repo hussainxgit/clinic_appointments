@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:clinic_appointments/features/doctor/view/doctor_profile_screen.dart';
 
 class AccountAvatarWidget extends StatelessWidget {
   const AccountAvatarWidget({super.key});
@@ -16,19 +15,13 @@ class AccountAvatarWidget extends StatelessWidget {
             PopupMenuItem(
               value: 'account_settings',
               child: const Text('Account Settings'),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                      builder: (context) => DoctorProfileScreen()),
-                );
-              },
+              onTap: () {},
             ),
             const PopupMenuItem(value: 'logout', child: Text('Logout')),
           ],
         ).then((value) {
           if (value == 'logout') {
             // Handle logout logic here
-            print('Logout clicked');
           }
         });
       },
