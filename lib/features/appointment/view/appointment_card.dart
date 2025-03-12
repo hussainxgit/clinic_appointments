@@ -1,13 +1,14 @@
 import 'package:clinic_appointments/features/doctor/models/doctor.dart';
 import 'package:clinic_appointments/features/patient/models/patient.dart';
 import 'package:clinic_appointments/features/patient/view/patient_avatar.dart';
-import 'package:clinic_appointments/shared/provider/clinic_service.dart';
+import 'package:clinic_appointments/shared/services/clinic_service.dart';
 import 'package:clinic_appointments/shared/utilities/utility.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../doctor/view/doctor_avatar.dart';
 import '../models/appointment.dart';
+import 'appointment_details_screen.dart';
 import 'edit_appointment_dialog.dart';
 
 class AppointmentCard extends StatelessWidget {
@@ -39,18 +40,17 @@ class AppointmentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: isPast
-              ? colorScheme.outlineVariant.withOpacity(0.5)
+              ? colorScheme.outlineVariant.withValues(alpha:0.5)
               : colorScheme.primaryContainer,
           width: 1,
         ),
       ),
       child: InkWell(
-        onTap: () {
-          // Show appointment details
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Viewing details for ${patient.name}')),
-          );
-        },
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => AppointmentDetailsScreen(
+            appointmentId: appointment.id,
+          ),
+        )),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -123,7 +123,7 @@ class AppointmentCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            color: colorScheme.surfaceContainerHighest.withValues(alpha:0.5),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -387,7 +387,6 @@ class AppointmentCard extends StatelessWidget {
                 Provider.of<ClinicService>(context, listen: false)
                     .removeAppointment(
                   appointment.id,
-                  appointment.appointmentSlotId,
                 );
                 Navigator.of(context).pop();
               },

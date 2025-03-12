@@ -1,4 +1,4 @@
-import 'package:clinic_appointments/shared/provider/clinic_service.dart';
+import 'package:clinic_appointments/shared/services/clinic_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/appointment.dart';
@@ -233,7 +233,7 @@ class _EditAppointmentDialogState extends State<EditAppointmentDialog> {
                   Container(
                     decoration: BoxDecoration(
                       border: Border.all(
-                          color: colorScheme.outline.withOpacity(0.5)),
+                          color: colorScheme.outline.withValues(alpha:0.5)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: InkWell(
@@ -259,7 +259,7 @@ class _EditAppointmentDialogState extends State<EditAppointmentDialog> {
                                 style: textTheme.bodyLarge?.copyWith(
                                   color: _selectedDate == null
                                       ? colorScheme.onSurfaceVariant
-                                          .withOpacity(0.8)
+                                          .withValues(alpha:0.8)
                                       : colorScheme.onSurface,
                                 ),
                               ),
@@ -320,7 +320,7 @@ class _EditAppointmentDialogState extends State<EditAppointmentDialog> {
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(28),
                 ),
                 child: const Center(
@@ -375,13 +375,13 @@ class _EditAppointmentDialogState extends State<EditAppointmentDialog> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: colorScheme.outline.withOpacity(0.5),
+            color: colorScheme.outline.withValues(alpha:0.5),
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: colorScheme.outline.withOpacity(0.5),
+            color: colorScheme.outline.withValues(alpha:0.5),
           ),
         ),
         focusedBorder: OutlineInputBorder(

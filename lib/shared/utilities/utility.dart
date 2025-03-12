@@ -165,3 +165,20 @@ void showMessageDialog(BuildContext context, String title, String body) {
     },
   );
 }
+
+// Helper extension to determine device type and orientation
+extension DeviceInfo on BuildContext {
+  bool get isTablet {
+    final width = MediaQuery.of(this).size.width;
+    return width < 1100 && width >= 600;
+  }
+
+  bool get isPortrait {
+    final size = MediaQuery.of(this).size;
+    return size.height > size.width;
+  }
+
+  bool get isSmallScreen {
+    return MediaQuery.of(this).size.width < 500;
+  }
+}

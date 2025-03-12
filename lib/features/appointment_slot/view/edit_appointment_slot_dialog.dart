@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:clinic_appointments/features/doctor/models/doctor.dart';
 import 'package:clinic_appointments/features/appointment_slot/models/appointment_slot.dart';
-import '../../../shared/provider/clinic_service.dart';
+import '../../../shared/services/clinic_service.dart';
 
 class EditAppointmentSlot extends StatefulWidget {
   final AppointmentSlot initialSlot;

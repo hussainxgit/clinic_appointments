@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../shared/provider/clinic_service.dart';
+import '../../../shared/services/clinic_service.dart';
 import 'search_doctor_sheet.dart';
 import 'doctors_grid_view.dart';
+import 'filter_doctors_sheet.dart';
 
-class DoctorsScreen extends StatelessWidget {
+class DoctorsScreen extends StatefulWidget {
   const DoctorsScreen({super.key});
 
+  @override
+  State<DoctorsScreen> createState() => _DoctorsScreenState();
+}
+
+class _DoctorsScreenState extends State<DoctorsScreen> {
+  // Filter state
+  bool _showOnlyAvailable = false;
+  String? _selectedSpecialty;
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,7 +34,7 @@ class DoctorsScreen extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: () {},
+            onPressed: () => _showFilterSheet(context),
             tooltip: 'Filter doctors',
           ),
         ],
@@ -43,7 +53,24 @@ class DoctorsScreen extends StatelessWidget {
   Widget _buildDoctorsList(BuildContext context) {
     return Consumer<ClinicService>(
       builder: (context, clinicService, _) {
-        final doctors = clinicService.getDoctors();
+        final allDoctors = clinicService.getDoctors();
+        
+        // Apply filters
+        final doctors = allDoctors.where((doctor) {
+          // Availability filter
+          if (_showOnlyAvailable && !doctor.isAvailable) {
+            return false;
+          }
+          
+          // Specialty filter
+          if (_selectedSpecialty != null && 
+              _selectedSpecialty!.isNotEmpty && 
+              doctor.specialty != _selectedSpecialty) {
+            return false;
+          }
+          
+          return true;
+        }).toList();
         
         if (doctors.isEmpty) {
           return Center(
@@ -57,24 +84,64 @@ class DoctorsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'No doctors available',
+                  'No doctors found',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Add doctors to your clinic',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+                if (_showOnlyAvailable || _selectedSpecialty != null)
+                  ElevatedButton(
+                    onPressed: _clearFilters,
+                    child: const Text('Clear Filters'),
+                  )
+                else
+                  Text(
+                    'Add doctors to your clinic',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
               ],
             ),
           );
         }
         
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: DoctorsGridView(doctors: doctors),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_showOnlyAvailable || _selectedSpecialty != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Wrap(
+                  spacing: 8,
+                  children: [
+                    if (_showOnlyAvailable)
+                      _buildFilterChip(
+                        'Available Only', 
+                        () => _setAvailabilityFilter(false)
+                      ),
+                    if (_selectedSpecialty != null)
+                      _buildFilterChip(
+                        'Specialty: $_selectedSpecialty', 
+                        () => _setSpecialtyFilter(null)
+                      ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: DoctorsGridView(doctors: doctors),
+              ),
+            ),
+          ],
         );
       },
+    );
+  }
+
+  Widget _buildFilterChip(String label, VoidCallback onRemove) {
+    return Chip(
+      label: Text(label),
+      deleteIcon: const Icon(Icons.close, size: 18),
+      onDeleted: onRemove,
     );
   }
 
@@ -85,5 +152,41 @@ class DoctorsScreen extends StatelessWidget {
       useSafeArea: true,
       builder: (context) => const SearchDoctorSheet(),
     );
+  }
+  
+  void _showFilterSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => FilterDoctorsSheet(
+        showOnlyAvailable: _showOnlyAvailable,
+        selectedSpecialty: _selectedSpecialty,
+        onApplyFilters: (showOnlyAvailable, specialty) {
+          setState(() {
+            _showOnlyAvailable = showOnlyAvailable;
+            _selectedSpecialty = specialty;
+          });
+        },
+      ),
+    );
+  }
+  
+  void _setAvailabilityFilter(bool value) {
+    setState(() {
+      _showOnlyAvailable = value;
+    });
+  }
+  
+  void _setSpecialtyFilter(String? value) {
+    setState(() {
+      _selectedSpecialty = value;
+    });
+  }
+  
+  void _clearFilters() {
+    setState(() {
+      _showOnlyAvailable = false;
+      _selectedSpecialty = null;
+    });
   }
 }

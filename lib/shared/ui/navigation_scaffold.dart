@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../main.dart';
-import 'search_bar_widget.dart';
-import 'add_appointment_button.dart';
 import 'account_avatar_widget.dart';
 
 class NavigationScaffold extends StatefulWidget {
@@ -48,10 +46,6 @@ class _NavigationScaffoldState extends State<NavigationScaffold> {
         ),
         elevation: 0.3,
         actions: [
-          SizedBox(
-              width: MediaQuery.of(context).size.width * 0.5,
-              child: SearchBarWidget()),
-          AddAppointmentButton(),
           AccountAvatarWidget(),
         ],
       ),

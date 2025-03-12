@@ -1,42 +1,47 @@
-import 'package:clinic_appointments/shared/database/mock_data.dart';
 import 'package:flutter/material.dart';
-
+import '../../../shared/database/mock_data.dart';
 import '../models/patient.dart';
 
-class PatientProvider with ChangeNotifier {
-  final List<Patient> _patients = mockPatients;
+class PatientProvider extends ChangeNotifier {
+  // Private list of patients initialized with mock data
+  final List<Patient> _patients = allPatients;
 
-  List<Patient> get patients => _patients;
+  // Getter for patients list
+  List<Patient> get patients => List.unmodifiable(_patients);
 
-  void addPatient(Patient patient) {
+  // Add a new patient
+  Patient addPatient(Patient patient) {
     _patients.add(patient);
     notifyListeners();
+    return patient;
   }
 
+  // Remove a patient by ID
   void removePatient(String patientId) {
     _patients.removeWhere((patient) => patient.id == patientId);
     notifyListeners();
   }
 
-  void updatePatient(Patient patient) {
-    final index = _patients.indexWhere((p) => p.id == patient.id);
+  // Update an existing patient
+  void updatePatient(Patient updatedPatient) {
+    final index = _patients.indexWhere((p) => p.id == updatedPatient.id);
     if (index != -1) {
-      _patients[index] = patient;
+      _patients[index] = updatedPatient;
       notifyListeners();
     }
   }
 
-  List<Patient> searchPatientsByPhone(String query) {
-    final cleanQuery = query.trim().toLowerCase();
-    if (cleanQuery.isEmpty) return [];
+  // Search patients by phone number
+  List<Patient> searchPatientsByPhone(String phoneQuery) {
+    final cleanQuery = phoneQuery.trim().toLowerCase();
     return _patients
         .where((patient) => patient.phone.toLowerCase().contains(cleanQuery))
         .toList();
   }
 
-  List<Patient> searchPatientsByQuery(String query) {
-    final cleanQuery = query.trim().toLowerCase();
-    if (cleanQuery.isEmpty) return [];
+  // Comprehensive search across name and phone
+  List<Patient> searchPatientsByQuery(String searchQuery) {
+    final cleanQuery = searchQuery.trim().toLowerCase();
     return _patients
         .where((patient) =>
             patient.name.toLowerCase().contains(cleanQuery) ||
@@ -44,16 +49,49 @@ class PatientProvider with ChangeNotifier {
         .toList();
   }
 
-  // New: Auto-fill patient name based on phone number
-  void updateNameFromPhone(String phone, TextEditingController nameController) {
-    final patient = _patients.firstWhere(
-      (p) => p.phone == phone.trim(),
-      orElse: () =>
-          Patient(id: '', name: '', phone: '', registeredAt: DateTime.now()),
-    );
-    if (patient.id.isNotEmpty) {
+  // Find patient by phone number
+  Patient? findPatientByPhone(String phone) {
+    final cleanPhone = phone.trim();
+    try {
+      return _patients.firstWhere((p) => p.phone == cleanPhone);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Auto-fill patient name based on phone number
+  void autoFillNameFromPhone(
+      String phone, TextEditingController nameController) {
+    final patient = findPatientByPhone(phone);
+    if (patient != null) {
       nameController.text = patient.name;
     }
     notifyListeners();
+  }
+
+  // Get total number of patients
+  int get patientCount => _patients.length;
+
+  // Filter patients by status
+  List<Patient> getPatientsByStatus(PatientStatus status) {
+    return _patients.where((patient) => patient.status == status).toList();
+  }
+
+  void suspendPatient(String patientId) {
+    final index = _patients.indexWhere((p) => p.id == patientId);
+    if (index != -1) {
+      _patients[index] =
+          _patients[index].copyWith(status: PatientStatus.inactive);
+      notifyListeners();
+    }
+  }
+
+  void activatePatient(String patientId) {
+    final index = _patients.indexWhere((p) => p.id == patientId);
+    if (index != -1) {
+      _patients[index] =
+          _patients[index].copyWith(status: PatientStatus.active);
+      notifyListeners();
+    }
   }
 }

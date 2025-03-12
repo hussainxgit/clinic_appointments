@@ -3,10 +3,10 @@ class Doctor {
   final String name;
   final String specialty;
   final String phoneNumber;
-  String? email;
-  String? imageUrl;
-  String? bio;
-  bool isAvailable = true;
+  final String? email;
+  final String? imageUrl;
+  final String? bio;
+  final bool isAvailable;
   final Map<String, String>? socialMedia;
 
   Doctor({
@@ -16,9 +16,9 @@ class Doctor {
     required this.phoneNumber,
     this.email,
     this.imageUrl,
+    this.bio,
     this.isAvailable = true,
     this.socialMedia,
-    this.bio,
   });
 
   factory Doctor.fromJson(Map<String, dynamic> json) {
@@ -29,9 +29,11 @@ class Doctor {
       phoneNumber: json['phoneNumber'],
       email: json['email'],
       imageUrl: json['imageUrl'],
-      isAvailable: json['isAvailable'],
+      isAvailable: json['isAvailable'] ?? true,
       bio: json['bio'],
-      //TODO: add socialMedia to fromJson
+      socialMedia: json['socialMedia'] != null
+          ? Map<String, String>.from(json['socialMedia'])
+          : null,
     );
   }
 
@@ -44,8 +46,33 @@ class Doctor {
       'email': email,
       'imageUrl': imageUrl,
       'isAvailable': isAvailable,
-      'bio': isAvailable,
-      //TODO: add socialMedia to toJson
+      'bio': bio,
+      'socialMedia': socialMedia,
     };
+  }
+
+  // Create a copy of this Doctor with the given field values updated
+  Doctor copyWith({
+    String? id,
+    String? name,
+    String? specialty,
+    String? phoneNumber,
+    String? email,
+    String? imageUrl,
+    String? bio,
+    bool? isAvailable,
+    Map<String, String>? socialMedia,
+  }) {
+    return Doctor(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      specialty: specialty ?? this.specialty,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      email: email ?? this.email,
+      imageUrl: imageUrl ?? this.imageUrl,
+      bio: bio ?? this.bio,
+      isAvailable: isAvailable ?? this.isAvailable,
+      socialMedia: socialMedia ?? this.socialMedia,
+    );
   }
 }

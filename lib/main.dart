@@ -9,13 +9,13 @@ import 'features/doctor/view/doctors_screen.dart';
 import 'features/patient/controller/patient_provider.dart';
 import 'features/doctor/controller/doctor_provider.dart';
 import 'features/patient/view/patients_screen.dart';
-import 'shared/provider/clinic_service.dart';
+import 'shared/services/clinic_service.dart';
+import 'shared/services/service_factory.dart';
 import 'shared/ui/navigation_scaffold.dart';
 import 'shared/utilities/globals.dart' as globals;
 import 'shared/utilities/my_theme.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+void main() {
 
   runApp(
     MultiProvider(
@@ -26,11 +26,13 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AppointmentSlotProvider()),
         ProxyProvider4<AppointmentProvider, PatientProvider, DoctorProvider,
             AppointmentSlotProvider, ClinicService>(
-          update: (_, ap, pp, dp, asp, __) => ClinicService(
-            appointmentProvider: ap,
-            patientProvider: pp,
-            doctorProvider: dp,
-            appointmentSlotProvider: asp,
+          update: (_, ap, pp, dp, asp, __) =>
+              ServiceFactory.createClinicService(
+            globals.scaffoldMessengerKey,
+            ap,
+            pp,
+            dp,
+            asp,
           ),
         ),
       ],

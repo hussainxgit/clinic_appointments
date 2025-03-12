@@ -1,4 +1,5 @@
 import 'package:clinic_appointments/features/doctor/models/doctor.dart';
+import 'package:clinic_appointments/features/doctor/view/doctor_appointments_screen.dart';
 import 'package:clinic_appointments/features/doctor/view/doctor_avatar.dart';
 import 'package:clinic_appointments/features/doctor/controller/doctor_provider.dart';
 import 'package:flutter/material.dart';
@@ -17,21 +18,21 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
   late Doctor _doctor;
   bool _isEditing = false;
   final _formKey = GlobalKey<FormState>();
-  
+
   // Text controllers
   late TextEditingController _nameController;
   late TextEditingController _specialtyController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _bioController;
-  
+
   @override
   void initState() {
     super.initState();
     _doctor = widget.doctor;
     _initControllers();
   }
-  
+
   void _initControllers() {
     _nameController = TextEditingController(text: _doctor.name);
     _specialtyController = TextEditingController(text: _doctor.specialty);
@@ -39,7 +40,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
     _phoneController = TextEditingController(text: _doctor.phoneNumber);
     _bioController = TextEditingController(text: _doctor.bio ?? '');
   }
-  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -62,7 +63,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
       }
     });
   }
-  
+
   void _saveChanges() {
     if (_formKey.currentState?.validate() ?? false) {
       final updatedDoctor = Doctor(
@@ -76,24 +77,27 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
         isAvailable: _doctor.isAvailable,
         socialMedia: _doctor.socialMedia,
       );
-      
+
       try {
         // Update doctor in provider
-        final doctorProvider = Provider.of<DoctorProvider>(context, listen: false);
+        final doctorProvider =
+            Provider.of<DoctorProvider>(context, listen: false);
         doctorProvider.updateDoctor(updatedDoctor);
-        
+
         // Update local doctor state
         setState(() {
           _doctor = updatedDoctor;
           _isEditing = false;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Doctor profile updated successfully')),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating doctor: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Error updating doctor: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -107,7 +111,17 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
         scrolledUnderElevation: 0,
         actions: [
           IconButton(
-            icon: Icon(_isEditing ? Icons.cancel_outlined : Icons.edit_outlined),
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) =>
+                      DoctorAppointmentsScreen(doctorId: widget.doctor.id)));
+            },
+            icon: Icon(Icons.calendar_month_rounded),
+            tooltip: 'View Appointments',
+          ),
+          IconButton(
+            icon:
+                Icon(_isEditing ? Icons.cancel_outlined : Icons.edit_outlined),
             onPressed: _toggleEditMode,
             tooltip: _isEditing ? 'Cancel Edit' : 'Edit Profile',
           ),
@@ -215,7 +229,8 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                           validator: (value) {
                             if (value != null && value.isNotEmpty) {
                               // Simple email validation
-                              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                              final emailRegex =
+                                  RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                               if (!emailRegex.hasMatch(value)) {
                                 return 'Enter a valid email address';
                               }
@@ -223,8 +238,8 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                             return null;
                           },
                         )
-                      : _buildContactInfo(
-                          context, Icons.mail_outline, _doctor.email ?? 'No email provided'),
+                      : _buildContactInfo(context, Icons.mail_outline,
+                          _doctor.email ?? 'No email provided'),
                   const SizedBox(height: 4),
                   _isEditing
                       ? TextFormField(
@@ -353,7 +368,9 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                     onPressed: () {
                       // This would open a dialog to add a new service
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Service editing not implemented in this example')),
+                        const SnackBar(
+                            content: Text(
+                                'Service editing not implemented in this example')),
                       );
                     },
                   ),
@@ -401,7 +418,9 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                   onPressed: () {
                     // This would open a dialog to edit this service
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Service editing not implemented in this example')),
+                      const SnackBar(
+                          content: Text(
+                              'Service editing not implemented in this example')),
                     );
                   },
                 ),
@@ -440,7 +459,9 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                           onPressed: () {
                             // This would open a dialog to add social media
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Social media editing not implemented in this example')),
+                              const SnackBar(
+                                  content: Text(
+                                      'Social media editing not implemented in this example')),
                             );
                           },
                         ),
@@ -501,7 +522,9 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                       // Navigate to booking screen
                       if (!_doctor.isAvailable) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('This doctor is not currently available for appointments')),
+                          const SnackBar(
+                              content: Text(
+                                  'This doctor is not currently available for appointments')),
                         );
                         return;
                       }
@@ -567,7 +590,9 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                     onTap: () {
                       // This would remove the social media entry
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Social media editing not implemented in this example')),
+                        const SnackBar(
+                            content: Text(
+                                'Social media editing not implemented in this example')),
                       );
                     },
                     child: Container(

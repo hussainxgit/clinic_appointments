@@ -1,9 +1,9 @@
-// Reusable widget for a single doctor's card
+import 'package:clinic_appointments/features/doctor/view/doctor_appointments_screen.dart';
 import 'package:clinic_appointments/features/doctor/view/doctor_profile_screen.dart';
-import 'package:clinic_appointments/shared/provider/clinic_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../shared/services/clinic_service.dart';
 import '../models/doctor.dart';
 import 'doctor_avatar.dart';
 
@@ -21,11 +21,28 @@ class DoctorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    
+    // Get screen dimensions
+    final size = MediaQuery.of(context).size;
+    final isLandscape = size.width > size.height;
+    final isTablet = size.width < 1100 && size.width >= 600;
+    final isIpadLandscape = isTablet && isLandscape;
+    
+    // Adjust padding based on screen size
+    final padding = isIpadLandscape ? 10.0 : 16.0;
+    
+    // Adjust spacing
+    final verticalSpacing = isIpadLandscape ? 8.0 : 16.0;
+    final smallSpacing = isIpadLandscape ? 2.0 : 4.0;
+    
+    // Adjust avatar size
+    final avatarRadius = isIpadLandscape ? 36.0 : 48.0;
 
     return Card(
       elevation: 0,
       clipBehavior: Clip.hardEdge,
       color: colorScheme.surfaceContainerLow,
+      margin: EdgeInsets.all(isIpadLandscape ? 4.0 : 8.0),
       child: InkWell(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
@@ -33,15 +50,15 @@ class DoctorCard extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(padding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context),
-              const SizedBox(height: 16),
-              _buildDoctorInfo(theme, colorScheme),
+              _buildHeader(context, avatarRadius),
+              SizedBox(height: verticalSpacing),
+              _buildDoctorInfo(context, theme, colorScheme, smallSpacing),
               const Spacer(),
-              _buildContactActions(colorScheme),
+              _buildContactActions(colorScheme, isIpadLandscape),
             ],
           ),
         ),
@@ -49,7 +66,7 @@ class DoctorCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, double avatarRadius) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -57,46 +74,63 @@ class DoctorCard extends StatelessWidget {
           imageUrl: doctor.imageUrl,
           name: doctor.name,
           index: index,
-          radius: 48,
+          radius: avatarRadius,
         ),
         _buildActionMenu(context),
       ],
     );
   }
 
-  Widget _buildDoctorInfo(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildDoctorInfo(context, ThemeData theme, ColorScheme colorScheme, double spacing) {
+    // Get screen dimensions
+    final size = MediaQuery.of(context).size;
+    final isLandscape = size.width > size.height;  // Default for safety
+    final isTablet = size.width < 1100 && size.width >= 600;
+    final isIpadLandscape = isTablet && isLandscape;
+    
+    // Adjust text sizes
+    final nameStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w600,
+      fontSize: isIpadLandscape ? 14 : null,
+    );
+    
+    final specialtyStyle = theme.textTheme.bodyMedium?.copyWith(
+      color: colorScheme.onSurfaceVariant,
+      fontSize: isIpadLandscape ? 12 : null,
+    );
+    
+    final ratingStyle = theme.textTheme.bodySmall?.copyWith(
+      fontSize: isIpadLandscape ? 10 : null,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           doctor.name,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: nameStyle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: spacing),
         Text(
           doctor.specialty,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
+          style: specialtyStyle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: spacing),
         Row(
           children: [
             Icon(
               Icons.star,
-              size: 16,
+              size: isIpadLandscape ? 14 : 16,
               color: Colors.amber,
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: spacing / 2),
             Text(
               '4.8',
-              style: theme.textTheme.bodySmall,
+              style: ratingStyle,
             ),
           ],
         ),
@@ -104,7 +138,7 @@ class DoctorCard extends StatelessWidget {
     );
   }
 
-  Widget _buildContactActions(ColorScheme colorScheme) {
+  Widget _buildContactActions(ColorScheme colorScheme, bool isIpadLandscape) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -113,15 +147,19 @@ class DoctorCard extends StatelessWidget {
           style: TextStyle(
             color: colorScheme.primary,
             fontWeight: FontWeight.w500,
+            fontSize: isIpadLandscape ? 12 : 14,
           ),
         ),
         Row(
           children: [
             IconButton(
               onPressed: () {},
-              icon: Icon(Icons.message, color: colorScheme.primary),
+              icon: Icon(Icons.message, 
+                color: colorScheme.primary,
+                size: isIpadLandscape ? 20 : 24,
+              ),
               style: IconButton.styleFrom(
-                minimumSize: const Size(40, 40),
+                minimumSize: Size(isIpadLandscape ? 32 : 40, isIpadLandscape ? 32 : 40),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
@@ -132,10 +170,18 @@ class DoctorCard extends StatelessWidget {
   }
 
   Widget _buildActionMenu(BuildContext context) {
+    // Get screen dimensions for icon size
+    final size = MediaQuery.of(context).size;
+    final isLandscape = size.width > size.height;
+    final isTablet = size.width < 1100 && size.width >= 600;
+    final isIpadLandscape = isTablet && isLandscape;
+    
     return MenuAnchor(
       builder: (context, controller, child) {
         return IconButton(
-          icon: const Icon(Icons.more_vert),
+          icon: Icon(Icons.more_vert, 
+            size: isIpadLandscape ? 20 : 24,
+          ),
           onPressed: () {
             if (controller.isOpen) {
               controller.close();
@@ -148,12 +194,22 @@ class DoctorCard extends StatelessWidget {
       menuChildren: [
         MenuItemButton(
           leadingIcon: const Icon(Icons.calendar_today, color: Colors.green),
-          child: const Text('View schedule'),
-          onPressed: () {},
+          child: Text('View schedule', 
+            style: TextStyle(fontSize: isIpadLandscape ? 13 : 14),
+          ),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => DoctorAppointmentsScreen(doctorId: doctor.id),
+              ),
+            );
+          },
         ),
         MenuItemButton(
           leadingIcon: const Icon(Icons.delete, color: Colors.red),
-          child: const Text('Delete doctor'),
+          child: Text('Delete doctor',
+            style: TextStyle(fontSize: isIpadLandscape ? 13 : 14),
+          ),
           onPressed: () {
             Provider.of<ClinicService>(context, listen: false)
                 .deleteDoctor(doctor.id);

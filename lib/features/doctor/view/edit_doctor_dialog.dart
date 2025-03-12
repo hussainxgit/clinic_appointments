@@ -1,4 +1,4 @@
-import 'package:clinic_appointments/shared/provider/clinic_service.dart';
+import 'package:clinic_appointments/shared/services/clinic_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../patient/models/patient.dart';

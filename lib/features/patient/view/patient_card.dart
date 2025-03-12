@@ -1,9 +1,10 @@
 // Reusable widget for a single Patient's card
 import 'package:clinic_appointments/features/patient/view/patient_profile_screen.dart';
+import 'package:clinic_appointments/shared/utilities/utility.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../shared/provider/clinic_service.dart';
+import '../../../shared/services/clinic_service.dart';
 import '../models/patient.dart';
 import 'patient_avatar.dart';
 
@@ -77,14 +78,19 @@ class PatientCard extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 4),
-        // if (patient.dateOfBirth != null)
-        //   Text(
-        //     'DOB: ${_formatDate(patient.dateOfBirth!)}',
-        //     style: theme.textTheme.bodyMedium,
-        //   ),
+        if (patient.dateOfBirth != null)
+          Text(
+            'DOB: ${patient.dateOfBirth!.dateOnly()}',
+            style: theme.textTheme.bodyMedium,
+          ),
         if (patient.id.isNotEmpty)
           Text(
             'ID: ${patient.id}',
+            style: theme.textTheme.bodySmall,
+          ),
+        if (patient.phone.isNotEmpty)
+          Text(
+            'Phone: ${patient.phone}',
             style: theme.textTheme.bodySmall,
           ),
       ],
@@ -96,7 +102,7 @@ class PatientCard extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Contact',
+          'Send SMS',
           style: TextStyle(
             color: colorScheme.primary,
             fontWeight: FontWeight.w500,
@@ -104,14 +110,6 @@ class PatientCard extends StatelessWidget {
         ),
         Row(
           children: [
-            IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.phone, color: colorScheme.primary),
-              style: IconButton.styleFrom(
-                minimumSize: Size(40, 40),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            ),
             IconButton(
               onPressed: () {},
               icon: Icon(Icons.message, color: colorScheme.primary),
@@ -141,20 +139,67 @@ class PatientCard extends StatelessWidget {
         );
       },
       menuChildren: [
-        MenuItemButton(
-          leadingIcon: Icon(Icons.stop_circle_rounded, color: Colors.red),
-          child: Text('Suspend patient'),
-          onPressed: () {},
-        ),
+        if (patient.status == PatientStatus.inactive)
+          MenuItemButton(
+            leadingIcon: Icon(Icons.check_circle, color: Colors.green),
+            child: Text('Activate patient'),
+            onPressed: () {
+              Provider.of<ClinicService>(context, listen: false)
+                  .activatePatient(patient.id);
+            },
+          ),
+        if (patient.status == PatientStatus.active)
+          MenuItemButton(
+            leadingIcon: Icon(Icons.pause_circle, color: Colors.yellow),
+            child: Text('Suspend patient'),
+            onPressed: () {
+              Provider.of<ClinicService>(context, listen: false)
+                  .suspendPatient(patient.id);
+            },
+          ),
         MenuItemButton(
           leadingIcon: Icon(Icons.delete, color: Colors.red),
           child: Text('Delete patient'),
           onPressed: () {
-            Provider.of<ClinicService>(context, listen: false)
-                .removePatient(patient.id);
+            showConfirmationDialog(
+                context: context,
+                title: 'Delete Patient',
+                message: 'Are you sure you want to delete this patient?',
+                onConfirm: () {
+                  Provider.of<ClinicService>(context, listen: false)
+                      .removePatientWithCascade(patient.id);
+                });
           },
         ),
       ],
     );
+  }
+
+  void showConfirmationDialog(
+      {required BuildContext context,
+      required String title,
+      required String message,
+      required Null Function() onConfirm}) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  onConfirm();
+                  Navigator.of(context).pop();
+                },
+                child: Text('Confirm'),
+              ),
+            ],
+          );
+        });
   }
 }

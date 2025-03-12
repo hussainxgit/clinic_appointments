@@ -1,8 +1,9 @@
-import 'package:clinic_appointments/shared/provider/clinic_service.dart';
+import 'package:clinic_appointments/shared/services/clinic_service.dart';
 import 'package:clinic_appointments/shared/utilities/utility.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../appointment/models/appointment.dart';
+import '../../appointment/view/appointment_details_screen.dart';
 import '../../appointment/view/edit_appointment_dialog.dart';
 import '../../doctor/models/doctor.dart';
 import '../../patient/models/patient.dart';
@@ -31,19 +32,11 @@ class PatientAppointmentList extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Appointments (02)',
+                    'No Appointments',
                     style: TextStyle(
                       fontSize: 18,
                       color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tap to view or add appointments.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -66,6 +59,11 @@ class PatientAppointmentList extends StatelessWidget {
                 final Doctor doctor = compindeAppointments[index]['doctor'];
 
                 return ListTile(
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => AppointmentDetailsScreen(
+                      appointmentId: appointment.id,
+                    ),
+                  )),
                   title: Text(
                     doctor.name,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -115,8 +113,9 @@ class PatientAppointmentList extends StatelessWidget {
                       IconButton(
                         onPressed: () {
                           Provider.of<ClinicService>(context, listen: false)
-                              .removeAppointment(appointment.id,
-                                  appointment.appointmentSlotId);
+                              .removeAppointment(
+                            appointment.id,
+                          );
                         },
                         icon: Icon(Icons.delete_outline, size: 24),
                         color: Theme.of(context).colorScheme.error,

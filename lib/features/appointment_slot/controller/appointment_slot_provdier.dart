@@ -37,22 +37,39 @@ class AppointmentSlotProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Book a slot (immutable update)
-  void bookSlot(String slotId) {
+  /// Book a slot with appointment tracking
+  void bookSlot(String slotId, String appointmentId) {
     updateSlot(slotId, (slot) {
       if (slot.isFullyBooked) throw SlotFullyBookedException(slotId);
       if (slot.date.isBefore(DateTime.now())) {
         throw SlotDateInPastException(slot.date);
       }
-      return slot.bookPatient();
+
+      // Add the appointment ID to the slot's tracking list
+      final updatedAppointmentIds = List<String>.from(slot.appointmentIds)
+        ..add(appointmentId);
+
+      return slot.copyWith(
+          bookedPatients: slot.bookedPatients + 1,
+          appointmentIds: updatedAppointmentIds);
     });
   }
 
-  /// Cancel booking (immutable update)
-  void cancelSlot(String slotId) {
+  /// Cancel booking with appointment tracking
+  void cancelSlot(String slotId, String appointmentId) {
     updateSlot(slotId, (slot) {
       if (slot.bookedPatients <= 0) throw SlotNotBookedException(slotId);
-      return slot.cancelBooking();
+      if (!slot.appointmentIds.contains(appointmentId)) {
+        throw Exception('Appointment $appointmentId not found in slot $slotId');
+      }
+
+      // Remove the appointment ID from the slot's tracking list
+      final updatedAppointmentIds = List<String>.from(slot.appointmentIds)
+        ..remove(appointmentId);
+
+      return slot.copyWith(
+          bookedPatients: slot.bookedPatients - 1,
+          appointmentIds: updatedAppointmentIds);
     });
   }
 

@@ -5,7 +5,7 @@ import '../models/appointment.dart';
 import '../models/appointment_exception.dart';
 
 class AppointmentProvider extends ChangeNotifier {
-  final List<Appointment> _appointments = mockAppointments;
+  final List<Appointment> _appointments = allAppointments;
 
   /// Immutable copy of appointments
   List<Appointment> get appointments => List.unmodifiable(_appointments);
@@ -30,6 +30,11 @@ class AppointmentProvider extends ChangeNotifier {
   /// Remove an existing appointment
   void removeAppointment(String appointmentId) {
     _appointments.removeWhere((a) => a.id == appointmentId);
+    notifyListeners();
+  }
+
+  void removePatientAppointments(String patientId) {
+    _appointments.removeWhere((a) => a.patientId == patientId);
     notifyListeners();
   }
 

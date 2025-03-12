@@ -1,4 +1,4 @@
-import 'package:clinic_appointments/shared/provider/clinic_service.dart';
+import 'package:clinic_appointments/shared/services/clinic_service.dart';
 import 'package:clinic_appointments/shared/utilities/utility.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -50,13 +50,13 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Add Appointment', 
+                Text('Add Appointment',
                     style: textTheme.headlineSmall?.copyWith(
                       color: colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
                     )),
                 const SizedBox(height: 24),
-                
+
                 // Patient information section
                 _buildSectionHeader('Patient Information'),
                 const SizedBox(height: 8),
@@ -70,7 +70,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                       ? 'Phone number is required'
                       : null,
                   onChanged: (value) => clinicService.patientProvider
-                      .updateNameFromPhone(value, _nameController),
+                      .autoFillNameFromPhone(value, _nameController),
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(
@@ -91,7 +91,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                   maxLines: 2,
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Appointment details section
                 _buildSectionHeader('Appointment Details'),
                 const SizedBox(height: 8),
@@ -140,22 +140,21 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                   onChanged: (value) => setState(() => paymentStatus = value!),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Action buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: _isLoading 
-                          ? null 
-                          : () => Navigator.of(context).pop(),
+                      onPressed:
+                          _isLoading ? null : () => Navigator.of(context).pop(),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                       ),
-                      child: Text('Cancel', 
+                      child: Text('Cancel',
                           style: TextTheme().labelLarge?.copyWith(
-                            color: colorScheme.primary,
-                          )),
+                                color: colorScheme.primary,
+                              )),
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
@@ -208,7 +207,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     int maxLines = 1,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
@@ -248,7 +247,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     String? Function(T?)? validator,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return DropdownButtonFormField<T>(
       value: value,
       decoration: InputDecoration(
@@ -282,7 +281,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
   Widget _buildDateSelector(ClinicService clinicService) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Card(
       margin: EdgeInsets.zero,
       elevation: 0,
@@ -303,7 +302,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
             );
             return;
           }
-          
+
           final result = await clinicService.appointmentSlotProvider
               .selectSlotForDoctor(context, selectedDoctorId!);
           if (result != null) {
@@ -331,7 +330,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                       ),
                 ),
               ),
-              Icon(Icons.arrow_forward_ios, 
+              Icon(Icons.arrow_forward_ios,
                   size: 16, color: colorScheme.onSurfaceVariant),
             ],
           ),
@@ -344,7 +343,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     if (selectedDate == null || selectedSlotId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -354,13 +353,13 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       );
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     final clinicService = Provider.of<ClinicService>(context, listen: false);
-    
+
     try {
       await clinicService.createAppointmentFromForm(
         phone: _phoneController.text,
@@ -372,17 +371,15 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         status: status,
         paymentStatus: paymentStatus,
       );
-      
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Appointment created successfully'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Appointment created successfully'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
