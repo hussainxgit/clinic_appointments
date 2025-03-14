@@ -1,6 +1,8 @@
 // lib/features/doctor/doctor_module_riverpod.dart
+import 'package:clinic_appointments/features/doctor/data/doctor_provider.dart';
+import 'package:clinic_appointments/features/doctor/presentation/provider/doctor_notifier.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/single_child_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/module/feature_module.dart';
 import 'presentation/screens/doctors_screen.dart';
 import 'presentation/screens/doctor_form_screen.dart';
@@ -20,7 +22,10 @@ class DoctorModule implements FeatureModule {
   List<String> get dependsOn => [];
 
   @override
-  List<SingleChildWidget> get providers => []; // No longer needed with Riverpod
+  List<ProviderBase> get providers => [
+    doctorNotifierProvider,
+    doctorRepositoryProvider,
+  ];
 
   @override
   Map<String, WidgetBuilder> get routes => {

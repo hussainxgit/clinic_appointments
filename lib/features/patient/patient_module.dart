@@ -1,6 +1,8 @@
 // lib/features/patient/patient_module.dart
+import 'package:clinic_appointments/features/patient/data/patient_providers.dart';
+import 'package:clinic_appointments/features/patient/presentation/providers/patient_notifier.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/single_child_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/module/feature_module.dart';
 import 'presentation/screens/patient_screen.dart';
 
@@ -10,15 +12,19 @@ class PatientModule implements FeatureModule {
 
   @override
   String get moduleName => 'Patient Management';
-  
+
   @override
-  String? get moduleDescription => 'Manage clinic patients and their information';
+  String? get moduleDescription =>
+      'Manage clinic patients and their information';
 
   @override
   List<String> get dependsOn => [];
 
   @override
-  List<SingleChildWidget> get providers => []; // No longer needed with Riverpod
+  List<ProviderBase> get providers => [
+    patientNotifierProvider,
+    patientRepositoryProvider,
+  ]; 
 
   @override
   Map<String, WidgetBuilder> get routes => {

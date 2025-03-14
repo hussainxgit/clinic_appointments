@@ -1,6 +1,6 @@
 // lib/core/module/feature_module.dart
 import 'package:flutter/material.dart';
-import 'package:provider/single_child_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 abstract class FeatureModule {
   String get moduleId;
@@ -8,7 +8,7 @@ abstract class FeatureModule {
   String? get moduleDescription => null;
   List<String> get dependsOn => [];
   
-  List<SingleChildWidget> get providers;
+  List<ProviderBase> get providers => [];
   Map<String, WidgetBuilder> get routes;
   List<NavigationItem> get navigationItems => [];
   

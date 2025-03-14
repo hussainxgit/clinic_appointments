@@ -1,6 +1,6 @@
 // lib/core/module/feature_registry.dart
 import 'package:flutter/material.dart';
-import 'package:provider/single_child_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'feature_module.dart';
 import '../utils/logger.dart';
 
@@ -30,7 +30,7 @@ class FeatureRegistry {
   List<FeatureModule> get modules => List.unmodifiable(_modules.values);
   FeatureModule? getModule(String moduleId) => _modules[moduleId];
   
-  List<SingleChildWidget> get allProviders => 
+  List<ProviderBase> get allProviders => 
     modules.expand((module) => module.providers).toList();
     
   Map<String, WidgetBuilder> get allRoutes {

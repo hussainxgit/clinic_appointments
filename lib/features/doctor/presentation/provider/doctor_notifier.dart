@@ -11,11 +11,7 @@ class DoctorState {
   final bool isLoading;
   final String? error;
 
-  DoctorState({
-    required this.doctors,
-    this.isLoading = false,
-    this.error,
-  });
+  DoctorState({required this.doctors, this.isLoading = false, this.error});
 
   DoctorState copyWith({
     List<Doctor>? doctors,
@@ -34,13 +30,13 @@ class DoctorState {
 class DoctorNotifier extends _$DoctorNotifier {
   @override
   DoctorState build() {
-    _loadDoctors();
-    return DoctorState(doctors: [], isLoading: true);
+    // Return an initial state without loading
+    return DoctorState(doctors: [], isLoading: false);
   }
 
-  Future<void> _loadDoctors() async {
+  Future<void> loadDoctors() async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final repository = ref.read(doctorRepositoryProvider);
       final doctors = await repository.getAll();
@@ -51,21 +47,21 @@ class DoctorNotifier extends _$DoctorNotifier {
   }
 
   Future<void> refreshDoctors() async {
-    await _loadDoctors();
+    await loadDoctors();
   }
 
   Future<Result<Doctor>> addDoctor(Doctor doctor) async {
     try {
       final repository = ref.read(doctorRepositoryProvider);
-      
+
       if (state.doctors.any((d) => d.id == doctor.id)) {
         return Result.failure('A doctor with this ID already exists');
       }
-      
+
       if (state.doctors.any((d) => d.name == doctor.name)) {
         return Result.failure('A doctor with this name already exists');
       }
-      
+
       final savedDoctor = await repository.create(doctor);
       state = state.copyWith(doctors: [...state.doctors, savedDoctor]);
       return Result.success(savedDoctor);
@@ -77,22 +73,24 @@ class DoctorNotifier extends _$DoctorNotifier {
   Future<Result<Doctor>> updateDoctor(Doctor doctor) async {
     try {
       final repository = ref.read(doctorRepositoryProvider);
-      
+
       final index = state.doctors.indexWhere((d) => d.id == doctor.id);
       if (index == -1) {
         return Result.failure('Doctor not found');
       }
-      
-      if (state.doctors.any((d) => d.name == doctor.name && d.id != doctor.id)) {
+
+      if (state.doctors.any(
+        (d) => d.name == doctor.name && d.id != doctor.id,
+      )) {
         return Result.failure('A doctor with this name already exists');
       }
-      
+
       final updatedDoctor = await repository.update(doctor);
-      
+
       final updatedDoctors = [...state.doctors];
       updatedDoctors[index] = updatedDoctor;
       state = state.copyWith(doctors: updatedDoctors);
-      
+
       return Result.success(updatedDoctor);
     } catch (e) {
       return Result.failure(e.toString());

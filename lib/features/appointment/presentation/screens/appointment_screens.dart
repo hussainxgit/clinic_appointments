@@ -39,7 +39,6 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final appointmentState = ref.watch(appointmentNotifierProvider);
     final navigationService = ref.read(navigationServiceProvider);
 
     return Scaffold(

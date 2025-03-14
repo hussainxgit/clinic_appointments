@@ -23,7 +23,6 @@ class _AppointmentSlotsScreenState extends ConsumerState<AppointmentSlotsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final slotState = ref.watch(appointmentSlotNotifierProvider);
     final navigationService = ref.read(navigationServiceProvider);
 
     return Scaffold(

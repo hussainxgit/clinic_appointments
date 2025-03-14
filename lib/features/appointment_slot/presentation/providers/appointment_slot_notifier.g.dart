@@ -7,7 +7,7 @@ part of 'appointment_slot_notifier.dart';
 // **************************************************************************
 
 String _$appointmentSlotNotifierHash() =>
-    r'08b9b54817a52d31ded65f04832ca78aab4848a2';
+    r'ee6b34ddded677d0a6ae19c8d2244e41174fd209';
 
 /// See also [AppointmentSlotNotifier].
 @ProviderFor(AppointmentSlotNotifier)

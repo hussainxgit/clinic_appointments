@@ -1,6 +1,8 @@
 // lib/features/appointment_slot/appointment_slot_module.dart
+import 'package:clinic_appointments/features/appointment_slot/data/appointment_slot_providers.dart';
+import 'package:clinic_appointments/features/appointment_slot/presentation/providers/appointment_slot_notifier.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/single_child_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/module/feature_module.dart';
 import 'presentation/screens/appointment_slot_form_screen.dart';
 import 'presentation/screens/appointment_slots_screen.dart';
@@ -19,7 +21,10 @@ class AppointmentSlotModule implements FeatureModule {
   List<String> get dependsOn => ['doctor'];
 
   @override
-  List<SingleChildWidget> get providers => []; // No longer needed with Riverpod
+  List<ProviderBase> get providers => [
+    appointmentSlotNotifierProvider,
+    appointmentSlotRepositoryProvider,
+  ];
 
   @override
   Map<String, WidgetBuilder> get routes => {

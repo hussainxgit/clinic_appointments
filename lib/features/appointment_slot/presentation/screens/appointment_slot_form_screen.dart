@@ -60,8 +60,6 @@ class _AppointmentSlotFormScreenState
 
   @override
   Widget build(BuildContext context) {
-    final navigationService = ref.read(navigationServiceProvider);
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
