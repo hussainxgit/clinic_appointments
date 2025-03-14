@@ -94,4 +94,10 @@ class PatientProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void replaceAll(List<Patient> patients) {
+    _patients.clear();
+    _patients.addAll(patients);
+    notifyListeners();
+  }
 }

@@ -140,4 +140,10 @@ class DoctorProvider extends ChangeNotifier {
     }
     // Add phone number format validation if needed
   }
+
+  void replaceAll(List<Doctor> doctors) {
+    _doctors.clear();
+    _doctors.addAll(doctors);
+    notifyListeners();
+  }
 }

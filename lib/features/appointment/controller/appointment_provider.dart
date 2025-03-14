@@ -90,4 +90,10 @@ class AppointmentProvider extends ChangeNotifier {
       throw InvalidAppointmentDataException('Payment status cannot be empty');
     }
   }
+
+  void replaceAll(List<Appointment> appointments) {
+    _appointments.clear();
+    _appointments.addAll(appointments);
+    notifyListeners();
+  }
 }

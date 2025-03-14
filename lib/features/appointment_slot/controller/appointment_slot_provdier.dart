@@ -168,4 +168,10 @@ class AppointmentSlotProvider extends ChangeNotifier {
         (slot) => slot.doctorId == doctorId && slot.date.isSameDayOrAfter(now));
     notifyListeners();
   }
+
+  void replaceAll(List<AppointmentSlot> slots) {
+    _slots.clear();
+    _slots.addAll(slots);
+    notifyListeners();
+  }
 }

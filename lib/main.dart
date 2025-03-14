@@ -1,5 +1,10 @@
+// lib/main.dart
+import 'package:clinic_appointments/features/settings/view/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_options.dart';
 import 'features/appointment/controller/appointment_provider.dart';
 import 'features/appointment/view/appointments_screen.dart';
 import 'features/appointment_slot/controller/appointment_slot_provdier.dart';
@@ -10,29 +15,58 @@ import 'features/patient/controller/patient_provider.dart';
 import 'features/doctor/controller/doctor_provider.dart';
 import 'features/patient/view/patients_screen.dart';
 import 'shared/services/clinic_service.dart';
-import 'shared/services/service_factory.dart';
+import 'shared/services/notification_service.dart';
 import 'shared/ui/navigation_scaffold.dart';
 import 'shared/utilities/globals.dart' as globals;
 import 'shared/utilities/my_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(
-    MultiProvider(
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('Firebase initialized successfully');
+  } catch (e) {
+    print('Failed to initialize Firebase: $e');
+    // Continue with app initialization even if Firebase fails
+  }
+
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
       providers: [
+        // Create domain providers first
         ChangeNotifierProvider(create: (_) => AppointmentProvider()),
         ChangeNotifierProvider(create: (_) => PatientProvider()),
         ChangeNotifierProvider(create: (_) => DoctorProvider()),
         ChangeNotifierProvider(create: (_) => AppointmentSlotProvider()),
-        ProxyProvider4<AppointmentProvider, PatientProvider, DoctorProvider,
-            AppointmentSlotProvider, ClinicService>(
-          update: (_, ap, pp, dp, asp, __) =>
-              ServiceFactory.createClinicService(
-            globals.scaffoldMessengerKey,
-            ap,
-            pp,
-            dp,
-            asp,
+
+        // Notification service
+        Provider(
+          create: (_) =>
+              SnackBarNotificationService(globals.scaffoldMessengerKey),
+        ),
+
+        // Direct Firestore instance
+        Provider(create: (_) => FirebaseFirestore.instance),
+
+        // ClinicService - depends on model providers and notification
+        Provider<ClinicService>(
+          create: (context) => ClinicService(
+            appointmentProvider: context.read<AppointmentProvider>(),
+            patientProvider: context.read<PatientProvider>(),
+            doctorProvider: context.read<DoctorProvider>(),
+            appointmentSlotProvider: context.read<AppointmentSlotProvider>(),
+            notificationService: context.read<SnackBarNotificationService>(),
           ),
         ),
       ],
@@ -43,8 +77,8 @@ void main() {
         home: MainNavigation(),
         scaffoldMessengerKey: globals.scaffoldMessengerKey,
       ),
-    ),
-  );
+    );
+  }
 }
 
 class MainNavigation extends StatelessWidget {
@@ -80,7 +114,7 @@ class MainNavigation extends StatelessWidget {
       selectedIcon: Icons.emoji_people,
     ),
     TabItem(
-      screen: Center(child: Text('Settings')),
+      screen: SettingsScreen(),
       title: 'Settings',
       icon: Icons.settings_outlined,
       selectedIcon: Icons.settings,
