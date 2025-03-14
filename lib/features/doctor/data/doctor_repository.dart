@@ -1,5 +1,4 @@
 // lib/features/doctor/data/doctor_repository.dart
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/data/firebase_repository.dart';
 import '../domain/entities/doctor.dart';
 
@@ -15,9 +14,8 @@ abstract class DoctorRepository {
 
 class DoctorRepositoryImpl extends FirebaseRepository<Doctor> implements DoctorRepository {
   DoctorRepositoryImpl({
-    required FirebaseFirestore firestore,
+    required super.firestore,
   }) : super(
-          firestore: firestore,
           collection: 'doctors',
         );
 

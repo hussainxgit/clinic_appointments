@@ -37,7 +37,9 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
   @override
   AppointmentSlotState build() {
     // Return an initial state without loading
-    return AppointmentSlotState(slots: [], isLoading: false);
+    state =  AppointmentSlotState(slots: [], isLoading: false);
+    loadSlots();
+    return state;
   }
 
   Future<void> loadSlots() async {

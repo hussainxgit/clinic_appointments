@@ -47,6 +47,6 @@ class DoctorModule implements FeatureModule {
 
   @override
   Future<void> initialize() async {
-    // No need to register repositories with GetIt
+    
   }
 }

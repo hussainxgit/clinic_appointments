@@ -40,7 +40,9 @@ class AppointmentNotifier extends _$AppointmentNotifier {
   @override
   AppointmentState build() {
     // Return an initial state without loading
-    return AppointmentState(appointments: [], isLoading: false);
+    state =  AppointmentState(appointments: [], isLoading: false);
+    loadAppointments();
+    return state;
   }
 
   Future<void> loadAppointments() async {

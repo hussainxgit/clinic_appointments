@@ -30,8 +30,9 @@ class DoctorState {
 class DoctorNotifier extends _$DoctorNotifier {
   @override
   DoctorState build() {
-    // Return an initial state without loading
-    return DoctorState(doctors: [], isLoading: false);
+    state = DoctorState(doctors: [], isLoading: true);
+    loadDoctors();
+    return state;
   }
 
   Future<void> loadDoctors() async {

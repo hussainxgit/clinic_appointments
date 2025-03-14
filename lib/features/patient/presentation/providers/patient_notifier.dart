@@ -31,7 +31,9 @@ class PatientNotifier extends _$PatientNotifier {
   @override
   PatientState build() {
     // Return an initial state without loading
-    return PatientState(patients: [], isLoading: false);
+    state = PatientState(patients: [], isLoading: false);
+    loadPatients();
+    return state;
   }
 
   Future<void> loadPatients() async {
