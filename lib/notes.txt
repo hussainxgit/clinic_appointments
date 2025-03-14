@@ -1,41 +1,47 @@
 Project directory structure
-
 ├───lib
 │   ├───assets
-│   ├───features
-│   │   ├───appointment
-│   │   │   ├───controller
-│   │   │   ├───models
-│   │   │   └───view
-│   │   ├───appointment_slot
-│   │   │   ├───controller
-│   │   │   ├───models
-│   │   │   └───view
-│   │   ├───auth
-│   │   │   ├───controller
-│   │   │   ├───models
-│   │   │   └───view
-│   │   ├───dashboard
-│   │   │   ├───controller
-│   │   │   ├───models
-│   │   │   └───view
-│   │   ├───doctor
-│   │   │   ├───controller
-│   │   │   ├───models
-│   │   │   └───view
-│   │   ├───patient
-│   │   │   ├───controller
-│   │   │   ├───models
-│   │   │   └───view
-│   │   └───settings
-│   │       ├───controller
-│   │       ├───models
-│   │       └───view
-│   └───shared
-│       ├───api
-│       ├───database
-│       ├───firebase
-│       │   └───repositories
-│       ├───services
-│       ├───ui
-│       └───utilities
+│   ├───core
+│   │   ├───data
+│   │   ├───di
+│   │   ├───events
+│   │   ├───firebase
+│   │   ├───module
+│   │   ├───navigation
+│   │   ├───ui
+│   │   │   ├───theme
+│   │   │   └───widgets
+│   │   └───utils
+│   └───features
+│       ├───appointment
+│       │   ├───data
+│       │   ├───domain
+│       │   │   ├───entities
+│       │   │   └───exceptions
+│       │   ├───presentation
+│       │   │   ├───providers
+│       │   │   └───screens
+│       │   └───services
+│       ├───appointment_slot
+│       │   ├───data
+│       │   ├───domain
+│       │   │   ├───entities
+│       │   │   └───exceptions
+│       │   └───presentation
+│       │       ├───providers
+│       │       └───screens
+│       ├───doctor
+│       │   ├───data
+│       │   ├───domain
+│       │   │   ├───entities
+│       │   │   └───exceptions
+│       │   └───presentation
+│       │       ├───provider
+│       │       └───screens
+│       └───patient
+│           ├───data
+│           ├───domain
+│           │   └───entities
+│           └───presentation
+│               ├───providers
+│               └───screens
