@@ -1,31 +1,18 @@
 // lib/core/utils/logger.dart
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AppLogger {
   final String tag;
   
   AppLogger({required this.tag});
   
-  void info(String message) {
-    _log('INFO', message);
-  }
-  
-  void warning(String message) {
-    _log('WARNING', message);
-  }
-  
+  void info(String message) => print('INFO [$tag]: $message');
+  void warning(String message) => print('WARNING [$tag]: $message');
   void error(String message, [Object? error, StackTrace? stackTrace]) {
-    _log('ERROR', message);
-    if (error != null) {
-      debugPrint('ERROR: $error');
-      if (stackTrace != null) {
-        debugPrint('STACKTRACE: $stackTrace');
-      }
-    }
-  }
-  
-  void _log(String level, String message) {
-    final timestamp = DateTime.now().toIso8601String();
-    debugPrint('[$timestamp] $level [$tag]: $message');
+    print('ERROR [$tag]: $message');
+    if (error != null) print('ERROR: $error');
   }
 }
+
+// Riverpod provider for logger
+final loggerProvider = Provider.family<AppLogger, String>((ref, tag) => AppLogger(tag: tag));

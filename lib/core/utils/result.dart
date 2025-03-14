@@ -26,16 +26,12 @@ class Result<T> {
   bool get isFailure => !_isSuccess;
 
   T get data {
-    if (isFailure) {
-      throw Exception("Cannot get data from failure result");
-    }
+    if (isFailure) throw Exception("Cannot get data from failure result");
     return _data as T;
   }
 
   String get error {
-    if (isSuccess) {
-      throw Exception("Cannot get error from success result");
-    }
+    if (isSuccess) throw Exception("Cannot get error from success result");
     return _error!;
   }
 }

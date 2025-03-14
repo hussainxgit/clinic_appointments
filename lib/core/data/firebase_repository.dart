@@ -24,8 +24,7 @@ abstract class FirebaseRepository<T> implements Repository<T> {
   @override
   Future<T?> getById(String id) async {
     final doc = await firestore.collection(collection).doc(id).get();
-    if (!doc.exists) return null;
-    return fromMap(doc.data()!, doc.id);
+    return doc.exists ? fromMap(doc.data()!, doc.id) : null;
   }
   
   @override

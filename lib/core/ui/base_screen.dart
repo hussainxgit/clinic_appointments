@@ -1,31 +1,34 @@
 // lib/core/ui/base_screen.dart
 import 'package:flutter/material.dart';
-import '../di/service_locator.dart';
-import '../navigation/navigation_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../di/core_providers.dart';
 
-abstract class BaseScreen extends StatelessWidget {
+abstract class BaseScreen extends ConsumerWidget {
   const BaseScreen({super.key});
 
   String get screenTitle;
   bool get showBackButton => true;
-  
-  Widget buildContent(BuildContext context);
-  List<Widget> buildActions(BuildContext context) => [];
-  
+
+  Widget buildContent(BuildContext context, WidgetRef ref);
+  List<Widget> buildActions(BuildContext context, WidgetRef ref) => [];
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final navigationService = ref.read(navigationServiceProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(screenTitle),
-        leading: showBackButton
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => ServiceLocator.get<NavigationService>().goBack(),
-              )
-            : null,
-        actions: buildActions(context),
+        leading:
+            showBackButton
+                ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => navigationService.goBack(),
+                )
+                : null,
+        actions: buildActions(context, ref),
       ),
-      body: buildContent(context),
+      body: buildContent(context, ref),
     );
   }
 }

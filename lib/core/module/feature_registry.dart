@@ -1,34 +1,16 @@
-// lib/core/module/feature_registry.dart
+import 'package:clinic_appointments/core/module/feature_module.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'feature_module.dart';
-import '../utils/logger.dart';
 
 class FeatureRegistry {
   final Map<String, FeatureModule> _modules = {};
-  final _logger = AppLogger(tag: 'FeatureRegistry');
   
   void registerModule(FeatureModule module) {
-    if (_modules.containsKey(module.moduleId)) {
-      _logger.warning('Module ${module.moduleId} already registered');
-      return;
-    }
-    
-    // Validate dependencies
-    for (final dependency in module.dependsOn) {
-      if (!_modules.containsKey(dependency)) {
-        throw Exception(
-          'Module ${module.moduleId} depends on $dependency, but it is not registered'
-        );
-      }
-    }
-    
+    if (_modules.containsKey(module.moduleId)) return;
     _modules[module.moduleId] = module;
-    _logger.info('Registered module: ${module.moduleName} (${module.moduleId})');
   }
   
-  List<FeatureModule> get modules => List.unmodifiable(_modules.values);
-  FeatureModule? getModule(String moduleId) => _modules[moduleId];
+  List<FeatureModule> get modules => _modules.values.toList();
   
   List<ProviderBase> get allProviders => 
     modules.expand((module) => module.providers).toList();
@@ -46,7 +28,6 @@ class FeatureRegistry {
     
   Future<void> initializeAllModules() async {
     for (final module in modules) {
-      _logger.info('Initializing module: ${module.moduleName}');
       await module.initialize();
     }
   }
