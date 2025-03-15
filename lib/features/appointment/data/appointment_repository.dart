@@ -1,5 +1,4 @@
 // lib/features/appointment/data/appointment_repository.dart
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/data/firebase_repository.dart';
 import '../domain/entities/appointment.dart';
 import '../domain/exceptions/appointment_exception.dart';

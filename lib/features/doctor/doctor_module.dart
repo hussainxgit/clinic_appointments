@@ -1,6 +1,7 @@
 // lib/features/doctor/doctor_module_riverpod.dart
 import 'package:clinic_appointments/features/doctor/data/doctor_provider.dart';
 import 'package:clinic_appointments/features/doctor/presentation/provider/doctor_notifier.dart';
+import 'package:clinic_appointments/features/doctor/presentation/screens/doctor_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/module/feature_module.dart';
@@ -32,6 +33,7 @@ class DoctorModule implements FeatureModule {
         '/doctor/list': (_) => const DoctorsScreen(),
         '/doctor/add': (_) => const DoctorFormScreen(isEditing: false),
         '/doctor/edit': (_) => const DoctorFormScreen(isEditing: true),
+        '/doctor/profile': (_) => const DoctorProfileScreen(),
       };
 
   @override

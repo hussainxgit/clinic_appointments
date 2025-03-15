@@ -98,5 +98,24 @@ class DoctorNotifier extends _$DoctorNotifier {
     }
   }
 
-  // Add other methods as needed
+  Future<Result<void>> deleteDoctor(String doctorId) async {
+    try {
+      final repository = ref.read(doctorRepositoryProvider);
+
+      final index = state.doctors.indexWhere((d) => d.id == doctorId);
+      if (index == -1) {
+        return Result.failure('Doctor not found');
+      }
+
+      await repository.delete(doctorId);
+
+      final updatedDoctors = [...state.doctors];
+      updatedDoctors.removeAt(index);
+      state = state.copyWith(doctors: updatedDoctors);
+
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure(e.toString());
+    }
+  }
 }
