@@ -29,6 +29,3 @@ class EventBus {
     _streamControllers.clear();
   }
 }
-
-// Riverpod provider for EventBus
-final eventBusProvider = Provider((ref) => EventBus());

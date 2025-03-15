@@ -1,9 +1,6 @@
 // lib/features/appointment/presentation/providers/appointment_notifier.dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/utils/result.dart';
-import '../../data/appointment_providers.dart';
-import '../../../patient/data/patient_providers.dart';
-import '../../../doctor/data/doctor_provider.dart';
 import '../../domain/entities/appointment.dart';
 import '../../services/appointment_service.dart';
 
@@ -35,12 +32,10 @@ class AppointmentState {
 
 @riverpod
 class AppointmentNotifier extends _$AppointmentNotifier {
-  late AppointmentService _appointmentService;
-
   @override
   AppointmentState build() {
     // Return an initial state without loading
-    state =  AppointmentState(appointments: [], isLoading: false);
+    state = AppointmentState(appointments: [], isLoading: false);
     loadAppointments();
     return state;
   }
@@ -49,29 +44,21 @@ class AppointmentNotifier extends _$AppointmentNotifier {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final appointmentRepo = ref.read(appointmentRepositoryProvider);
-      final patientRepo = ref.read(patientRepositoryProvider);
-      final doctorRepo = ref.read(doctorRepositoryProvider);
-
-      final appointments = await appointmentRepo.getAll();
-
-      // Combine with patient and doctor data
-      List<Map<String, dynamic>> combinedAppointments = [];
-      for (final appointment in appointments) {
-        final patient = await patientRepo.getById(appointment.patientId);
-        final doctor = await doctorRepo.getById(appointment.doctorId);
-
-        combinedAppointments.add({
-          'appointment': appointment,
-          'patient': patient,
-          'doctor': doctor,
-        });
+      // Use the service to get appointment data
+      final appointmentService = ref.read(appointmentServiceProvider);
+      final result = await appointmentService.getCombinedAppointments();
+      
+      if (result.isSuccess) {
+        state = state.copyWith(
+          appointments: result.data,
+          isLoading: false,
+        );
+      } else {
+        state = state.copyWith(
+          error: result.error,
+          isLoading: false,
+        );
       }
-
-      state = state.copyWith(
-        appointments: combinedAppointments,
-        isLoading: false,
-      );
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
@@ -83,14 +70,13 @@ class AppointmentNotifier extends _$AppointmentNotifier {
 
   Future<Result<Appointment>> createAppointment(Appointment appointment) async {
     try {
-      final result = await _appointmentService.createAppointment(appointment);
+      final appointmentService = ref.read(appointmentServiceProvider);
+      final result = await appointmentService.createAppointment(appointment);
 
       if (result.isSuccess) {
         await loadAppointments();
-        return result;
-      } else {
-        return Result.failure(result.error);
       }
+      return result;
     } catch (e) {
       return Result.failure(e.toString());
     }
@@ -98,14 +84,13 @@ class AppointmentNotifier extends _$AppointmentNotifier {
 
   Future<Result<Appointment>> updateAppointment(Appointment appointment) async {
     try {
-      final result = await _appointmentService.updateAppointment(appointment);
+      final appointmentService = ref.read(appointmentServiceProvider);
+      final result = await appointmentService.updateAppointment(appointment);
 
       if (result.isSuccess) {
         await loadAppointments();
-        return result;
-      } else {
-        return Result.failure(result.error);
       }
+      return result;
     } catch (e) {
       return Result.failure(e.toString());
     }
@@ -113,14 +98,13 @@ class AppointmentNotifier extends _$AppointmentNotifier {
 
   Future<Result<bool>> cancelAppointment(String appointmentId) async {
     try {
-      final result = await _appointmentService.cancelAppointment(appointmentId);
+      final appointmentService = ref.read(appointmentServiceProvider);
+      final result = await appointmentService.cancelAppointment(appointmentId);
 
       if (result.isSuccess) {
         await loadAppointments();
-        return result;
-      } else {
-        return Result.failure(result.error);
       }
+      return result;
     } catch (e) {
       return Result.failure(e.toString());
     }
@@ -132,7 +116,8 @@ class AppointmentNotifier extends _$AppointmentNotifier {
     String paymentStatus = 'paid',
   }) async {
     try {
-      final result = await _appointmentService.completeAppointment(
+      final appointmentService = ref.read(appointmentServiceProvider);
+      final result = await appointmentService.completeAppointment(
         appointmentId,
         notes: notes,
         paymentStatus: paymentStatus,
@@ -140,12 +125,29 @@ class AppointmentNotifier extends _$AppointmentNotifier {
 
       if (result.isSuccess) {
         await loadAppointments();
-        return result;
-      } else {
-        return Result.failure(result.error);
       }
+      return result;
     } catch (e) {
       return Result.failure(e.toString());
     }
+  }
+  
+  // Filter appointments by different criteria
+  List<Map<String, dynamic>> getFilteredAppointments({
+    String? status,
+    String? patientId,
+    String? doctorId,
+    DateTime? date,
+  }) {
+    return state.appointments.where((item) {
+      final appointment = item['appointment'] as Appointment;
+      
+      bool statusMatch = status == null || appointment.status == status;
+      bool patientMatch = patientId == null || appointment.patientId == patientId;
+      bool doctorMatch = doctorId == null || appointment.doctorId == doctorId;
+      bool dateMatch = date == null || appointment.isSameDay(date);
+      
+      return statusMatch && patientMatch && doctorMatch && dateMatch;
+    }).toList();
   }
 }

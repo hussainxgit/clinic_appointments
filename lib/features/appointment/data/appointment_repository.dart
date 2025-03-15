@@ -20,9 +20,8 @@ class AppointmentRepositoryImpl extends FirebaseRepository<Appointment>
     implements AppointmentRepository {
   
   AppointmentRepositoryImpl({
-    required FirebaseFirestore firestore,
+    required super.firestore,
   }) : super(
-          firestore: firestore,
           collection: 'appointments',
         );
 

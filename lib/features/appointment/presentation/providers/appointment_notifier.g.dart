@@ -7,7 +7,7 @@ part of 'appointment_notifier.dart';
 // **************************************************************************
 
 String _$appointmentNotifierHash() =>
-    r'003948b8a83136d94d3dd9a80a7408d320eb26a1';
+    r'8fe1f58c106666165c99d2b4f38ff818a6e98ec4';
 
 /// See also [AppointmentNotifier].
 @ProviderFor(AppointmentNotifier)
