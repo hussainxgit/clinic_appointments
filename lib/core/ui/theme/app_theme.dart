@@ -47,5 +47,13 @@ class AppTheme {
       labelColor: accentColor,
       unselectedLabelColor: Colors.white,
     ),
+    listTileTheme: ListTileThemeData(
+      tileColor: Colors.white70,
+      selectedColor: accentColor,
+      textColor: Colors.black,
+      shape:  RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+    ),
   );
 }

@@ -18,7 +18,7 @@ class AppointmentSlotModule implements FeatureModule {
   String? get moduleDescription => 'Manage doctor appointment slots';
 
   @override
-  List<String> get dependsOn => ['doctor'];
+  List<String> get dependsOn => ['doctor', 'patient', 'appointment'];
 
   @override
   List<ProviderBase> get providers => [

@@ -4,6 +4,8 @@ import 'package:clinic_appointments/features/patient/presentation/providers/pati
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/module/feature_module.dart';
+import 'presentation/screens/patient_details_screen.dart';
+import 'presentation/screens/patient_form_screen.dart';
 import 'presentation/screens/patient_screen.dart';
 
 class PatientModule implements FeatureModule {
@@ -18,7 +20,7 @@ class PatientModule implements FeatureModule {
       'Manage clinic patients and their information';
 
   @override
-  List<String> get dependsOn => [];
+  List<String> get dependsOn => ['appointment_slot', 'appointment', 'doctor'];
 
   @override
   List<ProviderBase> get providers => [
@@ -29,9 +31,9 @@ class PatientModule implements FeatureModule {
   @override
   Map<String, WidgetBuilder> get routes => {
     '/patient/list': (_) => const PatientsScreen(),
-    // '/patient/details': (_) => const PatientDetailsScreen(),
-    // '/patient/add': (_) => const PatientFormScreen(isEditing: false),
-    // '/patient/edit': (_) => const PatientFormScreen(isEditing: true),
+    '/patient/details': (_) => const PatientDetailsScreen(),
+    '/patient/add': (_) => const PatientFormScreen(isEditing: false),
+    '/patient/edit': (_) => const PatientFormScreen(isEditing: true),
   };
 
   @override

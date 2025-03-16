@@ -20,7 +20,7 @@ class DoctorModule implements FeatureModule {
       'Manage clinic doctors and their availability';
 
   @override
-  List<String> get dependsOn => [];
+  List<String> get dependsOn => ['appointment_slot', 'appointment', 'patient'];
 
   @override
   List<ProviderBase> get providers => [
