@@ -7,7 +7,7 @@ part of 'appointment_service.dart';
 // **************************************************************************
 
 String _$appointmentServiceHash() =>
-    r'79beca864092a8f52b262c7e8fb40fdd71368406';
+    r'd6b62ea1f0d5d6dbf7496b84a03aba500fbf07ab';
 
 /// Provider for the AppointmentService
 ///

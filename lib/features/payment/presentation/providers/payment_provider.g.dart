@@ -1,27 +1,27 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'doctor_notifier.dart';
+part of 'payment_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$doctorNotifierHash() => r'5e0394de8129be1bfb4811de9972ba9de3e58cdc';
+String _$paymentNotifierHash() => r'7cb59ec3e97106780c2882c60576b254f904264c';
 
-/// See also [DoctorNotifier].
-@ProviderFor(DoctorNotifier)
-final doctorNotifierProvider =
-    AutoDisposeNotifierProvider<DoctorNotifier, DoctorState>.internal(
-      DoctorNotifier.new,
-      name: r'doctorNotifierProvider',
+/// See also [PaymentNotifier].
+@ProviderFor(PaymentNotifier)
+final paymentNotifierProvider =
+    AutoDisposeNotifierProvider<PaymentNotifier, PaymentState>.internal(
+      PaymentNotifier.new,
+      name: r'paymentNotifierProvider',
       debugGetCreateSourceHash:
           const bool.fromEnvironment('dart.vm.product')
               ? null
-              : _$doctorNotifierHash,
+              : _$paymentNotifierHash,
       dependencies: null,
       allTransitiveDependencies: null,
     );
 
-typedef _$DoctorNotifier = AutoDisposeNotifier<DoctorState>;
+typedef _$PaymentNotifier = AutoDisposeNotifier<PaymentState>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

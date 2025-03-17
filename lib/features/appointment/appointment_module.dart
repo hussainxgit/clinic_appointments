@@ -1,10 +1,13 @@
 // lib/features/appointment/appointment_module.dart
 import 'package:clinic_appointments/features/appointment/data/appointment_providers.dart';
+import 'package:clinic_appointments/features/appointment/presentation/screens/appointment_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/module/feature_module.dart';
 import 'presentation/providers/appointment_notifier.dart';
+import 'presentation/screens/appointment_payment_screen.dart';
 import 'presentation/screens/appointment_screens.dart';
+import 'presentation/screens/appointment_form_screen.dart';
 
 class AppointmentModule implements FeatureModule {
   @override
@@ -28,6 +31,10 @@ class AppointmentModule implements FeatureModule {
   @override
   Map<String, WidgetBuilder> get routes => {
     '/appointment/list': (_) => const AppointmentsScreen(),
+    '/appointment/create': (_) => const AppointmentFormScreen(),
+    '/appointment/edit': (_) => const AppointmentFormScreen(isEditing: true),
+    '/appointment/details': (_) => const AppointmentDetailsScreen(),
+    '/appointment/payment': (_) => const AppointmentPaymentScreen(),
   };
 
   @override

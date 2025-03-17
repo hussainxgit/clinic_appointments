@@ -1,4 +1,5 @@
 // lib/main.dart
+import 'package:clinic_appointments/features/payment/payment_module.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -31,6 +32,8 @@ void main() async {
   featureRegistry.registerModule(PatientModule());
   featureRegistry.registerModule(AppointmentSlotModule());
   featureRegistry.registerModule(AppointmentModule());
+    featureRegistry.registerModule(PaymentModule());
+
   
   await featureRegistry.initializeAllModules();
 
