@@ -16,20 +16,23 @@ class AppointmentDetailsScreen extends ConsumerStatefulWidget {
   const AppointmentDetailsScreen({super.key});
 
   @override
-  ConsumerState<AppointmentDetailsScreen> createState() => _AppointmentDetailsScreenState();
+  ConsumerState<AppointmentDetailsScreen> createState() =>
+      _AppointmentDetailsScreenState();
 }
 
-class _AppointmentDetailsScreenState extends ConsumerState<AppointmentDetailsScreen> {
+class _AppointmentDetailsScreenState
+    extends ConsumerState<AppointmentDetailsScreen> {
   bool _isCompleting = false;
   bool _isCancelling = false;
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     final appointment = args['appointment'] as Appointment;
     final patient = args['patient'] as Patient?;
     final doctor = args['doctor'] as Doctor?;
-    
+
     final navigationService = ref.read(navigationServiceProvider);
 
     return Scaffold(
@@ -37,15 +40,34 @@ class _AppointmentDetailsScreenState extends ConsumerState<AppointmentDetailsScr
         title: const Text('Appointment Details'),
         actions: [
           if (appointment.status == 'scheduled')
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                navigationService.navigateTo(
-                  '/appointment/edit',
-                  arguments: args,
-                );
-              },
-            ),
+            // Add this button for appointments with "unpaid" status
+            if (appointment.paymentStatus == 'unpaid')
+              ElevatedButton.icon(
+                icon: const Icon(Icons.payment),
+                label: const Text('Process Payment'),
+                onPressed: () {
+                  // Navigate to payment screen with appointment data
+                  ref
+                      .read(navigationServiceProvider)
+                      .navigateTo(
+                        '/appointment/payment',
+                        arguments: {
+                          'appointment': appointment,
+                          'patient': patient,
+                          'doctor': doctor,
+                        },
+                      );
+                },
+              ),
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              navigationService.navigateTo(
+                '/appointment/edit',
+                arguments: args,
+              );
+            },
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -93,16 +115,15 @@ class _AppointmentDetailsScreenState extends ConsumerState<AppointmentDetailsScr
                   ],
                 ),
               ],
-              if (appointment.notes != null && appointment.notes!.isNotEmpty) ...[
+              if (appointment.notes != null &&
+                  appointment.notes!.isNotEmpty) ...[
                 const SizedBox(height: 24),
                 const Text(
                   'Notes',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                AppCard(
-                  child: Text(appointment.notes!),
-                ),
+                AppCard(child: Text(appointment.notes!)),
               ],
             ],
           ),
@@ -199,10 +220,7 @@ class _AppointmentDetailsScreenState extends ConsumerState<AppointmentDetailsScr
         children: [
           const Text(
             'Appointment Information',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           _buildDetailRow(
@@ -227,9 +245,10 @@ class _AppointmentDetailsScreenState extends ConsumerState<AppointmentDetailsScr
             icon: Icons.payment,
             label: 'Payment Status',
             value: appointment.paymentStatus == 'paid' ? 'Paid' : 'Unpaid',
-            valueColor: appointment.paymentStatus == 'paid' 
-                ? Colors.green 
-                : Colors.orange,
+            valueColor:
+                appointment.paymentStatus == 'paid'
+                    ? Colors.green
+                    : Colors.orange,
           ),
         ],
       ),
@@ -243,10 +262,7 @@ class _AppointmentDetailsScreenState extends ConsumerState<AppointmentDetailsScr
         children: [
           const Text(
             'Patient Information',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           _buildDetailRow(
@@ -288,10 +304,7 @@ class _AppointmentDetailsScreenState extends ConsumerState<AppointmentDetailsScr
         children: [
           const Text(
             'Doctor Information',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           _buildDetailRow(
@@ -343,18 +356,9 @@ class _AppointmentDetailsScreenState extends ConsumerState<AppointmentDetailsScr
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.grey, fontSize: 14),
                 ),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: valueColor,
-                  ),
-                ),
+                Text(value, style: TextStyle(fontSize: 16, color: valueColor)),
               ],
             ),
           ),
@@ -399,10 +403,12 @@ class _AppointmentDetailsScreenState extends ConsumerState<AppointmentDetailsScr
     });
 
     try {
-      final result = await ref.read(appointmentNotifierProvider.notifier).completeAppointment(
-        appointmentId,
-        paymentStatus: 'paid', // Default to paid when completing
-      );
+      final result = await ref
+          .read(appointmentNotifierProvider.notifier)
+          .completeAppointment(
+            appointmentId,
+            paymentStatus: 'paid', // Default to paid when completing
+          );
 
       if (result.isSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -434,21 +440,24 @@ class _AppointmentDetailsScreenState extends ConsumerState<AppointmentDetailsScr
     // Show confirmation dialog
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cancel Appointment'),
-        content: const Text('Are you sure you want to cancel this appointment?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('No'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Cancel Appointment'),
+            content: const Text(
+              'Are you sure you want to cancel this appointment?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('No'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Yes, cancel'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Yes, cancel'),
-          ),
-        ],
-      ),
     );
 
     if (confirm != true) return;
@@ -458,9 +467,9 @@ class _AppointmentDetailsScreenState extends ConsumerState<AppointmentDetailsScr
     });
 
     try {
-      final result = await ref.read(appointmentNotifierProvider.notifier).cancelAppointment(
-        appointmentId,
-      );
+      final result = await ref
+          .read(appointmentNotifierProvider.notifier)
+          .cancelAppointment(appointmentId);
 
       if (result.isSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(

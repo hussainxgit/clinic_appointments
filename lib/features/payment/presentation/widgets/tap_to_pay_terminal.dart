@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/core_providers.dart';
-import '../../domain/interfaces/payment_gateway.dart';
+import '../../domain/entities/payment_status.dart';
 
 /// A widget that simulates a physical payment terminal for Tap-to-Pay payments
 class TapToPayTerminal extends ConsumerStatefulWidget {

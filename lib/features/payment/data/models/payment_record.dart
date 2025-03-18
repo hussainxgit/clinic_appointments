@@ -1,6 +1,6 @@
 // lib/features/payment/data/models/payment_record.dart
-import 'package:clinic_appointments/features/payment/domain/interfaces/payment_gateway.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../domain/entities/payment_status.dart';
 
 class PaymentRecord {
   final String id;

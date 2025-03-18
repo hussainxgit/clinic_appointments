@@ -1,6 +1,6 @@
 // lib/features/payment/presentation/widgets/payment_status_widget.dart
-import 'package:clinic_appointments/features/payment/domain/interfaces/payment_gateway.dart';
 import 'package:flutter/material.dart';
+import '../../domain/entities/payment_status.dart';
 
 class PaymentStatusWidget extends StatelessWidget {
   final PaymentStatus? status;
@@ -87,6 +87,27 @@ class PaymentStatusWidget extends StatelessWidget {
             Text(
               errorMessage,
               style: const TextStyle(color: Colors.red),
+            ),
+          ],
+          if (status!.transactionId != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Transaction ID: ${status!.transactionId}',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ],
+          if (status!.amount != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Amount: ${status!.amount!.toStringAsFixed(3)} ${status!.currency ?? ""}',
+              style: TextStyle(fontSize: 14, color: Colors.grey[800]),
+            ),
+          ],
+          if (status!.timestamp != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Date: ${status!.timestamp!.day}/${status!.timestamp!.month}/${status!.timestamp!.year}',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ],

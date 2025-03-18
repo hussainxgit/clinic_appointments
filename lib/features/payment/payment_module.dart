@@ -1,12 +1,13 @@
 // lib/features/payment/payment_module.dart
-import 'package:clinic_appointments/features/payment/data/payment_repository_provider.dart';
-import 'package:clinic_appointments/features/payment/domain/payment_service.dart';
-import 'package:clinic_appointments/features/payment/presentation/payment_history_screen.dart';
-import 'package:clinic_appointments/features/payment/presentation/payment_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/module/feature_module.dart';
-
+import 'data/payment_repository_provider.dart';
+import 'domain/payment_service.dart';
+import 'presentation/payment_history_screen.dart';
+import 'presentation/payment_screen.dart';
+import 'presentation/payment_settings_screen.dart';
+import 'presentation/providers/payment_provider.dart';
 
 class PaymentModule implements FeatureModule {
   @override
@@ -26,12 +27,14 @@ class PaymentModule implements FeatureModule {
     paymentServiceProvider,
     paymentRepositoryProvider,
     paymentConfigProvider,
+    paymentNotifierProvider,
   ];
 
   @override
   Map<String, WidgetBuilder> get routes => {
     '/payment/process': (_) => const PaymentScreen(),
     '/payment/history': (_) => const PaymentHistoryScreen(),
+    '/payment/settings': (_) => const PaymentSettingsScreen(),
   };
 
   @override
@@ -48,5 +51,6 @@ class PaymentModule implements FeatureModule {
   @override
   Future<void> initialize() async {
     // Initialize payment module
+    // Here you might do initial setup, like registering payment gateways
   }
 }

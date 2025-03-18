@@ -1,20 +1,19 @@
-// lib/features/payment/presentation/screens/payment_screen.dart
 import 'dart:async';
+import 'package:clinic_appointments/core/di/core_providers.dart';
+import 'package:clinic_appointments/core/ui/widgets/app_card.dart';
+import 'package:clinic_appointments/core/ui/widgets/loading_button.dart';
+import 'package:clinic_appointments/features/payment/domain/entities/payment_response.dart';
+import 'package:clinic_appointments/features/payment/domain/payment_service.dart';
 import 'package:clinic_appointments/features/payment/presentation/providers/payment_provider.dart';
+import 'package:clinic_appointments/features/payment/presentation/widgets/payment_method_selector.dart';
 import 'package:clinic_appointments/features/payment/presentation/widgets/payment_status_widget.dart';
 import 'package:clinic_appointments/features/payment/presentation/widgets/tap_to_pay_terminal.dart';
+import 'package:clinic_appointments/features/patient/domain/entities/patient.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import '../../../../core/di/core_providers.dart';
-import '../../../../core/ui/widgets/app_card.dart';
-import '../../../../core/ui/widgets/loading_button.dart';
+import 'package:webview_windows/webview_windows.dart';
 
-import '../../patient/domain/entities/patient.dart';
-import '../domain/interfaces/payment_gateway.dart';
-import '../domain/payment_service.dart';
-
-import 'widgets/payment_method_selector.dart';
+import '../../../core/navigation/navigation_service.dart';
 
 class PaymentScreen extends ConsumerStatefulWidget {
   const PaymentScreen({super.key});
@@ -24,20 +23,23 @@ class PaymentScreen extends ConsumerStatefulWidget {
 }
 
 class _PaymentScreenState extends ConsumerState<PaymentScreen> {
-  late WebViewController? _webViewController;
-  String _paymentRecordId = '';
+  WebviewController? _webViewController;
+  String _paymentRecordId = ''; // Initially InvoiceId
+  String? _transactionPaymentId; // Store PaymentId from WebView URL
   Timer? _statusCheckTimer;
   bool _isCompleted = false;
 
   @override
   void initState() {
     super.initState();
-    _webViewController = null;
+    debugPrint('PaymentScreen: initState called');
   }
 
   @override
   void dispose() {
+    debugPrint('PaymentScreen: dispose called');
     _statusCheckTimer?.cancel();
+    _webViewController?.dispose();
     super.dispose();
   }
 
@@ -47,7 +49,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     final paymentNotifier = ref.read(paymentNotifierProvider.notifier);
     final navigationService = ref.read(navigationServiceProvider);
 
-    // Get arguments from the route
     final args =
         ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     final appointmentId = args['appointmentId'] as String;
@@ -56,109 +57,143 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     final patient = args['patient'] as Patient;
     final appointmentDate = args['appointmentDate'] as DateTime?;
 
-    // Handle payment completed status
+    _handlePaymentSuccess(paymentState, navigationService, amount, currency);
+
+    return Scaffold(
+      appBar: _buildAppBar(
+        context,
+        paymentState,
+        paymentNotifier,
+        navigationService,
+      ),
+      body: _buildBody(
+        paymentState,
+        paymentNotifier,
+        appointmentId,
+        amount,
+        currency,
+        patient,
+        appointmentDate,
+      ),
+    );
+  }
+
+  // Extracted Methods
+
+  AppBar _buildAppBar(
+    BuildContext context,
+    PaymentState paymentState,
+    PaymentNotifier paymentNotifier,
+    NavigationService navigationService,
+  ) {
+    return AppBar(
+      title: const Text('Process Payment'),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed:
+            () => _handleBackButton(
+              context,
+              paymentState,
+              paymentNotifier,
+              navigationService,
+            ),
+      ),
+    );
+  }
+
+  Widget _buildBody(
+    PaymentState paymentState,
+    PaymentNotifier paymentNotifier,
+    String appointmentId,
+    double amount,
+    String currency,
+    Patient patient,
+    DateTime? appointmentDate,
+  ) {
+    if (paymentState.isLoading && paymentState.currentPayment == null) {
+      debugPrint('PaymentScreen: Showing loading indicator');
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (paymentState.error != null && paymentState.currentPayment == null) {
+      debugPrint('PaymentScreen: Showing error view - ${paymentState.error}');
+      return _buildErrorView(paymentState.error!);
+    }
+    if (paymentState.currentPayment != null) {
+      debugPrint('PaymentScreen: Showing payment processing view');
+      return _buildPaymentProcessingView(paymentState);
+    }
+    debugPrint('PaymentScreen: Showing payment initiation view');
+    return _buildPaymentInitiationView(
+      paymentNotifier,
+      paymentState,
+      appointmentId,
+      amount,
+      currency,
+      patient,
+      appointmentDate,
+    );
+  }
+
+  void _handlePaymentSuccess(
+    PaymentState paymentState,
+    NavigationService navigationService,
+    double amount,
+    String currency,
+  ) {
     if (paymentState.lastPaymentStatus?.isSuccessful == true && !_isCompleted) {
+      debugPrint('PaymentScreen: Payment successful detected');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         setState(() {
           _isCompleted = true;
         });
-
-        // Stop status checking
         _statusCheckTimer?.cancel();
-
-        // Show success dialog
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder:
-              (context) => AlertDialog(
-                title: const Text('Payment Successful'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                      size: 64,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Your payment of ${amount.toStringAsFixed(3)} $currency has been processed successfully.',
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      // Return to the calling screen with success status
-                      navigationService.goBack(true);
-                    },
-                    child: const Text('Continue'),
-                  ),
-                ],
-              ),
-        );
+        _showSuccessDialog(navigationService, amount, currency);
       });
     }
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Process Payment'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            // Confirm before leaving
-            if (paymentState.currentPayment != null && !_isCompleted) {
-              showDialog(
-                context: context,
-                builder:
-                    (context) => AlertDialog(
-                      title: const Text('Cancel Payment'),
-                      content: const Text(
-                        'Are you sure you want to cancel this payment? Your transaction will not be completed.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Stay'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            paymentNotifier.clearCurrentPayment();
-                            navigationService.goBack(false);
-                          },
-                          child: const Text(
-                            'Leave',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      ],
-                    ),
-              );
-            } else {
-              navigationService.goBack(false);
-            }
-          },
-        ),
-      ),
-      body:
-          paymentState.isLoading && paymentState.currentPayment == null
-              ? const Center(child: CircularProgressIndicator())
-              : paymentState.error != null &&
-                  paymentState.currentPayment == null
-              ? _buildErrorView(paymentState.error!)
-              : paymentState.currentPayment != null
-              ? _buildPaymentProcessingView(paymentState)
-              : _buildPaymentInitiationView(
-                appointmentId,
-                amount,
-                currency,
-                patient,
-                appointmentDate,
+  void _handleBackButton(
+    BuildContext context,
+    PaymentState paymentState,
+    PaymentNotifier paymentNotifier,
+    NavigationService navigationService,
+  ) {
+    if (paymentState.currentPayment != null && !_isCompleted) {
+      debugPrint('PaymentScreen: Showing cancel payment confirmation');
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Cancel Payment'),
+              content: const Text(
+                'Are you sure you want to cancel this payment? Your transaction will not be completed.',
               ),
-    );
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Stay'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    debugPrint(
+                      'PaymentScreen: User confirmed payment cancellation',
+                    );
+                    Navigator.pop(context);
+                    paymentNotifier.clearCurrentPayment();
+                    navigationService.goBack(false);
+                  },
+                  child: const Text(
+                    'Leave',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+      );
+    } else {
+      debugPrint('PaymentScreen: Navigating back without confirmation');
+      navigationService.goBack(false);
+    }
   }
 
   Widget _buildErrorView(String error) {
@@ -177,6 +212,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () {
+              debugPrint('PaymentScreen: User pressed Go Back from error view');
               ref.read(navigationServiceProvider).goBack(false);
             },
             child: const Text('Go Back'),
@@ -187,48 +223,27 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   }
 
   Widget _buildPaymentInitiationView(
+    PaymentNotifier paymentNotifier,
+    PaymentState paymentState,
     String appointmentId,
     double amount,
     String currency,
     Patient patient,
     DateTime? appointmentDate,
   ) {
-    final paymentNotifier = ref.read(paymentNotifierProvider.notifier);
-    final paymentState = ref.watch(paymentNotifierProvider);
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Payment Details Card
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Payment Details',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const Divider(),
-                _buildInfoRow('Appointment ID', appointmentId),
-                if (appointmentDate != null)
-                  _buildInfoRow(
-                    'Appointment Date',
-                    '${appointmentDate.day}/${appointmentDate.month}/${appointmentDate.year}',
-                  ),
-                _buildInfoRow('Patient', patient.name),
-                _buildInfoRow(
-                  'Amount',
-                  '${amount.toStringAsFixed(3)} $currency',
-                ),
-              ],
-            ),
+          _buildPaymentDetailsCard(
+            appointmentId,
+            amount,
+            currency,
+            patient,
+            appointmentDate,
           ),
-
           const SizedBox(height: 24),
-
-          // Payment Method Selection
           Text(
             'Select Payment Method',
             style: Theme.of(context).textTheme.titleLarge,
@@ -237,135 +252,173 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           PaymentMethodSelector(
             gateways: paymentState.availableGateways,
             selectedGatewayId: paymentState.selectedGatewayId,
-            onSelected: (gatewayId) {
-              paymentNotifier.selectGateway(gatewayId);
-            },
+            onSelected: paymentNotifier.selectGateway,
           ),
-
           const SizedBox(height: 32),
-
-          // Pay Button
-          SizedBox(
-            width: double.infinity,
-            child: LoadingButton(
-              text: 'Pay ${amount.toStringAsFixed(3)} $currency',
-              icon: Icons.payment,
-              isLoading: paymentState.isLoading,
-              onPressed: () async {
-                final result = await paymentNotifier.processPayment(
-                  referenceId: appointmentId,
-                  amount: amount,
-                  currency: currency,
-                  patient: patient,
-                  description:
-                      'Payment for appointment on ${appointmentDate?.day}/${appointmentDate?.month}/${appointmentDate?.year}',
-                  returnUrl: 'https://your-clinic-app.com/payments/callback',
-                  callbackUrl: 'https://your-clinic-app.com/payments/webhook',
-                );
-
-                if (result.isSuccess) {
-                  // Store payment record ID for status checking
-                  _paymentRecordId = result.data.paymentId;
-
-                  // Start periodic status checking
-                  _statusCheckTimer = Timer.periodic(
-                    const Duration(seconds: 5),
-                    (_) => _checkPaymentStatus(_paymentRecordId),
-                  );
-                }
-              },
-            ),
+          _buildPayButton(
+            paymentNotifier,
+            appointmentId,
+            amount,
+            currency,
+            patient,
+            appointmentDate,
           ),
-
           const SizedBox(height: 16),
-
-          // Security Note
-          Center(
-            child: Column(
-              children: [
-                const Icon(Icons.lock, size: 16),
-                const SizedBox(height: 4),
-                Text(
-                  'Secured with encrypted connection',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Text(
-                  'Your payment information is secure',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
+          _buildSecurityNote(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentDetailsCard(
+    String appointmentId,
+    double amount,
+    String currency,
+    Patient patient,
+    DateTime? appointmentDate,
+  ) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Payment Details',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const Divider(),
+          _buildInfoRow('Appointment ID', appointmentId),
+          if (appointmentDate != null)
+            _buildInfoRow('Appointment Date', _formatDate(appointmentDate)),
+          _buildInfoRow('Patient', patient.name),
+          _buildInfoRow('Amount', '${amount.toStringAsFixed(3)} $currency'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPayButton(
+    PaymentNotifier paymentNotifier,
+    String appointmentId,
+    double amount,
+    String currency,
+    Patient patient,
+    DateTime? appointmentDate,
+  ) {
+    return SizedBox(
+      width: double.infinity,
+      child: LoadingButton(
+        text: 'Pay ${amount.toStringAsFixed(3)} $currency',
+        icon: Icons.payment,
+        isLoading: ref.watch(paymentNotifierProvider).isLoading,
+        onPressed: () async {
+          debugPrint('PaymentScreen: Pay button pressed - Initiating payment');
+          final result = await paymentNotifier.processPayment(
+            referenceId: appointmentId,
+            amount: amount,
+            currency: currency,
+            patient: patient,
+            description:
+                'Payment for appointment on ${_formatDate(appointmentDate)}',
+            returnUrl: 'https://your-clinic-app.com/payments/callback',
+            callbackUrl: 'https://your-clinic-app.com/payments/webhook',
+          );
+
+          if (result.isSuccess) {
+            debugPrint(
+              'PaymentScreen: Payment initiated successfully - PaymentId: ${result.data.paymentId}',
+            );
+            setState(() {
+              _paymentRecordId = result.data.paymentId;
+            });
+            _startStatusChecking();
+          } else {
+            debugPrint(
+              'PaymentScreen: Payment initiation failed - ${result.error}',
+            );
+          }
+        },
       ),
     );
   }
 
   Widget _buildPaymentProcessingView(PaymentState paymentState) {
     final currentPayment = paymentState.currentPayment!;
-
-    // Handle different response types
-    if (currentPayment.type == PaymentResponseType.redirect) {
-      return _buildWebViewPayment(currentPayment.redirectUrl!, paymentState);
-    } else if (currentPayment.type == PaymentResponseType.widget) {
-      // Check if this is a tap-to-pay widget
-      if (paymentState.selectedGatewayId == 'tap_to_pay') {
-        return _buildTapToPayWidget(
-          currentPayment.paymentId,
-          currentPayment.widgetData!,
-          paymentState,
+    switch (currentPayment.type) {
+      case PaymentResponseType.redirect:
+        debugPrint('PaymentScreen: Building WebView for redirect payment');
+        return _buildWebViewPayment(currentPayment.redirectUrl!, paymentState);
+      case PaymentResponseType.widget:
+        debugPrint('PaymentScreen: Building widget-based payment view');
+        return paymentState.selectedGatewayId == 'tap_to_pay'
+            ? _buildTapToPayWidget(
+              currentPayment.paymentId,
+              currentPayment.widgetData!,
+              paymentState,
+            )
+            : _buildWidgetPayment(currentPayment.widgetData!, paymentState);
+      case PaymentResponseType.error:
+        debugPrint('PaymentScreen: Building error view for payment response');
+        return _buildErrorView(
+          currentPayment.errorMessage ?? 'Unknown payment error',
         );
-      } else {
-        return _buildWidgetPayment(currentPayment.widgetData!, paymentState);
-      }
-    } else {
-      // Handle error case
-      return _buildErrorView(
-        currentPayment.errorMessage ?? 'Unknown payment error',
-      );
     }
   }
 
-  // Updated _buildWebViewPayment method in payment_screen.dart
   Widget _buildWebViewPayment(String url, PaymentState paymentState) {
+    _webViewController ??= _createWebViewController(url);
     return Column(
       children: [
         PaymentStatusWidget(status: paymentState.lastPaymentStatus),
-        Expanded(
-          child: WebViewWidget(controller: _createWebViewController(url)),
-        ),
+        Expanded(child: Webview(_webViewController!)),
       ],
     );
   }
 
-  WebViewController _createWebViewController(String url) {
-    final controller =
-        WebViewController()
-          ..setJavaScriptMode(JavaScriptMode.unrestricted)
-          ..loadRequest(Uri.parse(url))
-          ..setNavigationDelegate(
-            NavigationDelegate(
-              onNavigationRequest: (NavigationRequest request) {
-                // Check if the navigation is to our callback URL
-                if (request.url.startsWith(
-                  'https://your-clinic-app.com/payments/callback',
-                )) {
-                  // Parse URL for parameters
-                  final uri = Uri.parse(request.url);
-                  final paymentId = uri.queryParameters['paymentId'];
+  WebviewController _createWebViewController(String url) {
+    debugPrint('PaymentScreen: Creating WebViewController with URL: $url');
+    final controller = WebviewController();
 
-                  if (paymentId != null) {
-                    _checkPaymentStatus(paymentId);
-                  }
+    controller
+        .initialize()
+        .then((_) {
+          debugPrint('PaymentScreen: WebView initialized, loading URL');
+          controller.loadUrl(url);
 
-                  return NavigationDecision.prevent;
-                }
-                return NavigationDecision.navigate;
-              },
-            ),
-          );
+          controller.url.listen((currentUrl) {
+            debugPrint('PaymentScreen: WebView URL changed to: $currentUrl');
+            final uri = Uri.parse(currentUrl);
 
-    _webViewController = controller;
+            // Check for PaymentId in URL
+            if (uri.queryParameters.containsKey('PaymentId')) {
+              _transactionPaymentId = uri.queryParameters['PaymentId'];
+              debugPrint(
+                'PaymentScreen: Extracted PaymentId from URL: $_transactionPaymentId',
+              );
+
+              // Stop periodic checking with InvoiceId and check status with PaymentId
+              _statusCheckTimer?.cancel();
+              _checkPaymentStatus(_transactionPaymentId!);
+            }
+            // Check for callback URL
+            else if (currentUrl.startsWith(
+              'https://your-clinic-app.com/payments/callback',
+            )) {
+              final paymentId =
+                  uri.queryParameters['paymentId'] ??
+                  _transactionPaymentId ??
+                  _paymentRecordId;
+              debugPrint(
+                'PaymentScreen: Callback detected, checking status for PaymentId: $paymentId',
+              );
+              _checkPaymentStatus(paymentId);
+              controller.stop();
+            }
+          });
+        })
+        .catchError((e) {
+          debugPrint('PaymentScreen: WebView initialization failed: $e');
+        });
+
     return controller;
   }
 
@@ -373,8 +426,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     Map<String, dynamic> widgetData,
     PaymentState paymentState,
   ) {
-    // This would be implementation-specific based on the payment gateway
-    // For example, rendering a credit card form or other payment widget
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -382,7 +433,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           const Text('Please complete your payment'),
           const SizedBox(height: 24),
           PaymentStatusWidget(status: paymentState.lastPaymentStatus),
-          // Here you would render the payment widget components
         ],
       ),
     );
@@ -400,26 +450,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           children: [
             if (paymentState.lastPaymentStatus != null)
               PaymentStatusWidget(status: paymentState.lastPaymentStatus),
-
             const SizedBox(height: 16),
-
             TapToPayTerminal(
               paymentData: widgetData,
-              onPaymentComplete: (status) async {
-                // Update the payment record with the status
-                final paymentNotifier = ref.read(
-                  paymentNotifierProvider.notifier,
-                );
-                final paymentService = ref.read(paymentServiceProvider);
-
-                await paymentService.updatePaymentWithStatus(
-                  _paymentRecordId,
-                  status,
-                );
-
-                // Refresh the payment status
-                await paymentNotifier.checkPaymentStatus(_paymentRecordId);
-              },
+              onPaymentComplete:
+                  (status) => _handleTapToPayComplete(paymentId, status),
             ),
           ],
         ),
@@ -440,9 +475,86 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     );
   }
 
+  Widget _buildSecurityNote() {
+    return Center(
+      child: Column(
+        children: [
+          const Icon(Icons.lock, size: 16),
+          const SizedBox(height: 4),
+          Text(
+            'Secured with encrypted connection',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          Text(
+            'Your payment information is secure',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSuccessDialog(
+    NavigationService navigationService,
+    double amount,
+    String currency,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Payment Successful'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green, size: 64),
+                const SizedBox(height: 16),
+                Text(
+                  'Your payment of ${amount.toStringAsFixed(3)} $currency has been processed successfully.',
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  debugPrint('PaymentScreen: User confirmed payment success');
+                  Navigator.pop(context);
+                  navigationService.goBack(true);
+                },
+                child: const Text('Continue'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _startStatusChecking() {
+    debugPrint('PaymentScreen: Starting periodic status checking');
+    _statusCheckTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      debugPrint('PaymentScreen: Periodic status check triggered');
+      // Use InvoiceId initially until PaymentId is available
+      _checkPaymentStatus(_transactionPaymentId ?? _paymentRecordId);
+    });
+  }
+
   Future<void> _checkPaymentStatus(String paymentId) async {
+    debugPrint(
+      'PaymentScreen: Checking payment status for PaymentId: $paymentId',
+    );
     await ref
         .read(paymentNotifierProvider.notifier)
         .checkPaymentStatus(paymentId);
   }
+
+  Future<void> _handleTapToPayComplete(String paymentId, dynamic status) async {
+    debugPrint('PaymentScreen: Tap to pay completed with status: $status');
+    final paymentNotifier = ref.read(paymentNotifierProvider.notifier);
+    final paymentService = ref.read(paymentServiceProvider);
+    await paymentService.updatePaymentWithStatus(paymentId, status);
+    await paymentNotifier.checkPaymentStatus(paymentId);
+  }
+
+  String _formatDate(DateTime? date) =>
+      date != null ? '${date.day}/${date.month}/${date.year}' : '';
 }

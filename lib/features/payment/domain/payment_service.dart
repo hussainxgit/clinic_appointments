@@ -1,15 +1,16 @@
 // lib/features/payment/domain/payment_service.dart
-import 'dart:async';
-import 'package:clinic_appointments/features/payment/data/payment_repository_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/result.dart';
-import '../data/repository/payment_repository.dart';
+import '../data/payment_repository_provider.dart';
 import '../data/models/payment_record.dart';
-import '../domain/interfaces/payment_gateway.dart';
-
+import '../data/repository/payment_repository.dart';
 import '../data/gateways/myfatoorah_gateway.dart';
 import '../data/gateways/tap_gateway.dart';
 import '../data/gateways/tap_to_pay_gateway.dart';
+import 'interfaces/payment_gateway.dart';
+import 'entities/payment_request.dart';
+import 'entities/payment_response.dart';
+import 'entities/payment_status.dart';
 
 // Payment configuration provider
 final paymentConfigProvider = Provider<Map<String, dynamic>>((ref) {
@@ -18,7 +19,7 @@ final paymentConfigProvider = Provider<Map<String, dynamic>>((ref) {
     'defaultGateway': 'myfatoorah', // or 'tap'
     'gateways': {
       'myfatoorah': {
-        'apiKey': 'j4lc68ycMg3Vk30apbsbLnGWMtWbLXzRGilTN4l8ZTz6qlZ5SI7SYZbrRdjtI5FuRWz3lg6jnCV15VBU9cFhA_pRo4qiQCyZtTdjaAkN2QOq-TOWRuj81B6dVbP4DR-nhs4c_KVsYqfHmHcqb3hVS9Aymc771P_e13LU4X_Zd3bKyVY_L9WWBQ3bQtK-gAHpn9RVoVioQo1g_ZaaAiV4GP8scxfEMy02uN-OvcRGXExThTanoqwKwXgzU9dxJQteD0vbgVfeVbtzoWIjnroB2oPQuE_PZtG1ljdq0r5jFJp3fREVJEa2K8DjkMIo0KHavlPBClW11HyBYsnmGxVjXGFMeXVFRrXosl9KudRR8s98QusPDcbP1e4oDv3iJo8bYMDAT8F327FGBjGdonzNsaOIvfzCMdI-jpxaZ7wh5eO-KTTNX4N5xP6Vp0CShkhPTT16z84JFQvnzaJ6nRtYJ6w9AJbi3WghON9x350OIaR0ffThTrincoBGo_0szIj-TcyZhNAT4RRRd01gEm3O6d-qeDVL6xhVKYh9g8Op1AWBB5q5oWlPD8VSRHsWzR7Z05RdPK8qKOXaoA9iQBpo9HS_qddqF9KCyOvy9fhOtYOxdLYv5NpbefMAGfLl87NzjBxCUfKR5KPnGg3Jibv6xSk500KIo_xoKQvcsAo5PvEGvUcQ',
+        'apiKey': 'rLtt6JWvbUHDDhsZnfpAhpYk4dxYDQkbcPTyGaKp2TYqQgG7FGZ5Th_WD53Oq8Ebz6A53njUoo1w3pjU1D4vs_ZMqFiz_j0urb_BH9Oq9VZoKFoJEDAbRZepGcQanImyYrry7Kt6MnMdgfG5jn4HngWoRdKduNNyP4kzcp3mRv7x00ahkm9LAK7ZRieg7k1PDAnBIOG3EyVSJ5kK4WLMvYr7sCwHbHcu4A5WwelxYK0GMJy37bNAarSJDFQsJ2ZvJjvMDmfWwDVFEVe_5tOomfVNt6bOg9mexbGjMrnHBnKnZR1vQbBtQieDlQepzTZMuQrSuKn-t5XZM7V6fCW7oP-uXGX-sMOajeX65JOf6XVpk29DP6ro8WTAflCDANC193yof8-f5_EYY-3hXhJj7RBXmizDpneEQDSaSz5sFk0sV5qPcARJ9zGG73vuGFyenjPPmtDtXtpx35A-BVcOSBYVIWe9kndG3nclfefjKEuZ3m4jL9Gg1h2JBvmXSMYiZtp9MR5I6pvbvylU_PP5xJFSjVTIz7IQSjcVGO41npnwIxRXNRxFOdIUHn0tjQ-7LwvEcTXyPsHXcMD8WtgBh-wxR8aKX7WPSsT1O8d8reb2aR7K3rkV3K82K_0OgawImEpwSvp9MNKynEAJQS6ZHe_J_l77652xwPNxMRTMASk1ZsJL',
         'testMode': true,
       },
       'tap': {

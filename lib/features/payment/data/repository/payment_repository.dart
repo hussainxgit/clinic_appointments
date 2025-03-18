@@ -1,6 +1,6 @@
 // lib/features/payment/data/repository/payment_repository.dart
-import 'package:clinic_appointments/features/payment/data/models/payment_record.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/payment_record.dart';
 
 abstract class PaymentRepository {
   Future<List<PaymentRecord>> getAllPayments();
@@ -75,4 +75,3 @@ class PaymentRepositoryImpl implements PaymentRepository {
     return true;
   }
 }
-

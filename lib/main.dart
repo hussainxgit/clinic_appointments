@@ -32,7 +32,7 @@ void main() async {
   featureRegistry.registerModule(PatientModule());
   featureRegistry.registerModule(AppointmentSlotModule());
   featureRegistry.registerModule(AppointmentModule());
-    featureRegistry.registerModule(PaymentModule());
+  featureRegistry.registerModule(PaymentModule());
 
   
   await featureRegistry.initializeAllModules();

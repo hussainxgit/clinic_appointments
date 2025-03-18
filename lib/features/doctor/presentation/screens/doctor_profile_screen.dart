@@ -24,7 +24,6 @@ class DoctorProfileScreen extends ConsumerStatefulWidget {
 class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _isFavorite = false;
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
 
@@ -82,25 +81,6 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
       ),
       actions: [
         IconButton(
-          icon: Icon(_isFavorite ? Icons.favorite : Icons.favorite_border),
-          color: _isFavorite ? Colors.red : null,
-          onPressed: () {
-            setState(() {
-              _isFavorite = !_isFavorite;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  _isFavorite
-                      ? 'Added ${doctor.name} to favorites'
-                      : 'Removed ${doctor.name} from favorites',
-                ),
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          },
-        ),
-        IconButton(
           icon: const Icon(Icons.share),
           onPressed: () {
             // Share doctor profile
@@ -115,7 +95,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        title: Text(doctor.name),
+        title: Text(doctor.name, style: TextStyle(color: Colors.white)),
         background: Stack(
           fit: StackFit.expand,
           children: [

@@ -2,9 +2,12 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/utils/result.dart';
 import '../../../patient/domain/entities/patient.dart';
-import '../../domain/payment_service.dart';
-import '../../domain/interfaces/payment_gateway.dart';
 import '../../data/models/payment_record.dart';
+import '../../domain/interfaces/payment_gateway.dart';
+import '../../domain/payment_service.dart';
+import '../../domain/entities/payment_request.dart';
+import '../../domain/entities/payment_response.dart';
+import '../../domain/entities/payment_status.dart';
 
 part 'payment_provider.g.dart';
 

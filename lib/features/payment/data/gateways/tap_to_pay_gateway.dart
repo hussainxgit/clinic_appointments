@@ -1,6 +1,8 @@
 // lib/features/payment/data/gateways/tap_to_pay_gateway.dart
 import '../../domain/interfaces/payment_gateway.dart';
-
+import '../../domain/entities/payment_request.dart';
+import '../../domain/entities/payment_response.dart';
+import '../../domain/entities/payment_status.dart';
 
 /// TapToPay gateway for processing physical payments using NFC/card reader
 /// This is a mock implementation - in a real app, this would integrate with 
