@@ -19,8 +19,8 @@ final paymentConfigProvider = Provider<Map<String, dynamic>>((ref) {
     'gateways': {
       'myfatoorah': {
         'apiKey':
-            'blWGxi69g3K_GfnvzzUF2Fr6xtsj39bnF3my22-OOW-Kn3G5z8jzhw2xKVkigyV-A2GU5MHK98vL2VoavcyMNICKg3TK0HXR0SifQM_8w_j2kFc5pvcEfmkpWPBmukQ40z2HAsQMNmPl8r8hEzShT6VtQzKBpwZhZrxgwalPcex55SD6u0V_lMIG4odeYuoVHrjaD3sH7x0_CqT8Rv2of-hKvc3W4d_KUQQZXpzNEB1e5f7Y4kf7mytMvttotUcZOY6A-_HgkWIRD4NSOODjjIdXrb_8ZyQ_fWbT3THyjf72SYIan7h45sA99Xddh6tZBs1MtSeexjDeLfFPkoE6oIYQbXnPewCt5FpVbDt6u6DHQ5w9Xkn2o30qEKvoxHnJxAsP4kIDG1jDp1TYQECPvBww4WGLLcVshGVWCsgwNzmp3oSXc7XOIWhhUJ6Szo7RE2kg_2Nwt1CU6QBu2XIDD8Rg8TqF4SaUYgVBLtUhtapYuBrMjnmPXBCm6Yptq55mUDMpH59op5NfbLc5ULW8-WeSPMbw_sAJNJuGqYAOtp2YlDnsIf2plW2F_1U4XzVGmRr8eaU6Zllxv-_qSPKQag9O1of848evV6a8KQyQPpBYMJ3wyh2_VNzarSlP8DiLTFoUmXozQuPIhjVM3ow92KCVqP0ifG47PJY4AEqyJ6bbzAzv',
-        'testMode': false,
+            'A6mb_CU9MDQuG3bSpC591IMS1UtAQU40Hyt6ba-tlkvxiaWVejiZGDvvyot2X6m4pQsukf6BZsvRxl8qyBWXIbZ-FsmozNRmbLEV5XyvBWC9KNU1Ao3LgTvxIj_lf_RJAiAWfiYch9EV3XI7EE5tEh-V5zCx9GQheS0f40LcCZLSTkxqom0CeeODy65sucz9ae6MxtBOUNszOaevajNNAVMxTNns3mhoxedCnaBqLU-KlbQHUxHfmtIYV8jsG1i2p7mvHSo0NhXTvLbdwuzXldxa0lPWmx4cJiyZzonkf12en6yCiIW_1Yh4mGoMZHTnUIj-25-s4RO153Akvj0d8kmTWXeq5kr_XPAf_icbVkKtFiaSpj9WvrdsEAwBIjqCs-1pqwzWxdHuk9K-i5NjM4wJunv6XmeL85mIH0DHPyscTRAQ28luX_X08Y5P2Dowmg55ER-QNdPt__ip_BCKM4SNeOsyIPsOxaFLI8nukZ-w9SBH4iMgrJ7BefsN64RZ-z_RUqgRMjGcTR4wsinodhG4YghJ-8iNh8LXRTIaQI4Tna_hMIPeDhQlH4D6vHzpL9qqe8RujhAY5JA6RveR8Dsm3zJ8YpEnMU8gfVMHJYDzBhwEZeuZjybPFElf8y5tx203g-HMo6gkxwWz3bdvNI2Nn3alnYt35Z7qhZTKoTIW5EriiwBdTzB4moqWg506GnUcng',
+        'testMode': true,
       },
       'tap': {
         'apiKey': 'YOUR_TAP_API_KEY',

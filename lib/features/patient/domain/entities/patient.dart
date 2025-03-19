@@ -1,5 +1,6 @@
 // lib/features/patient/domain/entities/patient.dart
 enum PatientGender { male, female }
+
 enum PatientStatus { active, inactive }
 
 class Patient {
@@ -55,7 +56,7 @@ class Patient {
       appointmentIds: appointmentIds ?? this.appointmentIds,
     );
   }
-  
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -79,12 +80,23 @@ class Patient {
       phone: map['phone'] ?? '',
       email: map['email'],
       address: map['address'],
-      gender: map['gender'] == 'female' ? PatientGender.female : PatientGender.male,
-      dateOfBirth: map['dateOfBirth'] != null ? DateTime.parse(map['dateOfBirth']) : null,
+      gender:
+          map['gender'] == 'female' ? PatientGender.female : PatientGender.male,
+      dateOfBirth:
+          map['dateOfBirth'] != null
+              ? DateTime.parse(map['dateOfBirth'])
+              : null,
       registeredAt: DateTime.parse(map['registeredAt']),
-      status: map['status'] == 'inactive' ? PatientStatus.inactive : PatientStatus.active,
+      status:
+          map['status'] == 'inactive'
+              ? PatientStatus.inactive
+              : PatientStatus.active,
       notes: map['notes'],
-      appointmentIds: List<String>.from(map['appointmentIds'] ?? []),
+      // Fix: Properly handle appointmentIds casting
+      appointmentIds:
+          map['appointmentIds'] != null
+              ? List<String>.from(map['appointmentIds'])
+              : [],
     );
   }
 }

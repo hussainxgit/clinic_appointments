@@ -85,6 +85,8 @@ class Appointment {
     return status == 'paid' ? PaymentStatus.paid : PaymentStatus.unpaid;
   }
   
+  
+
   bool isSameDay(DateTime date) {
     return dateTime.year == date.year && 
            dateTime.month == date.month && 

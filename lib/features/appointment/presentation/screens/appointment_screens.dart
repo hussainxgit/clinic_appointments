@@ -126,9 +126,9 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildAppointmentList('scheduled'),
-                _buildAppointmentList('completed'),
-                _buildAppointmentList('cancelled'),
+                _buildAppointmentList(AppointmentStatus.scheduled),
+                _buildAppointmentList(AppointmentStatus.completed),
+                _buildAppointmentList(AppointmentStatus.cancelled),
               ],
             ),
           ),
@@ -144,7 +144,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
     );
   }
 
-  Widget _buildAppointmentList(String status) {
+  Widget _buildAppointmentList(AppointmentStatus status) {
     final appointmentState = ref.watch(appointmentNotifierProvider);
 
     if (appointmentState.isLoading) {
@@ -207,9 +207,9 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
       return EmptyState(
         message: 'No $status appointments found',
         icon: Icons.event_busy,
-        actionLabel: status == 'scheduled' ? 'Add Appointment' : null,
+        actionLabel: status == AppointmentStatus.scheduled ? 'Add Appointment' : null,
         onAction:
-            status == 'scheduled'
+            status == AppointmentStatus.scheduled
                 ? () {
                   ref
                       .read(navigationServiceProvider)
@@ -245,9 +245,9 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
     Doctor? doctor,
   ) {
     final statusColor =
-        appointment.status == 'scheduled'
+        appointment.status == AppointmentStatus.scheduled
             ? Colors.blue
-            : appointment.status == 'completed'
+            : appointment.status == AppointmentStatus.completed
             ? Colors.green
             : Colors.red;
 
@@ -261,7 +261,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
         leading: CircleAvatar(
           backgroundColor: statusColor,
           child: Icon(
-            appointment.status == 'scheduled'
+            appointment.status == AppointmentStatus.scheduled
                 ? Icons.schedule
                 : appointment.status == 'completed'
                 ? Icons.check
@@ -342,7 +342,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
   }
 
   Widget _buildActionButtons(Appointment appointment) {
-    if (appointment.status == 'scheduled') {
+    if (appointment.status == AppointmentStatus.scheduled) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [

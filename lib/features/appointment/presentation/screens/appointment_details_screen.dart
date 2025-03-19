@@ -59,26 +59,25 @@ class _AppointmentDetailsScreenState
       appBar: AppBar(
         title: const Text('Appointment Details'),
         actions: [
-          if (appointment.status == 'scheduled')
-            // Add this button for appointments with "unpaid" status
-            if (appointment.paymentStatus == 'unpaid')
-              ElevatedButton.icon(
-                icon: const Icon(Icons.payment),
-                label: const Text('Process Payment'),
-                onPressed: () {
-                  // Navigate to payment screen with appointment data
-                  ref
-                      .read(navigationServiceProvider)
-                      .navigateTo(
-                        '/appointment/payment',
-                        arguments: {
-                          'appointment': appointment,
-                          'patient': patient,
-                          'doctor': doctor,
-                        },
-                      );
-                },
-              ),
+          if (appointment.status == AppointmentStatus.scheduled &&
+              appointment.paymentStatus == PaymentStatus.unpaid)
+            ElevatedButton.icon(
+              icon: const Icon(Icons.payment),
+              label: const Text('Process Payment'),
+              onPressed: () {
+                // Navigate to payment screen with appointment data
+                ref
+                    .read(navigationServiceProvider)
+                    .navigateTo(
+                      '/appointment/payment',
+                      arguments: {
+                        'appointment': appointment,
+                        'patient': patient,
+                        'doctor': doctor,
+                      },
+                    );
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
@@ -104,7 +103,7 @@ class _AppointmentDetailsScreenState
               const SizedBox(height: 16),
               if (doctor != null) _buildDoctorCard(doctor),
               const SizedBox(height: 24),
-              if (appointment.status == 'scheduled') ...[
+              if (appointment.status == AppointmentStatus.scheduled) ...[
                 Row(
                   children: [
                     Expanded(
@@ -205,7 +204,7 @@ class _AppointmentDetailsScreenState
               ],
             ),
           ),
-          if (appointment.status == 'scheduled') ...[
+          if (appointment.status == AppointmentStatus.scheduled) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(

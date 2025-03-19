@@ -70,17 +70,22 @@ class AppointmentNotifier extends _$AppointmentNotifier {
       final appointmentService = ref.read(appointmentServiceProvider);
       final result = await appointmentService.createAppointment(appointment);
 
-      // Update state based on result
-      if (result.isSuccess) {
-        await loadAppointments();
-      } else {
-        state = state.copyWith(isLoading: false, error: result.error);
-      }
+      // Always refresh appointments after creation attempt, even if it failed
+      await loadAppointments();
+
       return result;
     } catch (e) {
-      // Handle errors consistently
+      // Handle errors and refresh data anyway
       final errorMsg = e.toString();
       state = state.copyWith(isLoading: false, error: errorMsg);
+
+      // Try to refresh appointments even after error
+      try {
+        await loadAppointments();
+      } catch (_) {
+        // Ignore refresh errors after creation error
+      }
+
       return Result.failure(errorMsg);
     }
   }
@@ -92,15 +97,19 @@ class AppointmentNotifier extends _$AppointmentNotifier {
       final appointmentService = ref.read(appointmentServiceProvider);
       final result = await appointmentService.updateAppointment(appointment);
 
-      if (result.isSuccess) {
-        await loadAppointments();
-      } else {
-        state = state.copyWith(isLoading: false, error: result.error);
-      }
+      // Always refresh after attempt
+      await loadAppointments();
+
       return result;
     } catch (e) {
       final errorMsg = e.toString();
       state = state.copyWith(isLoading: false, error: errorMsg);
+
+      // Try to refresh anyway
+      try {
+        await loadAppointments();
+      } catch (_) {}
+
       return Result.failure(errorMsg);
     }
   }
@@ -112,15 +121,19 @@ class AppointmentNotifier extends _$AppointmentNotifier {
       final appointmentService = ref.read(appointmentServiceProvider);
       final result = await appointmentService.cancelAppointment(appointmentId);
 
-      if (result.isSuccess) {
-        await loadAppointments();
-      } else {
-        state = state.copyWith(isLoading: false, error: result.error);
-      }
+      // Always refresh after attempt
+      await loadAppointments();
+
       return result;
     } catch (e) {
       final errorMsg = e.toString();
       state = state.copyWith(isLoading: false, error: errorMsg);
+
+      // Try to refresh anyway
+      try {
+        await loadAppointments();
+      } catch (_) {}
+
       return Result.failure(errorMsg);
     }
   }

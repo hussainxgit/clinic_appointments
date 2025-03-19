@@ -43,6 +43,11 @@ class AppointmentSlot {
       throw Exception('Slot fully booked');
     }
 
+    // Check if appointment already exists to avoid duplication
+    if (appointmentIds.contains(appointmentId)) {
+      return this; // Already added, return unchanged
+    }
+
     final updatedAppointmentIds = List<String>.from(appointmentIds)
       ..add(appointmentId);
 
@@ -54,11 +59,15 @@ class AppointmentSlot {
 
   // Cancel an appointment
   AppointmentSlot cancelAppointment(String appointmentId) {
-    if (bookedPatients == 0) {
+    if (bookedPatients <= 0) {
       throw Exception('No bookings to cancel');
     }
+
+    // Check if appointment exists, but don't throw if it doesn't
+    // This makes rollback more robust
     if (!appointmentIds.contains(appointmentId)) {
-      throw Exception('Appointment not found in this slot');
+      print('Warning: Appointment $appointmentId not found in slot $id');
+      return this; // Return unchanged
     }
 
     final updatedAppointmentIds = List<String>.from(appointmentIds)

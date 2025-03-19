@@ -1,5 +1,4 @@
 // lib/features/appointment_slot/data/appointment_slot_repository.dart
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/data/firebase_repository.dart';
 import '../domain/entities/appointment_slot.dart';
 import '../domain/exceptions/slot_exception.dart';
@@ -20,9 +19,8 @@ class AppointmentSlotRepositoryImpl extends FirebaseRepository<AppointmentSlot>
     implements AppointmentSlotRepository {
   
   AppointmentSlotRepositoryImpl({
-    required FirebaseFirestore firestore,
+    required super.firestore,
   }) : super(
-          firestore: firestore,
           collection: 'appointmentSlots',
         );
 

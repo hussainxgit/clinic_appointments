@@ -8,6 +8,7 @@ import '../../../../core/ui/widgets/app_card.dart';
 import '../../../../core/ui/widgets/loading_button.dart';
 import '../../../../core/ui/widgets/empty_state.dart';
 import '../../../../core/ui/theme/app_theme.dart';
+import '../../../appointment/domain/entities/appointment.dart';
 import '../../../appointment_slot/presentation/providers/appointment_slot_notifier.dart';
 import '../../../appointment/presentation/providers/appointment_notifier.dart';
 import '../../domain/entities/doctor.dart';
@@ -670,7 +671,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
         appointmentState.appointments.where((item) {
           final appointment = item['appointment'];
           return appointment.doctorId == doctor.id &&
-              appointment.status == 'scheduled';
+              appointment.status == AppointmentStatus.scheduled;
         }).toList();
 
     return appointments.isEmpty

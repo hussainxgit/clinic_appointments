@@ -339,16 +339,7 @@ class AppointmentService {
       bool appointmentCreated = false;
       String? appointmentId;
 
-      // 1. Book the slot
-      try {
-        final updatedSlot = slot.bookAppointment(appointment.id);
-        await _slotRepository.update(updatedSlot);
-        slotUpdated = true;
-      } catch (e) {
-        return Result.failure('Error booking slot: ${e.toString()}');
-      }
-
-      // 2. Create appointment
+      // 1. Create appointment first (so we have the ID)
       try {
         final savedAppointment = await _appointmentRepository.create(
           appointment,
@@ -356,19 +347,40 @@ class AppointmentService {
         appointmentCreated = true;
         appointmentId = savedAppointment.id;
 
+        // 2. Book the slot with the actual appointment ID
+        try {
+          final updatedSlot = slot.bookAppointment(savedAppointment.id);
+          await _slotRepository.update(updatedSlot);
+          slotUpdated = true;
+        } catch (e) {
+          // Rollback the appointment creation
+          if (appointmentCreated) {
+            try {
+              await _appointmentRepository.delete(savedAppointment.id);
+            } catch (rollbackErr) {
+              print(
+                'Rollback error - could not delete appointment: $rollbackErr',
+              );
+            }
+          }
+          return Result.failure('Error booking slot: ${e.toString()}');
+        }
+
         // 3. Update patient's appointment references
         try {
+          // Make sure we have a fresh List<String>
+          final List<String> currentAppointments = List<String>.from(
+            patient.appointmentIds,
+          );
+
           final updatedPatient = patient.copyWith(
-            appointmentIds: [...patient.appointmentIds, savedAppointment.id],
+            appointmentIds: [...currentAppointments, savedAppointment.id],
           );
           await _patientRepository.update(updatedPatient);
 
-          // 4. Publish creation event
-          _eventBus.publish(AppointmentCreatedEvent(savedAppointment));
-
           return Result.success(savedAppointment);
         } catch (e) {
-          // Rollback patient update failure
+          // Rollback slot and appointment
           await _rollbackOperations(
             slotUpdated: slotUpdated,
             slotId: slot.id,
@@ -378,13 +390,6 @@ class AppointmentService {
           return Result.failure('Error updating patient: ${e.toString()}');
         }
       } catch (e) {
-        // Rollback appointment creation failure
-        await _rollbackOperations(
-          slotUpdated: slotUpdated,
-          slotId: slot.id,
-          appointmentId: appointmentId,
-          appointmentCreated: appointmentCreated,
-        );
         return Result.failure('Error creating appointment: ${e.toString()}');
       }
     } catch (e) {
@@ -399,19 +404,12 @@ class AppointmentService {
     String? appointmentId,
     required bool appointmentCreated,
   }) async {
-    // Rollback in reverse order of operations
-    if (appointmentCreated && appointmentId != null) {
-      try {
-        await _appointmentRepository.delete(appointmentId);
-      } catch (e) {
-        print('Rollback error - could not delete appointment: $e');
-      }
-    }
-
-    if (slotUpdated) {
+    // First try to cancel the slot booking
+    if (slotUpdated && appointmentId != null) {
       try {
         final slot = await _slotRepository.getById(slotId);
-        if (slot != null && appointmentId != null) {
+        if (slot != null) {
+          // Use the fixed cancelAppointment that won't throw if not found
           final updatedSlot = slot.cancelAppointment(appointmentId);
           await _slotRepository.update(updatedSlot);
         }
@@ -419,7 +417,16 @@ class AppointmentService {
         print('Rollback error - could not restore slot: $e');
       }
     }
-  }
+
+    // Then try to delete the appointment
+    if (appointmentCreated && appointmentId != null) {
+      try {
+        await _appointmentRepository.delete(appointmentId);
+      } catch (e) {
+        print('Rollback error - could not delete appointment: $e');
+      }
+    }
+  } 
 
   /// Validate that doctor exists and is available
   Future<Result<void>> _validateDoctor(String doctorId) async {
