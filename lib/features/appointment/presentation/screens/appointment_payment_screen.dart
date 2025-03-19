@@ -48,7 +48,7 @@ class AppointmentPaymentScreen extends ConsumerWidget {
                   _buildInfoRow('Date', _formatDateTime(appointment.dateTime)),
                   _buildInfoRow('Patient', patient?.name ?? 'Unknown'),
                   _buildInfoRow('Doctor', doctor?.name ?? 'Unknown'),
-                  _buildInfoRow('Status', _formatStatus(appointment.status)),
+                  _buildInfoRow('Status', _formatStatus(appointment.status.toString())),
                 ],
               ),
             ),
@@ -71,7 +71,7 @@ class AppointmentPaymentScreen extends ConsumerWidget {
                   ),
                   _buildInfoRow(
                     'Payment Status',
-                    _formatPaymentStatus(appointment.paymentStatus),
+                    _formatPaymentStatus(appointment.paymentStatus.toString()),
                   ),
                   
                   const SizedBox(height: 16),

@@ -287,7 +287,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    appointment.status.capitalize(),
+                    appointment.status.toString().capitalize(),
                     style: TextStyle(
                       color: statusColor,
                       fontSize: 12,
@@ -309,7 +309,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    appointment.paymentStatus.capitalize(),
+                    appointment.paymentStatus.toString().capitalize(),
                     style: TextStyle(
                       color:
                           appointment.paymentStatus == 'paid'
@@ -405,14 +405,14 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
                 const SizedBox(height: 16),
                 const Text('Payment Status:'),
                 const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
+                DropdownButtonFormField<PaymentStatus>(
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                   ),
                   value: appointment.paymentStatus,
                   items: const [
-                    DropdownMenuItem(value: 'paid', child: Text('Paid')),
-                    DropdownMenuItem(value: 'unpaid', child: Text('Unpaid')),
+                    DropdownMenuItem(value: PaymentStatus.paid, child: Text('Paid')),
+                    DropdownMenuItem(value: PaymentStatus.unpaid, child: Text('Unpaid')),
                   ],
                   onChanged: (value) {
                     // This would be handled in the dialog result
@@ -442,7 +442,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
       final result = await notifier.completeAppointment(
         appointment.id,
         paymentStatus:
-            'paid', // You would get this from the dialog in a real app
+            PaymentStatus.paid, // You would get this from the dialog in a real app
       );
 
       if (result.isFailure) {

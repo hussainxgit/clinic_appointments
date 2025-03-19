@@ -19,17 +19,18 @@ import '../providers/appointment_notifier.dart';
 
 class AppointmentFormScreen extends ConsumerStatefulWidget {
   final bool isEditing;
-  
+
   const AppointmentFormScreen({super.key, this.isEditing = false});
-  
+
   @override
-  ConsumerState<AppointmentFormScreen> createState() => _AppointmentFormScreenState();
+  ConsumerState<AppointmentFormScreen> createState() =>
+      _AppointmentFormScreenState();
 }
 
 class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
-  
+
   // Appointment data
   late String _id;
   String? _patientId;
@@ -38,13 +39,13 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   String _notes = '';
-  String _status = 'scheduled';
-  String _paymentStatus = 'unpaid';
-  
+  AppointmentStatus _status = AppointmentStatus.scheduled;
+  PaymentStatus _paymentStatus = PaymentStatus.unpaid;
+
   // For selecting slot
   List<AppointmentSlot> _availableSlots = [];
   AppointmentSlot? _selectedSlot;
-  
+
   @override
   void initState() {
     super.initState();
@@ -54,14 +55,15 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     if (widget.isEditing) {
       // Get passed arguments from route
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
       if (args != null && args.containsKey('appointment')) {
         final appointment = args['appointment'] as Appointment;
-        
+
         // Initialize with existing appointment data
         _id = appointment.id;
         _patientId = appointment.patientId;
@@ -75,50 +77,59 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       }
     } else {
       // Handle appointment creation with pre-selected data if provided
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
       if (args != null) {
         // Pre-selected doctor and slot
         if (args.containsKey('doctorId')) {
           _doctorId = args['doctorId'] as String;
         }
-        
+
         if (args.containsKey('appointmentSlotId')) {
           _appointmentSlotId = args['appointmentSlotId'] as String;
         }
-        
+
         if (args.containsKey('dateTime')) {
           final dateTime = args['dateTime'] as DateTime;
           _selectedDate = dateTime;
           _selectedTime = TimeOfDay.fromDateTime(dateTime);
         }
-        
+
         if (args.containsKey('patientId')) {
           _patientId = args['patientId'] as String;
         }
       }
     }
-    
+
     // Load available slots based on selected date and doctor
     _loadAvailableSlots();
   }
-  
+
   void _loadAvailableSlots() {
     if (_doctorId != null) {
       // Get slots for this doctor and date
       final slotNotifier = ref.read(appointmentSlotNotifierProvider.notifier);
-      _availableSlots = slotNotifier.getSlots(
-        doctorId: _doctorId,
-        date: _selectedDate,
-      ).where((slot) => !slot.isFullyBooked || 
-                         (_appointmentSlotId != null && slot.id == _appointmentSlotId))
-       .toList();
-      
+      _availableSlots =
+          slotNotifier
+              .getSlots(doctorId: _doctorId, date: _selectedDate)
+              .where(
+                (slot) =>
+                    !slot.isFullyBooked ||
+                    (_appointmentSlotId != null &&
+                        slot.id == _appointmentSlotId),
+              )
+              .toList();
+
       // Find selected slot if we have an appointment slot ID
       if (_appointmentSlotId != null) {
         _selectedSlot = _availableSlots.firstWhere(
           (slot) => slot.id == _appointmentSlotId,
-          orElse: () => _availableSlots.isNotEmpty ? _availableSlots.first : throw Exception('No available slots'),
+          orElse:
+              () =>
+                  _availableSlots.isNotEmpty
+                      ? _availableSlots.first
+                      : throw Exception('No available slots'),
         );
       } else if (_availableSlots.isNotEmpty) {
         _selectedSlot = _availableSlots.first;
@@ -160,7 +171,10 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
               SizedBox(
                 width: double.infinity,
                 child: LoadingButton(
-                  text: widget.isEditing ? 'Update Appointment' : 'Create Appointment',
+                  text:
+                      widget.isEditing
+                          ? 'Update Appointment'
+                          : 'Create Appointment',
                   isLoading: _isLoading,
                   onPressed: _saveAppointment,
                 ),
@@ -171,15 +185,16 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       ),
     );
   }
-  
+
   Widget _buildPatientSelection() {
     final patientState = ref.watch(patientNotifierProvider);
-    
+
     // Filter for active patients only
-    final patients = patientState.patients
-        .where((p) => p.status == PatientStatus.active)
-        .toList();
-    
+    final patients =
+        patientState.patients
+            .where((p) => p.status == PatientStatus.active)
+            .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -194,12 +209,13 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
             hintText: 'Select a patient',
           ),
           value: _patientId,
-          items: patients.map((patient) {
-            return DropdownMenuItem<String>(
-              value: patient.id,
-              child: Text(patient.name),
-            );
-          }).toList(),
+          items:
+              patients.map((patient) {
+                return DropdownMenuItem<String>(
+                  value: patient.id,
+                  child: Text(patient.name),
+                );
+              }).toList(),
           onChanged: (value) {
             setState(() {
               _patientId = value;
@@ -215,15 +231,13 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       ],
     );
   }
-  
+
   Widget _buildDoctorSelection() {
     final doctorState = ref.watch(doctorNotifierProvider);
-    
+
     // Filter for available doctors only
-    final doctors = doctorState.doctors
-        .where((d) => d.isAvailable)
-        .toList();
-    
+    final doctors = doctorState.doctors.where((d) => d.isAvailable).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -238,12 +252,13 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
             hintText: 'Select a doctor',
           ),
           value: _doctorId,
-          items: doctors.map((doctor) {
-            return DropdownMenuItem<String>(
-              value: doctor.id,
-              child: Text('${doctor.name} (${doctor.specialty})'),
-            );
-          }).toList(),
+          items:
+              doctors.map((doctor) {
+                return DropdownMenuItem<String>(
+                  value: doctor.id,
+                  child: Text('${doctor.name} (${doctor.specialty})'),
+                );
+              }).toList(),
           onChanged: (value) {
             setState(() {
               _doctorId = value;
@@ -263,7 +278,7 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       ],
     );
   }
-  
+
   Widget _buildDateTimePickers() {
     return Row(
       children: [
@@ -317,7 +332,7 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       ],
     );
   }
-  
+
   Widget _buildSlotSelection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,7 +357,7 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
                 final slot = _availableSlots[index];
                 final isSelected = _selectedSlot?.id == slot.id;
                 final time = DateFormat('h:mm a').format(slot.date);
-                
+
                 return Padding(
                   padding: const EdgeInsets.only(right: 12.0),
                   child: AppCard(
@@ -369,7 +384,8 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
                           '${slot.bookedPatients}/${slot.maxPatients} booked',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isSelected ? Colors.blue.shade900 : Colors.grey,
+                            color:
+                                isSelected ? Colors.blue.shade900 : Colors.grey,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -385,7 +401,7 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       ],
     );
   }
-  
+
   Widget _buildStatusSelection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -395,15 +411,22 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-          ),
+        DropdownButtonFormField<AppointmentStatus>(
+          decoration: const InputDecoration(border: OutlineInputBorder()),
           value: _status,
           items: const [
-            DropdownMenuItem(value: 'scheduled', child: Text('Scheduled')),
-            DropdownMenuItem(value: 'completed', child: Text('Completed')),
-            DropdownMenuItem(value: 'cancelled', child: Text('Cancelled')),
+            DropdownMenuItem(
+              value: AppointmentStatus.scheduled,
+              child: Text('Scheduled'),
+            ),
+            DropdownMenuItem(
+              value: AppointmentStatus.completed,
+              child: Text('Completed'),
+            ),
+            DropdownMenuItem(
+              value: AppointmentStatus.cancelled,
+              child: Text('Cancelled'),
+            ),
           ],
           onChanged: (value) {
             if (value != null) {
@@ -416,7 +439,7 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       ],
     );
   }
-  
+
   Widget _buildPaymentStatusSelection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,14 +449,15 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-          ),
+        DropdownButtonFormField<PaymentStatus>(
+          decoration: const InputDecoration(border: OutlineInputBorder()),
           value: _paymentStatus,
           items: const [
-            DropdownMenuItem(value: 'paid', child: Text('Paid')),
-            DropdownMenuItem(value: 'unpaid', child: Text('Unpaid')),
+            DropdownMenuItem(value: PaymentStatus.paid, child: Text('Paid')),
+            DropdownMenuItem(
+              value: PaymentStatus.unpaid,
+              child: Text('Unpaid'),
+            ),
           ],
           onChanged: (value) {
             if (value != null) {
@@ -446,7 +470,7 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       ],
     );
   }
-  
+
   Widget _buildNotesField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -470,7 +494,7 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       ],
     );
   }
-  
+
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -478,7 +502,7 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    
+
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
@@ -487,20 +511,20 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       });
     }
   }
-  
+
   Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
     );
-    
+
     if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
       });
     }
   }
-  
+
   DateTime _combineDateAndTime() {
     return DateTime(
       _selectedDate.year,
@@ -510,12 +534,16 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       _selectedTime.minute,
     );
   }
-  
+
   Future<void> _saveAppointment() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
+    if (!_isValidAppointmentDateTime()) {
+      return;
+    }
+
     if (_appointmentSlotId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -525,14 +553,26 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       );
       return;
     }
-    
+
+    if (_appointmentSlotId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select an available appointment slot'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
-      final appointmentNotifier = ref.read(appointmentNotifierProvider.notifier);
-      
+      final appointmentNotifier = ref.read(
+        appointmentNotifierProvider.notifier,
+      );
+
       // Create appointment object
       final appointment = Appointment(
         id: _id,
@@ -544,19 +584,19 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
         paymentStatus: _paymentStatus,
         notes: _notes.isNotEmpty ? _notes : null,
       );
-      
+
       Result<Appointment> result;
-      
+
       if (widget.isEditing) {
         result = await appointmentNotifier.updateAppointment(appointment);
       } else {
         result = await appointmentNotifier.createAppointment(appointment);
       }
-      
+
       setState(() {
         _isLoading = false;
       });
-      
+
       if (result.isSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -568,7 +608,7 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        
+
         // Navigate back
         ref.read(navigationServiceProvider).goBack();
       } else {
@@ -583,7 +623,7 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       setState(() {
         _isLoading = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
@@ -591,5 +631,22 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
         ),
       );
     }
+  }
+
+  bool _isValidAppointmentDateTime() {
+    final now = DateTime.now();
+    final appointmentDateTime = _combineDateAndTime();
+
+    // Check if appointment is in the past
+    if (appointmentDateTime.isBefore(now)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Appointment time cannot be in the past'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
+    return true;
   }
 }

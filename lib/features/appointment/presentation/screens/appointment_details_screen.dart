@@ -1,9 +1,12 @@
 // lib/features/appointment/presentation/screens/appointment_details_screen.dart
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/di/core_providers.dart';
+import '../../../../core/events/domain_events.dart';
 import '../../../../core/ui/widgets/app_card.dart';
 import '../../../../core/ui/widgets/loading_button.dart';
 
@@ -24,6 +27,23 @@ class _AppointmentDetailsScreenState
     extends ConsumerState<AppointmentDetailsScreen> {
   bool _isCompleting = false;
   bool _isCancelling = false;
+  StreamSubscription? _eventSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    // Subscribe to relevant events
+    final eventBus = ref.read(eventBusProvider);
+    _eventSubscription = eventBus.on<AppointmentUpdatedEvent>().listen((event) {
+      // Handle event
+      if (mounted) {
+        // Update UI or state
+        setState(() {
+          // Update relevant state
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,25 +158,21 @@ class _AppointmentDetailsScreenState
     String statusText;
 
     switch (appointment.status) {
-      case 'scheduled':
+      case AppointmentStatus.scheduled:
         bannerColor = Colors.blue;
         statusIcon = Icons.schedule;
         statusText = 'Scheduled';
         break;
-      case 'completed':
+      case AppointmentStatus.completed:
         bannerColor = Colors.green;
         statusIcon = Icons.check_circle;
         statusText = 'Completed';
         break;
-      case 'cancelled':
+      case AppointmentStatus.cancelled:
         bannerColor = Colors.red;
         statusIcon = Icons.cancel;
         statusText = 'Cancelled';
         break;
-      default:
-        bannerColor = Colors.grey;
-        statusIcon = Icons.help_outline;
-        statusText = 'Unknown';
     }
 
     return Container(
@@ -407,7 +423,8 @@ class _AppointmentDetailsScreenState
           .read(appointmentNotifierProvider.notifier)
           .completeAppointment(
             appointmentId,
-            paymentStatus: 'paid', // Default to paid when completing
+            paymentStatus:
+                PaymentStatus.paid, // Default to paid when completing
           );
 
       if (result.isSuccess) {
@@ -495,5 +512,12 @@ class _AppointmentDetailsScreenState
         });
       }
     }
+  }
+
+  @override
+  void dispose() {
+    // Cancel subscription when screen is disposed
+    _eventSubscription?.cancel();
+    super.dispose();
   }
 }

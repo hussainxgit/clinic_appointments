@@ -47,17 +47,11 @@ class AppointmentNotifier extends _$AppointmentNotifier {
       // Use the service to get appointment data
       final appointmentService = ref.read(appointmentServiceProvider);
       final result = await appointmentService.getCombinedAppointments();
-      
+
       if (result.isSuccess) {
-        state = state.copyWith(
-          appointments: result.data,
-          isLoading: false,
-        );
+        state = state.copyWith(appointments: result.data, isLoading: false);
       } else {
-        state = state.copyWith(
-          error: result.error,
-          isLoading: false,
-        );
+        state = state.copyWith(error: result.error, isLoading: false);
       }
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
@@ -69,51 +63,72 @@ class AppointmentNotifier extends _$AppointmentNotifier {
   }
 
   Future<Result<Appointment>> createAppointment(Appointment appointment) async {
+    // Update loading state
+    state = state.copyWith(isLoading: true, error: null);
+
     try {
       final appointmentService = ref.read(appointmentServiceProvider);
       final result = await appointmentService.createAppointment(appointment);
 
+      // Update state based on result
       if (result.isSuccess) {
         await loadAppointments();
+      } else {
+        state = state.copyWith(isLoading: false, error: result.error);
       }
       return result;
     } catch (e) {
-      return Result.failure(e.toString());
+      // Handle errors consistently
+      final errorMsg = e.toString();
+      state = state.copyWith(isLoading: false, error: errorMsg);
+      return Result.failure(errorMsg);
     }
   }
 
   Future<Result<Appointment>> updateAppointment(Appointment appointment) async {
+    state = state.copyWith(isLoading: true, error: null);
+
     try {
       final appointmentService = ref.read(appointmentServiceProvider);
       final result = await appointmentService.updateAppointment(appointment);
 
       if (result.isSuccess) {
         await loadAppointments();
+      } else {
+        state = state.copyWith(isLoading: false, error: result.error);
       }
       return result;
     } catch (e) {
-      return Result.failure(e.toString());
+      final errorMsg = e.toString();
+      state = state.copyWith(isLoading: false, error: errorMsg);
+      return Result.failure(errorMsg);
     }
   }
 
   Future<Result<bool>> cancelAppointment(String appointmentId) async {
+    state = state.copyWith(isLoading: true, error: null);
+
     try {
       final appointmentService = ref.read(appointmentServiceProvider);
       final result = await appointmentService.cancelAppointment(appointmentId);
 
       if (result.isSuccess) {
         await loadAppointments();
+      } else {
+        state = state.copyWith(isLoading: false, error: result.error);
       }
       return result;
     } catch (e) {
-      return Result.failure(e.toString());
+      final errorMsg = e.toString();
+      state = state.copyWith(isLoading: false, error: errorMsg);
+      return Result.failure(errorMsg);
     }
   }
 
   Future<Result<Appointment>> completeAppointment(
     String appointmentId, {
     String? notes,
-    String paymentStatus = 'paid',
+    PaymentStatus paymentStatus = PaymentStatus.paid,
   }) async {
     try {
       final appointmentService = ref.read(appointmentServiceProvider);
@@ -131,7 +146,7 @@ class AppointmentNotifier extends _$AppointmentNotifier {
       return Result.failure(e.toString());
     }
   }
-  
+
   // Filter appointments by different criteria
   List<Map<String, dynamic>> getFilteredAppointments({
     String? status,
@@ -141,12 +156,13 @@ class AppointmentNotifier extends _$AppointmentNotifier {
   }) {
     return state.appointments.where((item) {
       final appointment = item['appointment'] as Appointment;
-      
+
       bool statusMatch = status == null || appointment.status == status;
-      bool patientMatch = patientId == null || appointment.patientId == patientId;
+      bool patientMatch =
+          patientId == null || appointment.patientId == patientId;
       bool doctorMatch = doctorId == null || appointment.doctorId == doctorId;
       bool dateMatch = date == null || appointment.isSameDay(date);
-      
+
       return statusMatch && patientMatch && doctorMatch && dateMatch;
     }).toList();
   }

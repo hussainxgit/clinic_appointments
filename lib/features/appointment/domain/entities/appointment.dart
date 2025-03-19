@@ -1,4 +1,4 @@
-// lib/features/appointment/domain/entities/appointment.dart
+// Update in lib/features/appointment/domain/entities/appointment.dart
 enum AppointmentStatus { scheduled, completed, cancelled }
 enum PaymentStatus { paid, unpaid }
 
@@ -6,8 +6,8 @@ class Appointment {
   final String id;
   final String patientId;
   final DateTime dateTime;
-  final String status;
-  final String paymentStatus;
+  final AppointmentStatus status;
+  final PaymentStatus paymentStatus;
   final String doctorId;
   final String appointmentSlotId;
   final String? notes;
@@ -16,8 +16,8 @@ class Appointment {
     required this.id,
     required this.patientId,
     required this.dateTime,
-    this.status = 'scheduled',
-    this.paymentStatus = 'unpaid',
+    this.status = AppointmentStatus.scheduled,
+    this.paymentStatus = PaymentStatus.unpaid,
     required this.doctorId,
     required this.appointmentSlotId,
     this.notes,
@@ -26,8 +26,8 @@ class Appointment {
   Appointment copyWith({
     String? patientId,
     DateTime? dateTime,
-    String? status,
-    String? paymentStatus,
+    AppointmentStatus? status,
+    PaymentStatus? paymentStatus,
     String? doctorId,
     String? appointmentSlotId,
     String? notes,
@@ -49,8 +49,8 @@ class Appointment {
       'id': id,
       'patientId': patientId,
       'dateTime': dateTime.toIso8601String(),
-      'status': status,
-      'paymentStatus': paymentStatus,
+      'status': status.toString().split('.').last,
+      'paymentStatus': paymentStatus.toString().split('.').last,
       'doctorId': doctorId,
       'appointmentSlotId': appointmentSlotId,
       'notes': notes,
@@ -62,12 +62,27 @@ class Appointment {
       id: map['id'] ?? '',
       patientId: map['patientId'] ?? '',
       dateTime: DateTime.parse(map['dateTime']),
-      status: map['status'] ?? 'scheduled',
-      paymentStatus: map['paymentStatus'] ?? 'unpaid',
+      status: _parseStatus(map['status'] ?? 'scheduled'),
+      paymentStatus: _parsePaymentStatus(map['paymentStatus'] ?? 'unpaid'),
       doctorId: map['doctorId'] ?? '',
       appointmentSlotId: map['appointmentSlotId'] ?? '',
       notes: map['notes'],
     );
+  }
+  
+  static AppointmentStatus _parseStatus(String status) {
+    switch (status) {
+      case 'completed':
+        return AppointmentStatus.completed;
+      case 'cancelled':
+        return AppointmentStatus.cancelled;
+      default:
+        return AppointmentStatus.scheduled;
+    }
+  }
+  
+  static PaymentStatus _parsePaymentStatus(String status) {
+    return status == 'paid' ? PaymentStatus.paid : PaymentStatus.unpaid;
   }
   
   bool isSameDay(DateTime date) {
