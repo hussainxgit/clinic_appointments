@@ -39,64 +39,56 @@ class _DoctorsScreenState extends ConsumerState<DoctorsScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        title: const Text('Doctors'),
         elevation: 0,
-        title: const Text('All Doctors'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list, ),
-            onPressed: () => _showFilterBottomSheet(context),
+            icon: const Icon(Icons.filter_alt_outlined),
+            tooltip: 'Filter',
+            onPressed: () => _showFilterDialog(context),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildSearchBar(),
-          const SizedBox(height: 16),
-          Expanded(child: _buildDoctorList(doctorState)),
-        ],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _buildSearchBar(context),
+            const SizedBox(height: 16),
+            Expanded(child: _buildDoctorList(doctorState)),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => navigationService.navigateTo('/doctor/add'),
-        backgroundColor: Theme.of(context).primaryColor,
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildSearchBar() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: 'Search doctors...',
-          prefixIcon: const Icon(Icons.search, color: Colors.grey),
-          suffixIcon:
-              _searchQuery.isNotEmpty
-                  ? IconButton(
-                    icon: const Icon(Icons.clear, color: Colors.grey),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                  )
-                  : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15),
+  Widget _buildSearchBar(BuildContext context) {
+    return TextField(
+      controller: _searchController,
+      decoration: InputDecoration(
+        hintText: 'Search doctors',
+        prefixIcon: const Icon(Icons.search),
+        suffixIcon: _searchQuery.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _searchQuery = '');
+                },
+              )
+            : null,
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surfaceContainer,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
-        onChanged: (value) => setState(() => _searchQuery = value),
       ),
+      onChanged: (value) => setState(() => _searchQuery = value),
     );
   }
 
@@ -116,181 +108,110 @@ class _DoctorsScreenState extends ConsumerState<DoctorsScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh:
-          () => ref.read(doctorNotifierProvider.notifier).refreshDoctors(),
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+      onRefresh: () => ref.read(doctorNotifierProvider.notifier).refreshDoctors(),
+      child: ListView.separated(
         itemCount: filteredDoctors.length,
-        itemBuilder:
-            (context, index) => _buildDoctorCard(filteredDoctors[index]),
+        separatorBuilder: (context, index) => const SizedBox(height: 8),
+        itemBuilder: (context, index) => _buildDoctorCard(filteredDoctors[index]),
       ),
     );
   }
 
   Widget _buildDoctorCard(Doctor doctor) {
-    return ListTile(
-      onTap:
-          () => ref
-              .read(navigationServiceProvider)
-              .navigateTo('/doctor/profile', arguments: doctor),
-      contentPadding: const EdgeInsets.all(16),
-      // Leading widget (Avatar with availability indicator)
-      leading: SizedBox(
-        width: 60, // Fixed width to maintain consistent layout
-        child: Stack(
-          children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: Colors.blue[100],
-              foregroundImage:
-                  doctor.imageUrl != null
-                      ? NetworkImage(doctor.imageUrl!)
-                      : null,
-              child: Text(
-                doctor.name[0].toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.blue,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        onTap: () => ref.read(navigationServiceProvider).navigateTo('/doctor/profile', arguments: doctor),
+        leading: CircleAvatar(
+          radius: 24,
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+          foregroundImage: doctor.imageUrl != null ? NetworkImage(doctor.imageUrl!) : null,
+          child: Text(
+            doctor.name[0].toUpperCase(),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
-            if (doctor.isAvailable)
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.check, size: 16, color: Colors.white),
-                ),
-              ),
-          ],
-        ),
-      ),
-      // Title and subtitle
-      title: Text(
-        doctor.name,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(
-          doctor.specialty,
-          style: TextStyle(color: Colors.grey[600], fontSize: 14),
-        ),
-      ),
-      trailing: OutlinedButton(
-        onPressed: () {
-          _bookAppointment(doctor);
-        },
-        style: OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
-        child: const Text('Book Appointment'),
+        title: Text(doctor.name),
+        subtitle: Text(doctor.specialty),
+        trailing: doctor.isAvailable
+            ? FilledButton(
+                onPressed: () => _bookAppointment(doctor),
+                child: const Text('Book'),
+              )
+            : FilledButton.tonal(
+                onPressed: null,
+                child: const Text('Unavailable'),
+              ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
   }
 
-  void _showFilterBottomSheet(BuildContext context) {
-    showModalBottomSheet(
+  void _showFilterDialog(BuildContext context) {
+    showDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder:
-          (context) => StatefulBuilder(
-            builder:
-                (context, setModalState) => Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Filter Doctors',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Specialty',
-                          border: OutlineInputBorder(),
-                        ),
-                        value: _selectedSpecialty,
-                        items: [
-                          const DropdownMenuItem(
-                            value: null,
-                            child: Text('All Specialties'),
-                          ),
-                          ..._specialties.map(
-                            (s) => DropdownMenuItem(value: s, child: Text(s)),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setModalState(
-                            () => setState(() => _selectedSpecialty = value),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      SwitchListTile(
-                        title: const Text('Show Available Only'),
-                        value: _onlyShowAvailable,
-                        onChanged: (value) {
-                          setModalState(
-                            () => setState(() => _onlyShowAvailable = value),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Sort By',
-                          border: OutlineInputBorder(),
-                        ),
-                        value: _sortBy,
-                        items: const [
-                          DropdownMenuItem(value: 'name', child: Text('Name')),
-                          DropdownMenuItem(
-                            value: 'availability',
-                            child: Text('Availability'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setModalState(
-                            () => setState(() => _sortBy = value ?? 'name'),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+      builder: (context) => AlertDialog(
+        title: const Text('Filter Doctors'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Specialty',
+                  border: OutlineInputBorder(),
                 ),
+                value: _selectedSpecialty,
+                items: [
+                  const DropdownMenuItem(value: null, child: Text('All Specialties')),
+                  ..._specialties.map((s) => DropdownMenuItem(value: s, child: Text(s))),
+                ],
+                onChanged: (value) => setState(() => _selectedSpecialty = value),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('Available Only'),
+                value: _onlyShowAvailable,
+                onChanged: (value) => setState(() => _onlyShowAvailable = value),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Sort By',
+                  border: OutlineInputBorder(),
+                ),
+                value: _sortBy,
+                items: const [
+                  DropdownMenuItem(value: 'name', child: Text('Name')),
+                  DropdownMenuItem(value: 'availability', child: Text('Availability')),
+                ],
+                onChanged: (value) => setState(() => _sortBy = value ?? 'name'),
+              ),
+            ],
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 
   List<Doctor> _filterAndSortDoctors(List<Doctor> doctors) {
-    var filtered =
-        doctors.where((doctor) {
-          final nameMatch =
-              _searchQuery.isEmpty ||
-              doctor.name.toLowerCase().contains(_searchQuery.toLowerCase());
-          final specialtyMatch =
-              _selectedSpecialty == null ||
-              doctor.specialty == _selectedSpecialty;
-          final availabilityMatch = !_onlyShowAvailable || doctor.isAvailable;
-          return nameMatch && specialtyMatch && availabilityMatch;
-        }).toList();
+    var filtered = doctors.where((doctor) {
+      final nameMatch = _searchQuery.isEmpty || doctor.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      final specialtyMatch = _selectedSpecialty == null || doctor.specialty == _selectedSpecialty;
+      final availabilityMatch = !_onlyShowAvailable || doctor.isAvailable;
+      return nameMatch && specialtyMatch && availabilityMatch;
+    }).toList();
 
     switch (_sortBy) {
       case 'availability':
@@ -303,40 +224,33 @@ class _DoctorsScreenState extends ConsumerState<DoctorsScreen> {
   }
 
   Widget _buildErrorState(String error) => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.error_outline, size: 48, color: Colors.red),
-        const SizedBox(height: 16),
-        Text('Error: $error', style: const TextStyle(color: Colors.red)),
-        const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed:
-              () => ref.read(doctorNotifierProvider.notifier).refreshDoctors(),
-          child: const Text('Retry'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+            const SizedBox(height: 16),
+            Text('Error: $error', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error)),
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: () => ref.read(doctorNotifierProvider.notifier).refreshDoctors(),
+              child: const Text('Retry'),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 
   Widget _buildEmptyState() => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
-        const SizedBox(height: 16),
-        Text(
-          'No doctors found',
-          style: TextStyle(color: Colors.grey[600], fontSize: 16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            const SizedBox(height: 16),
+            Text('No doctors found', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text('Try adjusting your filters', style: Theme.of(context).textTheme.bodyMedium),
+          ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Try adjusting your filters',
-          style: TextStyle(color: Colors.grey[500], fontSize: 14),
-        ),
-      ],
-    ),
-  );
+      );
 
   void _bookAppointment(Doctor doctor) {
     ScaffoldMessenger.of(context).showSnackBar(

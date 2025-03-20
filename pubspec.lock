@@ -592,14 +592,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
-  myfatoorah_flutter:
-    dependency: "direct main"
-    description:
-      name: myfatoorah_flutter
-      sha256: c0e6808805083afd102fb61548aaa1215f4a2ab4e9a3ba8df994a9ecb0161e20
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.1"
   package_config:
     dependency: transitive
     description:

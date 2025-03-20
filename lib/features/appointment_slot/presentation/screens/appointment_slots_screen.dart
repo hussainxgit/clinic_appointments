@@ -1,11 +1,13 @@
 // lib/features/appointment_slot/presentation/screens/appointment_slots_screen.dart
 import 'package:clinic_appointments/features/doctor/domain/entities/doctor.dart';
 import 'package:clinic_appointments/features/doctor/presentation/provider/doctor_notifier.dart';
+import 'package:clinic_appointments/features/patient/presentation/providers/patient_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/di/core_providers.dart';
 import '../../../../core/ui/widgets/empty_state.dart';
+import '../../../patient/domain/entities/patient.dart';
 import '../providers/appointment_slot_notifier.dart';
 import '../../domain/entities/appointment_slot.dart';
 
@@ -13,10 +15,12 @@ class AppointmentSlotsScreen extends ConsumerStatefulWidget {
   const AppointmentSlotsScreen({super.key});
 
   @override
-  ConsumerState<AppointmentSlotsScreen> createState() => _AppointmentSlotsScreenState();
+  ConsumerState<AppointmentSlotsScreen> createState() =>
+      _AppointmentSlotsScreenState();
 }
 
-class _AppointmentSlotsScreenState extends ConsumerState<AppointmentSlotsScreen> {
+class _AppointmentSlotsScreenState
+    extends ConsumerState<AppointmentSlotsScreen> {
   String? _selectedDoctorId;
   DateTime _selectedDate = DateTime.now();
   final DateFormat _dateFormat = DateFormat('EEE, MMM d, yyyy');
@@ -82,9 +86,7 @@ class _AppointmentSlotsScreenState extends ConsumerState<AppointmentSlotsScreen>
             ),
           ),
           // Slot list
-          Expanded(
-            child: _buildSlotsList(),
-          ),
+          Expanded(child: _buildSlotsList()),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -118,14 +120,13 @@ class _AppointmentSlotsScreenState extends ConsumerState<AppointmentSlotsScreen>
       ),
       value: _selectedDoctorId,
       items: [
-        const DropdownMenuItem<String>(
-          value: null,
-          child: Text('All Doctors'),
+        const DropdownMenuItem<String>(value: null, child: Text('All Doctors')),
+        ...doctors.map(
+          (doctor) => DropdownMenuItem<String>(
+            value: doctor.id,
+            child: Text(doctor.name),
+          ),
         ),
-        ...doctors.map((doctor) => DropdownMenuItem<String>(
-              value: doctor.id,
-              child: Text(doctor.name),
-            )),
       ],
       onChanged: (value) {
         setState(() {
@@ -153,7 +154,11 @@ class _AppointmentSlotsScreenState extends ConsumerState<AppointmentSlotsScreen>
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => ref.read(appointmentSlotNotifierProvider.notifier).refreshSlots(),
+              onPressed:
+                  () =>
+                      ref
+                          .read(appointmentSlotNotifierProvider.notifier)
+                          .refreshSlots(),
               child: const Text('Retry'),
             ),
           ],
@@ -162,10 +167,9 @@ class _AppointmentSlotsScreenState extends ConsumerState<AppointmentSlotsScreen>
     }
 
     // Apply filters
-    final slots = ref.read(appointmentSlotNotifierProvider.notifier).getSlots(
-          doctorId: _selectedDoctorId,
-          date: _selectedDate,
-        );
+    final slots = ref
+        .read(appointmentSlotNotifierProvider.notifier)
+        .getSlots(doctorId: _selectedDoctorId, date: _selectedDate);
 
     if (slots.isEmpty) {
       return EmptyState(
@@ -173,7 +177,9 @@ class _AppointmentSlotsScreenState extends ConsumerState<AppointmentSlotsScreen>
         icon: Icons.event_busy,
         actionLabel: 'Add Slot',
         onAction: () {
-          ref.read(navigationServiceProvider).navigateTo('/appointment-slot/add');
+          ref
+              .read(navigationServiceProvider)
+              .navigateTo('/appointment-slot/add');
         },
       );
     }
@@ -181,19 +187,22 @@ class _AppointmentSlotsScreenState extends ConsumerState<AppointmentSlotsScreen>
     final doctorState = ref.watch(doctorNotifierProvider);
 
     return RefreshIndicator(
-      onRefresh: () => ref.read(appointmentSlotNotifierProvider.notifier).refreshSlots(),
+      onRefresh:
+          () =>
+              ref.read(appointmentSlotNotifierProvider.notifier).refreshSlots(),
       child: ListView.builder(
         itemCount: slots.length,
         itemBuilder: (context, index) {
           final slot = slots[index];
           final doctor = doctorState.doctors.firstWhere(
             (d) => d.id == slot.doctorId,
-            orElse: () => Doctor(
-              id: slot.doctorId,
-              name: 'Unknown Doctor',
-              specialty: '',
-              phoneNumber: '',
-            ),
+            orElse:
+                () => Doctor(
+                  id: slot.doctorId,
+                  name: 'Unknown Doctor',
+                  specialty: '',
+                  phoneNumber: '',
+                ),
           );
           return _buildSlotItem(slot, doctor.name);
         },
@@ -203,7 +212,9 @@ class _AppointmentSlotsScreenState extends ConsumerState<AppointmentSlotsScreen>
 
   Widget _buildSlotItem(AppointmentSlot slot, String doctorName) {
     final navigationService = ref.read(navigationServiceProvider);
-    
+    final doctorState = ref.watch(doctorNotifierProvider);
+    final patientState = ref.watch(patientNotifierProvider);
+
     final availabilityColor = slot.isFullyBooked ? Colors.red : Colors.green;
     final timeString = DateFormat('h:mm a').format(slot.date);
     final dateString = DateFormat('EEE, MMM d').format(slot.date);
@@ -256,8 +267,30 @@ class _AppointmentSlotsScreenState extends ConsumerState<AppointmentSlotsScreen>
         onTap: () {
           // View slot details or edit
           navigationService.navigateTo(
-            '/appointment-slot/edit',
-            arguments: slot,
+            '/appointment-slot/details',
+            arguments: {
+              'slot': slot,
+              'doctor': doctorState.doctors.firstWhere(
+                (d) => d.id == slot.doctorId,
+                orElse:
+                    () => Doctor(
+                      id: slot.doctorId,
+                      name: 'Unknown Doctor',
+                      specialty: '',
+                      phoneNumber: '',
+                    ),
+              ),
+              'patient': patientState.patients.firstWhere(
+                (d) => d.id == slot.doctorId,
+                orElse:
+                    () => Patient(
+                      id: slot.doctorId,
+                      name: 'Unknown Patient',
+                      phone: '',
+                      registeredAt: DateTime.now(),
+                    ),
+              ),
+            },
           );
         },
       ),
@@ -282,29 +315,33 @@ class _AppointmentSlotsScreenState extends ConsumerState<AppointmentSlotsScreen>
   Future<void> _confirmDelete(AppointmentSlot slot) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Deletion'),
-        content:
-            Text('Are you sure you want to delete this appointment slot?\n\n'
-                'Doctor: ${slot.doctorId}\n'
-                'Date: ${DateFormat('EEE, MMM d, yyyy').format(slot.date)}\n'
-                'Time: ${DateFormat('h:mm a').format(slot.date)}'),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.of(context).pop(false),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Confirm Deletion'),
+            content: Text(
+              'Are you sure you want to delete this appointment slot?\n\n'
+              'Doctor: ${slot.doctorId}\n'
+              'Date: ${DateFormat('EEE, MMM d, yyyy').format(slot.date)}\n'
+              'Time: ${DateFormat('h:mm a').format(slot.date)}',
+            ),
+            actions: [
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
 
     if (confirmed == true) {
-      final result = await ref.read(appointmentSlotNotifierProvider.notifier).removeSlot(slot.id);
+      final result = await ref
+          .read(appointmentSlotNotifierProvider.notifier)
+          .removeSlot(slot.id);
 
       if (result.isFailure) {
         ScaffoldMessenger.of(context).showSnackBar(

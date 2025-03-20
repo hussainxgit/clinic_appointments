@@ -1,6 +1,7 @@
 // lib/features/appointment_slot/appointment_slot_module.dart
 import 'package:clinic_appointments/features/appointment_slot/data/appointment_slot_providers.dart';
 import 'package:clinic_appointments/features/appointment_slot/presentation/providers/appointment_slot_notifier.dart';
+import 'package:clinic_appointments/features/appointment_slot/presentation/screens/appointment_slot_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/module/feature_module.dart';
@@ -33,6 +34,7 @@ class AppointmentSlotModule implements FeatureModule {
         (_) => const AppointmentSlotFormScreen(isEditing: false),
     '/appointment-slot/edit':
         (_) => const AppointmentSlotFormScreen(isEditing: true),
+    '/appointment-slot/details': (_) => const AppointmentSlotDetailsScreen(),
   };
 
   @override
