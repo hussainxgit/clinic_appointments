@@ -14,7 +14,6 @@ part 'sms_service.g.dart';
 
 // SMS configuration provider
 final smsConfigProvider = Provider<Map<String, dynamic>>((ref) {
-  // In production, these would come from secure storage or environment variables
   return {
     'defaultProvider': 'twilio',
     'providers': {
@@ -22,8 +21,7 @@ final smsConfigProvider = Provider<Map<String, dynamic>>((ref) {
         'accountSid': Platform.environment['TWILIO_ACCOUNT_SID'] ?? '',
         'authToken': Platform.environment['TWILIO_AUTH_TOKEN'] ?? '',
         'defaultFrom': '+19896137314',
-      }, 
-      // Add other providers here
+      },
     },
   };
 });
@@ -32,10 +30,7 @@ final smsConfigProvider = Provider<Map<String, dynamic>>((ref) {
 SmsService smsService(Ref ref) {
   final smsRepository = ref.watch(smsRepositoryProvider);
   final config = ref.watch(smsConfigProvider);
-  return SmsService(
-    repository: smsRepository,
-    config: config,
-  );
+  return SmsService(repository: smsRepository, config: config);
 }
 
 class SmsService {
@@ -55,7 +50,7 @@ class SmsService {
   /// Register an SMS provider
   void registerProvider(SmsProvider provider, {Map<String, dynamic>? config}) {
     _providers[provider.providerId] = provider;
-    
+
     // Initialize provider if config is provided
     if (config != null) {
       provider.initialize(config);
@@ -74,12 +69,9 @@ class SmsService {
   }
 
   /// Send an SMS message using the specified provider
-  Future<SmsResponse> sendSms(
-    SmsMessage message, {
-    String? providerId,
-  }) async {
+  Future<SmsResponse> sendSms(SmsMessage message, {String? providerId}) async {
     final useProviderId = providerId ?? _defaultProviderId;
-    
+
     // Get the provider
     final provider = _providers[useProviderId];
     if (provider == null) {
@@ -87,7 +79,7 @@ class SmsService {
         errorMessage: 'SMS provider $useProviderId not found or not registered',
       );
     }
-    
+
     try {
       // Create pending record
       final record = SmsRecord(
@@ -99,12 +91,12 @@ class SmsService {
         status: 'pending',
         createdAt: DateTime.now(),
       );
-      
+
       final savedRecord = await _repository.createSmsRecord(record);
-      
+
       // Send SMS
       final response = await provider.sendSms(message);
-      
+
       // Update record with result
       final updatedRecord = savedRecord.copyWith(
         messageId: response.messageId,
@@ -113,9 +105,9 @@ class SmsService {
         updatedAt: DateTime.now(),
         metadata: response.providerResponse,
       );
-      
+
       await _repository.updateSmsRecord(updatedRecord);
-      
+
       return response;
     } catch (e) {
       return SmsResponse.error(
@@ -123,7 +115,7 @@ class SmsService {
       );
     }
   }
-  
+
   /// Check the status of a sent message
   Future<SmsResponse> checkMessageStatus(String messageId) async {
     try {
@@ -134,7 +126,7 @@ class SmsService {
           errorMessage: 'Message with ID $messageId not found',
         );
       }
-      
+
       // Get the provider
       final provider = _providers[record.providerId];
       if (provider == null) {
@@ -142,10 +134,10 @@ class SmsService {
           errorMessage: 'Provider ${record.providerId} not found',
         );
       }
-      
+
       // Check status
       final response = await provider.checkStatus(messageId);
-      
+
       // Update record
       final updatedRecord = record.copyWith(
         status: _mapStatusToString(response.status),
@@ -153,9 +145,9 @@ class SmsService {
         updatedAt: DateTime.now(),
         metadata: response.providerResponse,
       );
-      
+
       await _repository.updateSmsRecord(updatedRecord);
-      
+
       return response;
     } catch (e) {
       return SmsResponse.error(
@@ -163,10 +155,10 @@ class SmsService {
       );
     }
   }
-  
+
   /// Process webhook callback from provider
   Future<SmsResponse> processWebhook(
-    String providerId, 
+    String providerId,
     Map<String, dynamic> data,
   ) async {
     try {
@@ -176,13 +168,11 @@ class SmsService {
           errorMessage: 'Provider $providerId not found',
         );
       }
-      
+
       if (!provider.validateWebhook(data)) {
-        return SmsResponse.error(
-          errorMessage: 'Invalid webhook data',
-        );
+        return SmsResponse.error(errorMessage: 'Invalid webhook data');
       }
-      
+
       // Extract message ID from webhook data (implementation depends on provider)
       final messageId = _extractMessageId(providerId, data);
       if (messageId == null) {
@@ -190,10 +180,10 @@ class SmsService {
           errorMessage: 'Could not extract message ID from webhook data',
         );
       }
-      
+
       // Extract status
       final status = provider.extractStatusFromWebhook(data);
-      
+
       // Update record if found
       final record = await _repository.getSmsRecordByMessageId(messageId);
       if (record != null) {
@@ -202,10 +192,10 @@ class SmsService {
           updatedAt: DateTime.now(),
           metadata: {...?record.metadata, 'webhook': data},
         );
-        
+
         await _repository.updateSmsRecord(updatedRecord);
       }
-      
+
       return SmsResponse.success(
         messageId: messageId,
         status: status,
@@ -217,7 +207,7 @@ class SmsService {
       );
     }
   }
-  
+
   /// Get message history for a recipient
   Future<List<SmsRecord>> getMessageHistory(String recipient) async {
     try {
@@ -227,15 +217,16 @@ class SmsService {
       return [];
     }
   }
-  
+
   // Helper methods
   Map<String, Map<String, dynamic>> _getProvidersConfig() {
     final config = _repository.getConfigMap();
     return (config['providers'] as Map<String, dynamic>?)?.map(
-      (key, value) => MapEntry(key, value as Map<String, dynamic>),
-    ) ?? {};
+          (key, value) => MapEntry(key, value as Map<String, dynamic>),
+        ) ??
+        {};
   }
-  
+
   String _mapStatusToString(SmsDeliveryStatus status) {
     switch (status) {
       case SmsDeliveryStatus.sent:
@@ -252,7 +243,7 @@ class SmsService {
         return 'unknown';
     }
   }
-  
+
   String? _extractMessageId(String providerId, Map<String, dynamic> data) {
     switch (providerId) {
       case 'twilio':
