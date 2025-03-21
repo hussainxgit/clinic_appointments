@@ -38,6 +38,20 @@ Project directory structure
 │       │   └───presentation
 │       │       ├───provider
 │       │       └───screens
+│       ├───messaging
+│       │   ├───data
+│       │   │   ├───models
+│       │   │   ├───providers
+│       │   │   ├───repositories
+│       │   │   └───templates
+│       │   ├───domain
+│       │   │   ├───entities
+│       │   │   └───interfaces
+│       │   ├───presentation
+│       │   │   ├───controllers
+│       │   │   ├───providers
+│       │   │   └───screen
+│       │   └───services
 │       ├───patient
 │       │   ├───data
 │       │   ├───domain

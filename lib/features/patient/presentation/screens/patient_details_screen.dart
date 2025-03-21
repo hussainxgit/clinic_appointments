@@ -21,6 +21,13 @@ class PatientDetailsScreen extends ConsumerWidget {
         title: Text(patient.name),
         actions: [
           IconButton(
+            icon: const Icon(Icons.sms),
+            onPressed: () {
+              _sendWhatsAppTemplateMessage(patient, ref);
+            },
+            tooltip: 'Send WhatsApp Message',
+          ),
+          IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
               navigationService.navigateTo('/patient/edit', arguments: patient);
@@ -372,5 +379,14 @@ class PatientDetailsScreen extends ConsumerWidget {
   String _capitalizeFirst(String text) {
     if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1);
+  }
+
+  void _sendWhatsAppTemplateMessage(Patient patient, WidgetRef ref) {
+    if (patient.phone.isEmpty) return;
+
+    // Navigate to the template message screen with patient phone pre-filled
+    ref
+        .read(navigationServiceProvider)
+        .navigateTo('/messaging/template', arguments: patient.phone);
   }
 }

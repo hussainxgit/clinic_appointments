@@ -3,6 +3,7 @@ import 'package:clinic_appointments/features/payment/payment_module.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'features/messaging/messaging_module.dart';
 import 'firebase_options.dart';
 import 'core/di/core_providers.dart';
 import 'core/ui/theme/app_theme.dart';
@@ -33,6 +34,7 @@ void main() async {
   featureRegistry.registerModule(AppointmentSlotModule());
   featureRegistry.registerModule(AppointmentModule());
   featureRegistry.registerModule(PaymentModule());
+  featureRegistry.registerModule(MessagingModule());
 
   
   await featureRegistry.initializeAllModules();
