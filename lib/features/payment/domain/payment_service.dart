@@ -1,11 +1,11 @@
 // lib/features/payment/domain/payment_service.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../.my_secrets.dart';
 import '../../../core/utils/result.dart';
 import '../data/payment_repository_provider.dart';
 import '../data/models/payment_record.dart';
 import '../data/repository/payment_repository.dart';
 import '../data/gateways/myfatoorah_gateway.dart';
-import '../data/gateways/tap_to_pay_gateway.dart';
 import 'interfaces/payment_gateway.dart';
 import 'entities/payment_request.dart';
 import 'entities/payment_response.dart';
@@ -17,16 +17,7 @@ final paymentConfigProvider = Provider<Map<String, dynamic>>((ref) {
   return {
     'defaultGateway': 'myfatoorah', // or 'tap'
     'gateways': {
-      'myfatoorah': {
-        'apiKey':
-            'A6mb_CU9MDQuG3bSpC591IMS1UtAQU40Hyt6ba-tlkvxiaWVejiZGDvvyot2X6m4pQsukf6BZsvRxl8qyBWXIbZ-FsmozNRmbLEV5XyvBWC9KNU1Ao3LgTvxIj_lf_RJAiAWfiYch9EV3XI7EE5tEh-V5zCx9GQheS0f40LcCZLSTkxqom0CeeODy65sucz9ae6MxtBOUNszOaevajNNAVMxTNns3mhoxedCnaBqLU-KlbQHUxHfmtIYV8jsG1i2p7mvHSo0NhXTvLbdwuzXldxa0lPWmx4cJiyZzonkf12en6yCiIW_1Yh4mGoMZHTnUIj-25-s4RO153Akvj0d8kmTWXeq5kr_XPAf_icbVkKtFiaSpj9WvrdsEAwBIjqCs-1pqwzWxdHuk9K-i5NjM4wJunv6XmeL85mIH0DHPyscTRAQ28luX_X08Y5P2Dowmg55ER-QNdPt__ip_BCKM4SNeOsyIPsOxaFLI8nukZ-w9SBH4iMgrJ7BefsN64RZ-z_RUqgRMjGcTR4wsinodhG4YghJ-8iNh8LXRTIaQI4Tna_hMIPeDhQlH4D6vHzpL9qqe8RujhAY5JA6RveR8Dsm3zJ8YpEnMU8gfVMHJYDzBhwEZeuZjybPFElf8y5tx203g-HMo6gkxwWz3bdvNI2Nn3alnYt35Z7qhZTKoTIW5EriiwBdTzB4moqWg506GnUcng',
-        'testMode': true,
-      },
-      'tap': {
-        'apiKey': 'YOUR_TAP_API_KEY',
-        'secretKey': 'YOUR_TAP_SECRET_KEY',
-        'testMode': true,
-      },
+      'myfatoorah': {'apiKey': myfatoorahApiKey, 'testMode': true},
       'tap_to_pay': {'testMode': true},
     },
   };
@@ -44,10 +35,8 @@ class PaymentService {
        _defaultGatewayId = config['defaultGateway'] ?? 'myfatoorah' {
     // Initialize all supported gateways
     final myfatoorah = MyFatoorahGateway();
-    final tapToPay = TapToPayGateway();
 
     _gateways[myfatoorah.gatewayId] = myfatoorah;
-    _gateways[tapToPay.gatewayId] = tapToPay;
 
     // Initialize gateways with their configs
     final gatewayConfigs = config['gateways'] as Map<String, dynamic>? ?? {};

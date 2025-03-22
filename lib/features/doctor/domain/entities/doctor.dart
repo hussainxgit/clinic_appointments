@@ -9,6 +9,7 @@ class Doctor {
   final String? bio;
   final bool isAvailable;
   final Map<String, String>? socialMedia;
+  final DateTime? createdAt;
 
   Doctor({
     required this.id,
@@ -20,6 +21,7 @@ class Doctor {
     this.bio,
     this.isAvailable = true,
     this.socialMedia,
+    this.createdAt,
   });
 
   Doctor copyWith({
@@ -32,6 +34,7 @@ class Doctor {
     String? bio,
     bool? isAvailable,
     Map<String, String>? socialMedia,
+    DateTime? createdAt,
   }) {
     return Doctor(
       id: id ?? this.id,
@@ -43,6 +46,7 @@ class Doctor {
       bio: bio ?? this.bio,
       isAvailable: isAvailable ?? this.isAvailable,
       socialMedia: socialMedia ?? this.socialMedia,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -56,9 +60,11 @@ class Doctor {
       imageUrl: json['imageUrl'],
       isAvailable: json['isAvailable'] ?? true,
       bio: json['bio'],
-      socialMedia: json['socialMedia'] != null
-          ? Map<String, String>.from(json['socialMedia'])
-          : null,
+      socialMedia:
+          json['socialMedia'] != null
+              ? Map<String, String>.from(json['socialMedia'])
+              : null,
+      createdAt: json['createdAt'],
     );
   }
 
@@ -73,6 +79,7 @@ class Doctor {
       'isAvailable': isAvailable,
       'bio': bio,
       'socialMedia': socialMedia,
+      'createdAt': createdAt?.toIso8601String(),
     };
   }
 }

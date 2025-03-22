@@ -1,4 +1,5 @@
 // lib/main.dart
+import 'package:clinic_appointments/features/dashboard/dashboard_module.dart';
 import 'package:clinic_appointments/features/payment/payment_module.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,6 +30,7 @@ void main() async {
   final featureRegistry = FeatureRegistry();
   
   // Register modules in correct order
+  featureRegistry.registerModule(DashboardModule());
   featureRegistry.registerModule(DoctorModule());
   featureRegistry.registerModule(PatientModule());
   featureRegistry.registerModule(AppointmentSlotModule());

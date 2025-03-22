@@ -6,7 +6,6 @@ import 'data/providers/twilio_provider.dart';
 import 'data/repositories/sms_repository.dart';
 import 'presentation/screen/messaging_history_screen.dart';
 import 'presentation/screen/messaging_screen.dart';
-import 'presentation/screen/messaging_settings_screen.dart';
 import 'presentation/screen/template_message_screen.dart';
 import 'services/sms_service.dart';
 
@@ -35,7 +34,6 @@ class MessagingModule implements FeatureModule {
     '/messaging': (_) => const MessagingScreen(),
     '/messaging/template': (_) => const TemplateMessageScreen(),
     '/messaging/history': (_) => const MessagingHistoryScreen(),
-    '/messaging/settings': (_) => const MessagingSettingsScreen(),
   };
 
   @override

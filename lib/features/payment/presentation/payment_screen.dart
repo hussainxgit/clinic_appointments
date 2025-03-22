@@ -25,8 +25,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   bool _isCompleted = false;
   int _statusCheckAttempts = 0;
   final int _maxStatusCheckAttempts = 30;
-  bool _browserLaunched = false;
-  Uri? _paymentUrl;
   
   // Status tracking
   PaymentStatusType _currentStatus = PaymentStatusType.pending;
@@ -330,9 +328,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               _statusCheckAttempts = 0;
               _currentStatus = PaymentStatusType.pending;
               
-              if (result.data.type == PaymentResponseType.redirect) {
-                _paymentUrl = Uri.parse(result.data.redirectUrl!);
-              }
             });
             
             if (result.data.type == PaymentResponseType.redirect) {
@@ -351,10 +346,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
 
   Future<void> _launchBrowser(String url) async {
     final uri = Uri.parse(url);
-    setState(() {
-      _browserLaunched = true;
-    });
-    
     try {
       await launchUrl(
         uri,

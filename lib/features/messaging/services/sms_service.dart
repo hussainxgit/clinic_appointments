@@ -1,10 +1,10 @@
 // lib/features/messaging/domain/services/sms_service.dart
-import 'dart:io';
-
+import 'package:clinic_appointments/.my_secrets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../data/models/sms_record.dart';
+import '../data/providers/twilio_provider.dart';
 import '../data/repositories/sms_repository.dart';
 import '../domain/entities/sms_message.dart';
 import '../domain/entities/sms_response.dart';
@@ -18,9 +18,9 @@ final smsConfigProvider = Provider<Map<String, dynamic>>((ref) {
     'defaultProvider': 'twilio',
     'providers': {
       'twilio': {
-        'accountSid': Platform.environment['TWILIO_ACCOUNT_SID'] ?? '',
-        'authToken': Platform.environment['TWILIO_AUTH_TOKEN'] ?? '',
-        'defaultFrom': '+19896137314',
+        'accountSid': twilio_acc_id,
+        'authToken': twilio_authToken,
+        'defaultFrom': twilio_defaultFrom,
       },
     },
   };
@@ -73,13 +73,31 @@ class SmsService {
     final useProviderId = providerId ?? _defaultProviderId;
 
     // Get the provider
-    final provider = _providers[useProviderId];
+    var provider = _providers[useProviderId];
+
+    // Auto-register Twilio if needed
+    if (provider == null && useProviderId == 'twilio') {
+      print("Twilio provider not registered, registering now");
+      try {
+        final twilio = TwilioProvider();
+        final config = _repository.getConfigMap();
+        final providerConfig =
+            (config['providers'] as Map<String, dynamic>)['twilio'];
+
+        await twilio.initialize(providerConfig);
+        registerProvider(twilio);
+        provider = twilio;
+        print("Twilio registered on demand");
+      } catch (e) {
+        print("Failed to auto-register Twilio: $e");
+      }
+    }
+    // If provider is still null after auto-registration
     if (provider == null) {
       return SmsResponse.error(
         errorMessage: 'SMS provider $useProviderId not found or not registered',
       );
     }
-
     try {
       // Create pending record
       final record = SmsRecord(

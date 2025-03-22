@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/core_providers.dart';
-import '../../presentation/provider/doctor_notifier.dart';
+import '../../../../core/navigation/navigation_service.dart';
 import '../../domain/entities/doctor.dart';
+import '../../presentation/provider/doctor_notifier.dart';
 
 class DoctorsScreen extends ConsumerStatefulWidget {
   const DoctorsScreen({super.key});
@@ -14,17 +15,6 @@ class DoctorsScreen extends ConsumerStatefulWidget {
 class _DoctorsScreenState extends ConsumerState<DoctorsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String? _selectedSpecialty;
-  bool _onlyShowAvailable = false;
-  String _sortBy = 'name';
-
-  static const List<String> _specialties = [
-    'General Ophthalmology',
-    'Retina',
-    'Cornea',
-    'Pediatric',
-    'Glaucoma',
-  ];
 
   @override
   void dispose() {
@@ -38,43 +28,89 @@ class _DoctorsScreenState extends ConsumerState<DoctorsScreen> {
     final navigationService = ref.read(navigationServiceProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Doctors'),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_alt_outlined),
-            tooltip: 'Filter',
-            onPressed: () => _showFilterDialog(context),
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            _buildSearchBar(context),
-            const SizedBox(height: 16),
-            Expanded(child: _buildDoctorList(doctorState)),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => navigationService.navigateTo('/doctor/add'),
-        child: const Icon(Icons.add),
+      appBar: _buildAppBar(navigationService, doctorState.doctors.length),
+      body: Container(
+        color: Colors.grey[50],
+        child: doctorState.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : doctorState.error != null
+                ? _buildErrorView(doctorState.error!)
+                : _buildDoctorList(doctorState.doctors),
       ),
     );
   }
 
-  Widget _buildSearchBar(BuildContext context) {
+  AppBar _buildAppBar(NavigationService navigationService, int count) {
+    return AppBar(
+      title: Row(
+        children: [
+          Text(count.toString(), style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Colors.deepOrange,
+                fontWeight: FontWeight.bold,
+              )),
+          const SizedBox(width: 8),
+          Text('Doctors', style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Colors.grey[800],
+                fontWeight: FontWeight.bold,
+              )),
+        ],
+      ),
+      actions: [
+        ElevatedButton.icon(
+          onPressed: () => navigationService.navigateTo('/doctor/add'),
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text('Add Doctor', style: TextStyle(color: Colors.white)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.deepOrange,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+        const SizedBox(width: 16),
+      ],
+      backgroundColor: Colors.white,
+      elevation: 0,
+    );
+  }
+
+  Widget _buildDoctorList(List<Doctor> doctors) {
+    final filteredDoctors = doctors
+        .where((doctor) => _searchQuery.isEmpty || 
+            doctor.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildSearchBar(),
+          const SizedBox(height: 16),
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                childAspectRatio: 0.85,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: filteredDoctors.length,
+              itemBuilder: (context, index) => _buildDoctorCard(filteredDoctors[index]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
     return TextField(
       controller: _searchController,
+      onChanged: (value) => setState(() => _searchQuery = value),
       decoration: InputDecoration(
         hintText: 'Search doctors',
-        prefixIcon: const Icon(Icons.search),
+        prefixIcon: const Icon(Icons.search, color: Colors.grey),
         suffixIcon: _searchQuery.isNotEmpty
             ? IconButton(
-                icon: const Icon(Icons.clear),
+                icon: const Icon(Icons.clear, color: Colors.grey),
                 onPressed: () {
                   _searchController.clear();
                   setState(() => _searchQuery = '');
@@ -82,37 +118,11 @@ class _DoctorsScreenState extends ConsumerState<DoctorsScreen> {
               )
             : null,
         filled: true,
-        fillColor: Theme.of(context).colorScheme.surfaceContainer,
+        fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
         ),
-      ),
-      onChanged: (value) => setState(() => _searchQuery = value),
-    );
-  }
-
-  Widget _buildDoctorList(DoctorState doctorState) {
-    if (doctorState.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (doctorState.error != null) {
-      return _buildErrorState(doctorState.error!);
-    }
-
-    final filteredDoctors = _filterAndSortDoctors(doctorState.doctors);
-
-    if (filteredDoctors.isEmpty) {
-      return _buildEmptyState();
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => ref.read(doctorNotifierProvider.notifier).refreshDoctors(),
-      child: ListView.separated(
-        itemCount: filteredDoctors.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 8),
-        itemBuilder: (context, index) => _buildDoctorCard(filteredDoctors[index]),
       ),
     );
   }
@@ -121,142 +131,189 @@ class _DoctorsScreenState extends ConsumerState<DoctorsScreen> {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        onTap: () => ref.read(navigationServiceProvider).navigateTo('/doctor/profile', arguments: doctor),
-        leading: CircleAvatar(
-          radius: 24,
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-          foregroundImage: doctor.imageUrl != null ? NetworkImage(doctor.imageUrl!) : null,
-          child: Text(
-            doctor.name[0].toUpperCase(),
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        title: Text(doctor.name),
-        subtitle: Text(doctor.specialty),
-        trailing: doctor.isAvailable
-            ? FilledButton(
-                onPressed: () => _bookAppointment(doctor),
-                child: const Text('Book'),
-              )
-            : FilledButton.tonal(
-                onPressed: null,
-                child: const Text('Unavailable'),
+      child: InkWell(
+        onTap: () => ref.read(navigationServiceProvider).navigateTo('/doctor/details', arguments: doctor),
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildCardHeader(doctor),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(doctor.name, 
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  Text('Project Manager', 
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  _buildInfoRow('Department', doctor.specialty),
+                  const SizedBox(height: 4),
+                  _buildInfoRow('Hired Date', _formatDate()),
+                  const SizedBox(height: 12),
+                  _buildContactInfo(Icons.email_outlined, doctor.email ?? 'Ronald043@gmail.com'),
+                  const SizedBox(height: 8),
+                  _buildContactInfo(Icons.phone_outlined, 
+                      doctor.phoneNumber.isNotEmpty ? doctor.phoneNumber : '(229) 555-0109'),
+                ],
               ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  void _showFilterDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Filter Doctors'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+  Widget _buildCardHeader(Doctor doctor) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Stack(
             children: [
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Specialty',
-                  border: OutlineInputBorder(),
-                ),
-                value: _selectedSpecialty,
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('All Specialties')),
-                  ..._specialties.map((s) => DropdownMenuItem(value: s, child: Text(s))),
-                ],
-                onChanged: (value) => setState(() => _selectedSpecialty = value),
+              CircleAvatar(
+                radius: 40,
+                backgroundImage: doctor.imageUrl?.isNotEmpty ?? false
+                    ? NetworkImage(doctor.imageUrl!)
+                    : null,
+                child: doctor.imageUrl?.isEmpty ?? true
+                    ? _buildDoctorAvatar(doctor)
+                    : null,
               ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Available Only'),
-                value: _onlyShowAvailable,
-                onChanged: (value) => setState(() => _onlyShowAvailable = value),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Sort By',
-                  border: OutlineInputBorder(),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: CircleAvatar(
+                  radius: 12,
+                  backgroundColor: doctor.isAvailable ? Colors.green : Colors.grey,
                 ),
-                value: _sortBy,
-                items: const [
-                  DropdownMenuItem(value: 'name', child: Text('Name')),
-                  DropdownMenuItem(value: 'availability', child: Text('Availability')),
-                ],
-                onChanged: (value) => setState(() => _sortBy = value ?? 'name'),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_horiz, color: Colors.black45),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            onSelected: (value) => _handleMenuSelection(value, doctor),
+            itemBuilder: (context) => [
+              _buildMenuItem('edit', Icons.edit, 'Edit'),
+              _buildMenuItem('delete', Icons.delete, 'Delete'),
+            ],
           ),
         ],
       ),
     );
   }
 
-  List<Doctor> _filterAndSortDoctors(List<Doctor> doctors) {
-    var filtered = doctors.where((doctor) {
-      final nameMatch = _searchQuery.isEmpty || doctor.name.toLowerCase().contains(_searchQuery.toLowerCase());
-      final specialtyMatch = _selectedSpecialty == null || doctor.specialty == _selectedSpecialty;
-      final availabilityMatch = !_onlyShowAvailable || doctor.isAvailable;
-      return nameMatch && specialtyMatch && availabilityMatch;
-    }).toList();
-
-    switch (_sortBy) {
-      case 'availability':
-        filtered.sort((a, b) => b.isAvailable ? 1 : -1);
-        break;
-      default:
-        filtered.sort((a, b) => a.name.compareTo(b.name));
-    }
-    return filtered;
+  PopupMenuItem<String> _buildMenuItem(String value, IconData icon, String text) {
+    return PopupMenuItem(
+      value: value,
+      child: Row(
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 8),
+          Text(text),
+        ],
+      ),
+    );
   }
 
-  Widget _buildErrorState(String error) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
-            const SizedBox(height: 16),
-            Text('Error: $error', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error)),
-            const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: () => ref.read(doctorNotifierProvider.notifier).refreshDoctors(),
-              child: const Text('Retry'),
-            ),
-          ],
+  Widget _buildDoctorAvatar(Doctor doctor) {
+    return CircleAvatar(
+      radius: 40,
+      backgroundColor: Colors.blueGrey[300],
+      child: Text(
+        doctor.name.isNotEmpty ? doctor.name[0].toUpperCase() : '?',
+        style: TextStyle(
+          fontSize: 36,
+          fontWeight: FontWeight.bold,
+          color: Colors.blueGrey[600],
         ),
-      );
+      ),
+    );
+  }
 
-  Widget _buildEmptyState() => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
-            const SizedBox(height: 16),
-            Text('No doctors found', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text('Try adjusting your filters', style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        ),
-      );
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      children: [
+        SizedBox(width: 90, child: Text(label, style: TextStyle(color: Colors.grey[600]))),
+        Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500))),
+      ],
+    );
+  }
 
-  void _bookAppointment(Doctor doctor) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Booking appointment with ${doctor.name}'),
-        action: SnackBarAction(label: 'Undo', onPressed: () {}),
+  Widget _buildContactInfo(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, overflow: TextOverflow.ellipsis)),
+      ],
+    );
+  }
+
+  String _formatDate() => DateTime.now().day.isEven ? '7/27/15' : '9/14/12';
+
+  void _handleMenuSelection(String value, Doctor doctor) {
+    if (value == 'edit') {
+      ref.read(navigationServiceProvider).navigateTo('/doctor/edit', arguments: doctor);
+    } else if (value == 'delete') {
+      _confirmDelete(doctor);
+    }
+  }
+
+  Future<void> _confirmDelete(Doctor doctor) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Doctor'),
+        content: Text('Are you sure you want to delete ${doctor.name}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete != true || !mounted) return;
+
+    final notifier = ref.read(doctorNotifierProvider.notifier);
+    final result = await notifier.deleteDoctor(doctor.id);
+
+    if (result.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Doctor deleted successfully')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${result.error}')),
+      );
+    }
+  }
+
+  Widget _buildErrorView(String error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const SizedBox(height: 16),
+          Text('Error: $error', style: const TextStyle(color: Colors.red)),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => ref.read(doctorNotifierProvider.notifier).refreshDoctors(),
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }

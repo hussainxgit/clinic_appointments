@@ -70,15 +70,26 @@ class _TemplateMessageScreenState extends ConsumerState<TemplateMessageScreen> {
     super.initState();
 
     // Make sure Twilio is registered
-    final smsService = ref.read(smsServiceProvider);
-    if (smsService.getProviders().isEmpty) {
-      final twilio = TwilioProvider();
-      final config = ref.read(smsConfigProvider);
-      final twilioConfig =
-          (config['providers'] as Map<String, dynamic>)['twilio'];
-      twilio.initialize(twilioConfig);
-      smsService.registerProvider(twilio);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final smsService = ref.read(smsServiceProvider);
+      if (smsService.getProviders().isEmpty) {
+        print('No SMS providers registered, registering Twilio now');
+
+        // Get config from provider
+        final config = ref.read(smsConfigProvider);
+        final twilioConfig =
+            (config['providers'] as Map<String, dynamic>)['twilio'];
+
+        final twilio = TwilioProvider();
+        try {
+          twilio.initialize(twilioConfig);
+          smsService.registerProvider(twilio);
+          print('Twilio provider registered successfully');
+        } catch (e) {
+          print('Failed to register Twilio: $e');
+        }
+      }
+    });
   }
 
   @override
@@ -421,12 +432,14 @@ class _TemplateMessageScreenState extends ConsumerState<TemplateMessageScreen> {
       final placeholderValues =
           _placeholderControllers.map((c) => c.text).toList();
 
-      // Format the template
-      final messageBody = _selectedTemplate!.format(placeholderValues);
+      // Create variables object for the template
+      final variables = {};
+      for (var i = 0; i < placeholderValues.length; i++) {
+        variables['${i + 1}'] = placeholderValues[i];
+      }
 
-      // For this example, we'll embed our important message into the verification code template
-      // This is a way to "hack" around the template restriction while waiting for approval
-      // Note: This is for demonstration - in a real app, you'd use properly approved templates
+      // Format the message body (for fallback)
+      final messageBody = _selectedTemplate!.format(placeholderValues);
 
       final message = SmsMessage(
         to: _toController.text,
@@ -434,16 +447,13 @@ class _TemplateMessageScreenState extends ConsumerState<TemplateMessageScreen> {
         body: messageBody,
         metadata: {
           'isWhatsApp': _isWhatsApp,
-          'templateId': _selectedTemplate!.id,
-          // In a real implementation, you'd include the template SID from Twilio
-          // 'templateSid': 'YOUR_TEMPLATE_SID',
+          'contentSid':
+              'HXb5b62575e6e4ff6129ad7c8efe1f983e', // Your template SID
+          'variables': variables,
         },
       );
 
-      final response = await smsService.sendSms(
-        message,
-        providerId: 'twilio', // Templates are specifically for Twilio
-      );
+      final response = await smsService.sendSms(message, providerId: 'twilio');
 
       setState(() {
         _isLoading = false;
@@ -452,7 +462,6 @@ class _TemplateMessageScreenState extends ConsumerState<TemplateMessageScreen> {
           _successMessage =
               'Template message sent successfully! ID: ${response.messageId}';
           // Clear form on success
-          if (!mounted) return;
           for (var controller in _placeholderControllers) {
             controller.clear();
           }

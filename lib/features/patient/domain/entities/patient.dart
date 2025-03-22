@@ -15,6 +15,7 @@ class Patient {
   final PatientStatus status;
   final String? notes;
   final List<String> appointmentIds;
+  final String? avatarUrl;
 
   Patient({
     required this.id,
@@ -28,6 +29,7 @@ class Patient {
     this.status = PatientStatus.active,
     this.notes,
     this.appointmentIds = const [],
+    this.avatarUrl,
   });
 
   Patient copyWith({
@@ -41,6 +43,7 @@ class Patient {
     PatientStatus? status,
     String? notes,
     List<String>? appointmentIds,
+    String? avatarUrl,
   }) {
     return Patient(
       id: id,
@@ -54,6 +57,7 @@ class Patient {
       status: status ?? this.status,
       notes: notes ?? this.notes,
       appointmentIds: appointmentIds ?? this.appointmentIds,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
     );
   }
 
@@ -70,6 +74,7 @@ class Patient {
       'status': status.toString().split('.').last,
       'notes': notes,
       'appointmentIds': appointmentIds,
+      'avatarUrl': avatarUrl,
     };
   }
 
@@ -97,6 +102,7 @@ class Patient {
           map['appointmentIds'] != null
               ? List<String>.from(map['appointmentIds'])
               : [],
+      avatarUrl: map['avatarUrl'],
     );
   }
 }
