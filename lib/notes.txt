@@ -1,6 +1,5 @@
 Project directory structure
 ├───lib
-│   ├───assets
 │   ├───core
 │   │   ├───data
 │   │   ├───di
@@ -30,6 +29,10 @@ Project directory structure
 │       │   └───presentation
 │       │       ├───providers
 │       │       └───screens
+│       ├───dashboard
+│       │   └───presentation
+│       │       ├───providers
+│       │       └───widgets
 │       ├───doctor
 │       │   ├───data
 │       │   ├───domain
@@ -49,7 +52,6 @@ Project directory structure
 │       │   │   └───interfaces
 │       │   ├───presentation
 │       │   │   ├───controllers
-│       │   │   ├───providers
 │       │   │   └───screen
 │       │   └───services
 │       ├───patient
