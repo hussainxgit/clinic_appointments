@@ -102,8 +102,7 @@ class PaymentNotifier extends _$PaymentNotifier {
     required String currency,
     required Patient patient,
     String? description,
-    String? returnUrl,
-    String? callbackUrl,
+
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 
@@ -118,8 +117,6 @@ class PaymentNotifier extends _$PaymentNotifier {
         customerName: patient.name,
         customerPhone: patient.phone,
         description: description ?? 'Payment for $referenceId',
-        returnUrl: returnUrl,
-        callbackUrl: callbackUrl,
         metadata: {
           'patientId': patient.id,
           'source': 'clinic_app',

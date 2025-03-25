@@ -25,7 +25,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   bool _isCompleted = false;
   int _statusCheckAttempts = 0;
   final int _maxStatusCheckAttempts = 30;
-  
+
   // Status tracking
   PaymentStatusType _currentStatus = PaymentStatusType.pending;
   String? _statusMessage;
@@ -64,12 +64,13 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         title: const Text('Process Payment'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => _handleBackButton(
-            context,
-            paymentState,
-            paymentNotifier,
-            navigationService,
-          ),
+          onPressed:
+              () => _handleBackButton(
+                context,
+                paymentState,
+                paymentNotifier,
+                navigationService,
+              ),
         ),
       ),
       body: _buildBody(
@@ -103,21 +104,21 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     }
     if (paymentState.currentPayment != null) {
       debugPrint('PaymentScreen: Showing payment processing view');
-      
+
       // Update status based on latest payment status
       if (paymentState.lastPaymentStatus != null) {
         _currentStatus = paymentState.lastPaymentStatus!.status;
         _statusMessage = paymentState.lastPaymentStatus!.errorMessage;
       }
-      
+
       return _buildPaymentProcessingView(
-        paymentState, 
+        paymentState,
         appointmentId,
-        amount, 
-        currency
+        amount,
+        currency,
       );
     }
-    
+
     debugPrint('PaymentScreen: Showing payment initiation view');
     return _buildPaymentInitiationView(
       paymentNotifier,
@@ -146,10 +147,13 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         _statusCheckTimer?.cancel();
         _showSuccessDialog(navigationService, amount, currency);
       });
-    } else if (paymentState.lastPaymentStatus?.status == PaymentStatusType.failed && !_isCompleted) {
+    } else if (paymentState.lastPaymentStatus?.status ==
+            PaymentStatusType.failed &&
+        !_isCompleted) {
       setState(() {
         _currentStatus = PaymentStatusType.failed;
-        _statusMessage = paymentState.lastPaymentStatus?.errorMessage ?? 'Payment failed';
+        _statusMessage =
+            paymentState.lastPaymentStatus?.errorMessage ?? 'Payment failed';
       });
     }
   }
@@ -164,30 +168,33 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       debugPrint('PaymentScreen: Showing cancel payment confirmation');
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Cancel Payment'),
-          content: const Text(
-            'Are you sure you want to cancel this payment? Your transaction will not be completed.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Stay'),
-            ),
-            TextButton(
-              onPressed: () {
-                debugPrint('PaymentScreen: User confirmed payment cancellation');
-                Navigator.pop(context);
-                paymentNotifier.clearCurrentPayment();
-                navigationService.goBack(false);
-              },
-              child: const Text(
-                'Leave',
-                style: TextStyle(color: Colors.red),
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Cancel Payment'),
+              content: const Text(
+                'Are you sure you want to cancel this payment? Your transaction will not be completed.',
               ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Stay'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    debugPrint(
+                      'PaymentScreen: User confirmed payment cancellation',
+                    );
+                    Navigator.pop(context);
+                    paymentNotifier.clearCurrentPayment();
+                    navigationService.goBack(false);
+                  },
+                  child: const Text(
+                    'Leave',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
       );
     } else {
       debugPrint('PaymentScreen: Navigating back without confirmation');
@@ -311,33 +318,36 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         isLoading: ref.watch(paymentNotifierProvider).isLoading,
         onPressed: () async {
           debugPrint('PaymentScreen: Pay button pressed - Initiating payment');
+
           final result = await paymentNotifier.processPayment(
             referenceId: appointmentId,
             amount: amount,
             currency: currency,
             patient: patient,
-            description: 'Payment for appointment on ${_formatDate(appointmentDate)}',
-            returnUrl: 'https://your-clinic-app.com/payments/callback',
-            callbackUrl: 'https://your-clinic-app.com/payments/webhook',
+            description:
+                'Payment for appointment on ${_formatDate(appointmentDate)}',
           );
 
           if (result.isSuccess) {
-            debugPrint('PaymentScreen: Payment initiated successfully - PaymentId: ${result.data.paymentId}');
+            debugPrint(
+              'PaymentScreen: Payment initiated successfully - PaymentId: ${result.data.paymentId}',
+            );
             setState(() {
               _paymentRecordId = result.data.paymentId;
               _statusCheckAttempts = 0;
               _currentStatus = PaymentStatusType.pending;
-              
             });
-            
+
             if (result.data.type == PaymentResponseType.redirect) {
               // Launch browser with URL instead of using in-app WebView
               _launchBrowser(result.data.redirectUrl!);
             }
-            
+
             _startStatusChecking();
           } else {
-            debugPrint('PaymentScreen: Payment initiation failed - ${result.error}');
+            debugPrint(
+              'PaymentScreen: Payment initiation failed - ${result.error}',
+            );
           }
         },
       ),
@@ -347,10 +357,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   Future<void> _launchBrowser(String url) async {
     final uri = Uri.parse(url);
     try {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
       debugPrint('PaymentScreen: Failed to launch browser: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -369,17 +376,16 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     String currency,
   ) {
     final currentPayment = paymentState.currentPayment!;
-    
+
     if (currentPayment.type == PaymentResponseType.redirect) {
       return _buildPaymentStatusScreen(
-        paymentState, 
+        paymentState,
         currentPayment.redirectUrl!,
         appointmentId,
         amount,
-        currency
+        currency,
       );
-    } 
-    else if (currentPayment.type == PaymentResponseType.widget) {
+    } else if (currentPayment.type == PaymentResponseType.widget) {
       // Handle widget payments as before
       return Center(
         child: Column(
@@ -391,8 +397,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           ],
         ),
       );
-    } 
-    else {
+    } else {
       // Handle errors
       return _buildErrorView(
         currentPayment.errorMessage ?? 'Unknown payment error',
@@ -433,23 +438,20 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Status Animation
-                      SizedBox(
-                        height: 200,
-                        child: _buildStatusAnimation(),
-                      ),
-                      
+                      SizedBox(height: 200, child: _buildStatusAnimation()),
+
                       const SizedBox(height: 24),
-                      
+
                       // Status message
                       _buildStatusMessage(),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Action buttons
                       _buildActionButtons(url),
-                      
+
                       const SizedBox(height: 16),
                       Text(
                         'Payment ID: $_paymentRecordId',
@@ -468,7 +470,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       ),
     );
   }
-  
+
   Widget _buildStatusAnimation() {
     switch (_currentStatus) {
       case PaymentStatusType.pending:
@@ -492,7 +494,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             ),
           ],
         );
-      
+
       case PaymentStatusType.successful:
         // Show success animation
         return Column(
@@ -500,11 +502,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           children: [
             // Lottie.asset('assets/animations/payment_success.json'),
             // Or use an icon:
-            const Icon(
-              Icons.check_circle,
-              color: Colors.green,
-              size: 100,
-            ),
+            const Icon(Icons.check_circle, color: Colors.green, size: 100),
             const SizedBox(height: 16),
             const Text(
               'Payment Successful!',
@@ -517,7 +515,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             ),
           ],
         );
-      
+
       case PaymentStatusType.failed:
         // Show failure animation
         return Column(
@@ -525,11 +523,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           children: [
             // Lottie.asset('assets/animations/payment_failed.json'),
             // Or use an icon:
-            const Icon(
-              Icons.error_outline,
-              color: Colors.red,
-              size: 100,
-            ),
+            const Icon(Icons.error_outline, color: Colors.red, size: 100),
             const SizedBox(height: 16),
             const Text(
               'Payment Failed',
@@ -542,12 +536,12 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             ),
           ],
         );
-      
+
       default:
         return const CircularProgressIndicator();
     }
   }
-  
+
   Widget _buildStatusMessage() {
     switch (_currentStatus) {
       case PaymentStatusType.pending:
@@ -556,28 +550,29 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 16),
         );
-      
+
       case PaymentStatusType.processing:
         return const Text(
           'Your payment is being verified. This may take a moment.',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 16),
         );
-      
+
       case PaymentStatusType.successful:
         return const Text(
           'Your payment has been successfully processed. Thank you!',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 16, color: Colors.green),
         );
-      
+
       case PaymentStatusType.failed:
         return Text(
-          _statusMessage ?? 'Your payment could not be processed. Please try again.',
+          _statusMessage ??
+              'Your payment could not be processed. Please try again.',
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 16, color: Colors.red),
         );
-      
+
       default:
         return const Text(
           'Checking payment status...',
@@ -585,7 +580,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         );
     }
   }
-  
+
   Widget _buildActionButtons(String url) {
     switch (_currentStatus) {
       case PaymentStatusType.pending:
@@ -605,7 +600,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             ),
           ],
         );
-      
+
       case PaymentStatusType.successful:
         return ElevatedButton(
           onPressed: () {
@@ -621,7 +616,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           ),
           child: const Text('Continue'),
         );
-      
+
       case PaymentStatusType.failed:
         return Column(
           children: [
@@ -637,7 +632,9 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             TextButton(
               onPressed: () {
                 _statusCheckTimer?.cancel();
-                ref.read(paymentNotifierProvider.notifier).clearCurrentPayment();
+                ref
+                    .read(paymentNotifierProvider.notifier)
+                    .clearCurrentPayment();
                 // Go back to payment method selection
                 setState(() {
                   _currentStatus = PaymentStatusType.unknown;
@@ -648,24 +645,24 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             ),
           ],
         );
-      
+
       default:
         return const SizedBox();
     }
   }
-  
+
   Future<void> _checkManualStatus() async {
     try {
       setState(() {
         _statusCheckAttempts = 0;
       });
-      
+
       // Cancel any existing timer
       _statusCheckTimer?.cancel();
-      
+
       // Start a new checking cycle
       _startStatusChecking();
-      
+
       // Show a snackbar to indicate checking
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -724,54 +721,59 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Payment Successful'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 64),
-            const SizedBox(height: 16),
-            Text(
-              'Your payment of ${amount.toStringAsFixed(3)} $currency has been processed successfully.',
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Payment Successful'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green, size: 64),
+                const SizedBox(height: 16),
+                Text(
+                  'Your payment of ${amount.toStringAsFixed(3)} $currency has been processed successfully.',
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              debugPrint('PaymentScreen: User confirmed payment success');
-              Navigator.pop(context);
-              navigationService.goBack(true);
-            },
-            child: const Text('Continue'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  debugPrint('PaymentScreen: User confirmed payment success');
+                  Navigator.pop(context);
+                  navigationService.goBack(true);
+                },
+                child: const Text('Continue'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _startStatusChecking() {
     debugPrint('PaymentScreen: Starting periodic status checking');
     _statusCheckTimer?.cancel(); // Cancel any existing timer
-    
+
     _statusCheckTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (_statusCheckAttempts < _maxStatusCheckAttempts) {
-        debugPrint('PaymentScreen: Periodic status check triggered (attempt ${_statusCheckAttempts + 1})');
+        debugPrint(
+          'PaymentScreen: Periodic status check triggered (attempt ${_statusCheckAttempts + 1})',
+        );
         _checkPaymentStatus(_paymentRecordId);
         _statusCheckAttempts++;
       } else {
         debugPrint('PaymentScreen: Maximum status check attempts reached');
         _statusCheckTimer?.cancel();
-        
+
         if (!_isCompleted && mounted) {
           setState(() {
             _currentStatus = PaymentStatusType.unknown;
             _statusMessage = 'Status check timed out. Please check manually.';
           });
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Payment status check timed out. Please try checking manually.'),
+              content: Text(
+                'Payment status check timed out. Please try checking manually.',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -781,8 +783,10 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   }
 
   Future<void> _checkPaymentStatus(String paymentId) async {
-    debugPrint('PaymentScreen: Checking payment status for PaymentId: $paymentId');
-    
+    debugPrint(
+      'PaymentScreen: Checking payment status for PaymentId: $paymentId',
+    );
+
     try {
       await ref
           .read(paymentNotifierProvider.notifier)

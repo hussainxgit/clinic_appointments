@@ -565,7 +565,7 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () {}, // Add any onTap action if needed
+          onTap: () => _viewAppointmentDetails(slot, ref),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
             child: Column(
@@ -624,9 +624,9 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
                                 ),
                               ],
                             ),
-                        
+
                             const SizedBox(height: 8),
-                        
+
                             // Capacity progress indicator
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -654,10 +654,12 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(4),
                                   child: LinearProgressIndicator(
-                                    value: slot.bookedPatients / slot.maxPatients,
+                                    value:
+                                        slot.bookedPatients / slot.maxPatients,
                                     backgroundColor: Colors.grey.shade200,
                                     valueColor: AlwaysStoppedAnimation(
-                                      slot.bookedPatients / slot.maxPatients < 0.8
+                                      slot.bookedPatients / slot.maxPatients <
+                                              0.8
                                           ? Colors.green
                                           : slot.bookedPatients ==
                                               slot.maxPatients
@@ -892,7 +894,7 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
     final navigationService = ref.read(navigationServiceProvider);
     navigationService.navigateTo(
       '/appointment-slot/details',
-      arguments: {'slot': slot},
+      arguments: {'slotId': slot.id},
     );
   }
 

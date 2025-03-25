@@ -9,6 +9,9 @@ import '../../domain/entities/payment_status.dart';
 class MyFatoorahGateway implements PaymentGateway {
   static const String _sandboxBaseUrl = 'https://apitest.myfatoorah.com';
   static const String _productionBaseUrl = 'https://api.myfatoorah.com';
+  // Set the callback URL to your deployed function
+  final webhookUrl =
+      "https://us-central1-eye-clinic-41214.cloudfunctions.net/myFatoorahWebhook";
 
   late String _baseUrl;
   late String _apiKey;
@@ -103,8 +106,8 @@ class MyFatoorahGateway implements PaymentGateway {
         body: jsonEncode({
           'PaymentMethodId': paymentMethodId,
           'InvoiceValue': request.amount,
-          'CallBackUrl': request.returnUrl,
-          'ErrorUrl': request.returnUrl,
+          'CallBackUrl': request.callbackUrl ?? webhookUrl,
+          'ErrorUrl': request.returnUrl ?? webhookUrl,
           'CustomerName': request.customerName,
           'CustomerEmail': request.customerEmail,
           'CustomerMobile': request.customerPhone,

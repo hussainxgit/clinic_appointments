@@ -1,1 +1,32 @@
-{"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"eye-clinic-41214","configurations":{"web":"1:948470235864:web:da44679378d0c8451e4dad","windows":"1:948470235864:web:b5dfa304c285c1a01e4dad"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "eye-clinic-41214",
+          "configurations": {
+            "web": "1:948470235864:web:da44679378d0c8451e4dad",
+            "windows": "1:948470235864:web:b5dfa304c285c1a01e4dad"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "runtime": "nodejs22",
+      "source": "firebase/functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ]
+}

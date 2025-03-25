@@ -2,6 +2,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../../.my_secrets.dart';
 import '../../../../core/firebase/firebase_providers.dart';
 import '../models/sms_record.dart';
 
@@ -98,6 +99,15 @@ class SmsRepositoryImpl implements SmsRepository {
 
   @override
   Map<String, dynamic> getConfigMap() {
-    return {};
+    return {
+      'defaultProvider': 'twilio',
+      'providers': {
+        'twilio': {
+          'accountSid': twilio_acc_id,
+          'authToken': twilio_authToken,
+          'defaultFrom': twilio_defaultFrom,
+        },
+      },
+    };
   }
 }
