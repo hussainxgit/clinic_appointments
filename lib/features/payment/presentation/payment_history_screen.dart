@@ -347,8 +347,8 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen>
                             icon: Icons.replay,
                             label: 'Refund',
                             onTap: () {
-                              Navigator.pop(context);
-                              _showRefundDialog(payment);
+                              // Navigator.pop(context);
+                              // _showRefundDialog(payment);
                             },
                           ),
                         ],
@@ -474,75 +474,4 @@ class _PaymentHistoryScreenState extends ConsumerState<PaymentHistoryScreen>
     );
   }
 
-  void _showRefundDialog(PaymentRecord payment) {
-    final TextEditingController amountController = TextEditingController(
-      text: payment.amount.toStringAsFixed(3),
-    );
-
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Process Refund'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Enter the refund amount:'),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: amountController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Refund Amount',
-                    suffixText: payment.currency,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-
-                  // Process refund
-                  final amount = double.tryParse(amountController.text);
-                  if (amount == null || amount <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Invalid amount')),
-                    );
-                    return;
-                  }
-
-                  final result = await ref
-                      .read(paymentNotifierProvider.notifier)
-                      .processRefund(payment.id, amount: amount);
-
-                  if (result.isSuccess) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Refund processed successfully'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error: ${result.error}'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Process Refund'),
-              ),
-            ],
-          ),
-    );
-  }
 }

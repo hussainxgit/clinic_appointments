@@ -1,12 +1,13 @@
-// lib/features/payment/payment_module.dart
+// lib/features/payment/payment_module.dart - Updated to use WhatsApp payment flow
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/module/feature_module.dart';
 import 'data/payment_repository_provider.dart';
 import 'domain/payment_service.dart';
+import 'domain/whatsapp_payment_service.dart';
 import 'presentation/payment_history_screen.dart';
-import 'presentation/payment_screen.dart';
 import 'presentation/payment_settings_screen.dart';
+import 'presentation/simplified_payment_screen.dart';
 import 'presentation/providers/payment_provider.dart';
 
 class PaymentModule implements FeatureModule {
@@ -17,22 +18,24 @@ class PaymentModule implements FeatureModule {
   String get moduleName => 'Payments';
 
   @override
-  String? get moduleDescription => 'Process and manage payments';
+  String? get moduleDescription => 'Process and manage payments via WhatsApp';
 
   @override
-  List<String> get dependsOn => ['appointment']; // Depends on appointments module
+  List<String> get dependsOn => ['appointment', 'messaging']; // Added messaging dependency
 
   @override
   List<ProviderBase> get providers => [
-    paymentServiceProvider,
     paymentRepositoryProvider,
     paymentConfigProvider,
     paymentNotifierProvider,
+    whatsAppPaymentServiceProvider, // Added WhatsApp payment service
   ];
 
   @override
   Map<String, WidgetBuilder> get routes => {
-    '/payment/process': (_) => const PaymentScreen(),
+    '/payment/process':
+        (_) =>
+            const SimplifiedPaymentScreen(), // Using the new simplified screen
     '/payment/history': (_) => const PaymentHistoryScreen(),
     '/payment/settings': (_) => const PaymentSettingsScreen(),
   };
@@ -51,6 +54,5 @@ class PaymentModule implements FeatureModule {
   @override
   Future<void> initialize() async {
     // Initialize payment module
-    // Here you might do initial setup, like registering payment gateways
   }
 }
