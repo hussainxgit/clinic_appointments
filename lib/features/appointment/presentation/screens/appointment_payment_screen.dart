@@ -15,21 +15,20 @@ class AppointmentPaymentScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final navigationService = ref.read(navigationServiceProvider);
-    
+
     // Get appointment data from arguments
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     final appointment = args['appointment'] as Appointment;
     final patient = args['patient'] as Patient?;
     final doctor = args['doctor'] as Doctor?;
-    
+
     // Default payment amount - in a real app, this would come from the backend
     // or be calculated based on the doctor's fee, services, etc.
     const double paymentAmount = 25.0;
-    
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Process Payment'),
-      ),
+      appBar: AppBar(title: const Text('Process Payment')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -48,13 +47,16 @@ class AppointmentPaymentScreen extends ConsumerWidget {
                   _buildInfoRow('Date', _formatDateTime(appointment.dateTime)),
                   _buildInfoRow('Patient', patient?.name ?? 'Unknown'),
                   _buildInfoRow('Doctor', doctor?.name ?? 'Unknown'),
-                  _buildInfoRow('Status', _formatStatus(appointment.status.toString())),
+                  _buildInfoRow(
+                    'Status',
+                    _formatStatus(appointment.status.toString()),
+                  ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Payment summary
             AppCard(
               child: Column(
@@ -73,9 +75,9 @@ class AppointmentPaymentScreen extends ConsumerWidget {
                     'Payment Status',
                     _formatPaymentStatus(appointment.paymentStatus.toString()),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   Text(
                     'Total: ${paymentAmount.toStringAsFixed(3)} KWD',
                     style: const TextStyle(
@@ -86,22 +88,23 @@ class AppointmentPaymentScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // Action buttons
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: appointment.paymentStatus == 'paid'
-                    ? null
-                    : () => _navigateToPayment(
-                        context, 
-                        navigationService, 
-                        appointment, 
-                        patient!, 
-                        paymentAmount
-                      ),
+                onPressed:
+                    appointment.paymentStatus == 'paid'
+                        ? null
+                        : () => _navigateToPayment(
+                          context,
+                          navigationService,
+                          appointment,
+                          patient!,
+                          paymentAmount,
+                        ),
                 icon: const Icon(Icons.payment),
                 label: Text(
                   appointment.paymentStatus == 'paid'
@@ -113,9 +116,9 @@ class AppointmentPaymentScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             if (appointment.paymentStatus == 'paid')
               SizedBox(
                 width: double.infinity,
@@ -139,31 +142,26 @@ class AppointmentPaymentScreen extends ConsumerWidget {
       ),
     );
   }
-  
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(value),
         ],
       ),
     );
   }
-  
+
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} at '
-           '${dateTime.hour.toString().padLeft(2, '0')}:'
-           '${dateTime.minute.toString().padLeft(2, '0')}';
+        '${dateTime.hour.toString().padLeft(2, '0')}:'
+        '${dateTime.minute.toString().padLeft(2, '0')}';
   }
-  
+
   String _formatStatus(String status) {
     switch (status) {
       case 'scheduled':
@@ -176,7 +174,7 @@ class AppointmentPaymentScreen extends ConsumerWidget {
         return status.capitalize();
     }
   }
-  
+
   String _formatPaymentStatus(String status) {
     switch (status) {
       case 'paid':
@@ -187,7 +185,7 @@ class AppointmentPaymentScreen extends ConsumerWidget {
         return status.capitalize();
     }
   }
-  
+
   void _navigateToPayment(
     BuildContext context,
     dynamic navigationService,
@@ -197,16 +195,17 @@ class AppointmentPaymentScreen extends ConsumerWidget {
   ) async {
     // Navigate to payment screen with required data
     final result = await navigationService.navigateTo(
-      '/payment/process',
+      '/payment/send',
       arguments: {
         'appointmentId': appointment.id,
         'amount': amount,
         'currency': 'KWD',
         'patient': patient,
         'appointmentDate': appointment.dateTime,
+        'doctorId': appointment.doctorId,
       },
     );
-    
+
     // Handle payment result
     if (result == true) {
       // Payment was successful
@@ -217,7 +216,7 @@ class AppointmentPaymentScreen extends ConsumerWidget {
           backgroundColor: Colors.green,
         ),
       );
-      
+
       // Go back to appointment details
       navigationService.goBack(true);
     }

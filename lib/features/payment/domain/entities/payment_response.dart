@@ -1,33 +1,25 @@
-// lib/features/payment/domain/entities/payment_response.dart
-enum PaymentResponseType { redirect, widget, error }
+import '../../data/models/payment_record.dart';
 
 class PaymentResponse {
-  final PaymentResponseType type;
-  final String paymentId;
-  final String? redirectUrl;
-  final Map<String, dynamic>? widgetData;
+  final bool success;
+  final String? invoiceId;
+  final String? paymentId;
+  final String? invoiceUrl;
+  final String? customerReference;
+  final String? transactionId;
   final String? errorMessage;
+  final PaymentStatus status;
+  final Map<String, dynamic>? metadata;
 
-  PaymentResponse.redirect({
-    required this.paymentId,
-    required this.redirectUrl,
-  })  : type = PaymentResponseType.redirect,
-        widgetData = null,
-        errorMessage = null;
-
-  PaymentResponse.widget({
-    required this.paymentId,
-    required this.widgetData,
-  })  : type = PaymentResponseType.widget,
-        redirectUrl = null,
-        errorMessage = null;
-
-  PaymentResponse.error({
-    required this.errorMessage,
-  })  : type = PaymentResponseType.error,
-        paymentId = '',
-        redirectUrl = null,
-        widgetData = null;
-
-  bool get isSuccess => type != PaymentResponseType.error;
+  PaymentResponse({
+    required this.success,
+    this.invoiceId,
+    this.paymentId,
+    this.invoiceUrl,
+    this.customerReference,
+    this.transactionId,
+    this.errorMessage,
+    this.status = PaymentStatus.pending,
+    this.metadata,
+  });
 }

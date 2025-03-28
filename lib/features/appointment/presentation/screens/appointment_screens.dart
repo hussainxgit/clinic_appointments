@@ -263,7 +263,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
           child: Icon(
             appointment.status == AppointmentStatus.scheduled
                 ? Icons.schedule
-                : appointment.status == 'completed'
+                : appointment.status == AppointmentStatus.completed
                 ? Icons.check
                 : Icons.cancel,
             color: Colors.white,
@@ -287,7 +287,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    appointment.status.toString().capitalize(),
+                    appointment.status.toString().split('.').last.capitalize(),
                     style: TextStyle(
                       color: statusColor,
                       fontSize: 12,
@@ -303,16 +303,16 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen>
                   ),
                   decoration: BoxDecoration(
                     color:
-                        appointment.paymentStatus == 'paid'
+                        appointment.paymentStatus == PaymentStatus.paid
                             ? Colors.green.withOpacity(0.2)
                             : Colors.orange.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    appointment.paymentStatus.toString().capitalize(),
+                    appointment.paymentStatus.toString().split('.').last.capitalize(),
                     style: TextStyle(
                       color:
-                          appointment.paymentStatus == 'paid'
+                          appointment.paymentStatus == PaymentStatus.paid
                               ? Colors.green
                               : Colors.orange,
                       fontSize: 12,

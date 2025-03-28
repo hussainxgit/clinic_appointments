@@ -1,161 +1,191 @@
-// lib/features/payment/data/models/payment_record.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/entities/payment_status.dart';
+
+enum PaymentStatus { pending, successful, failed, refunded, cancelled }
+
+extension PaymentStatusExtension on PaymentStatus {
+  String toStorageString() {
+    return toString().split('.').last;
+  }
+
+  static PaymentStatus fromString(String status) {
+    return PaymentStatus.values.firstWhere(
+      (e) => e.toString().split('.').last == status,
+      orElse: () => PaymentStatus.pending,
+    );
+  }
+}
 
 class PaymentRecord {
   final String id;
-  final String referenceId; // Appointment or invoice ID
-  final String gatewayId;
-  final String gatewayPaymentId;
+  final String appointmentId;
   final String patientId;
+  final String doctorId;
   final double amount;
   final String currency;
-  final String status;
+  final PaymentStatus status;
+  final String paymentMethod;
+  final String? invoiceId;
   final String? transactionId;
+  final String? paymentLink;
+  final bool linkSent;
   final DateTime createdAt;
-  final DateTime? updatedAt;
+  final DateTime? completedAt;
+  final DateTime? lastUpdated;
   final Map<String, dynamic>? metadata;
-  final String? errorMessage;
 
   PaymentRecord({
     required this.id,
-    required this.referenceId,
-    required this.gatewayId,
-    required this.gatewayPaymentId,
+    required this.appointmentId,
     required this.patientId,
+    required this.doctorId,
     required this.amount,
     required this.currency,
     required this.status,
+    required this.paymentMethod,
+    this.invoiceId,
     this.transactionId,
+    this.paymentLink,
+    this.linkSent = false,
     required this.createdAt,
-    this.updatedAt,
+    this.completedAt,
+    this.lastUpdated,
     this.metadata,
-    this.errorMessage,
   });
 
   PaymentRecord copyWith({
     String? id,
-    String? referenceId,
-    String? gatewayId,
-    String? gatewayPaymentId,
+    String? appointmentId,
     String? patientId,
+    String? doctorId,
     double? amount,
     String? currency,
-    String? status,
+    PaymentStatus? status,
+    String? paymentMethod,
+    String? invoiceId,
     String? transactionId,
+    String? paymentLink,
+    bool? linkSent,
     DateTime? createdAt,
-    DateTime? updatedAt,
+    DateTime? completedAt,
+    DateTime? lastUpdated,
     Map<String, dynamic>? metadata,
-    String? errorMessage,
   }) {
     return PaymentRecord(
       id: id ?? this.id,
-      referenceId: referenceId ?? this.referenceId,
-      gatewayId: gatewayId ?? this.gatewayId,
-      gatewayPaymentId: gatewayPaymentId ?? this.gatewayPaymentId,
+      appointmentId: appointmentId ?? this.appointmentId,
       patientId: patientId ?? this.patientId,
+      doctorId: doctorId ?? this.doctorId,
       amount: amount ?? this.amount,
       currency: currency ?? this.currency,
       status: status ?? this.status,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      invoiceId: invoiceId ?? this.invoiceId,
       transactionId: transactionId ?? this.transactionId,
+      paymentLink: paymentLink ?? this.paymentLink,
+      linkSent: linkSent ?? this.linkSent,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      completedAt: completedAt ?? this.completedAt,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
       metadata: metadata ?? this.metadata,
-      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'referenceId': referenceId,
-      'gatewayId': gatewayId,
-      'gatewayPaymentId': gatewayPaymentId,
+      'appointmentId': appointmentId,
       'patientId': patientId,
+      'doctorId': doctorId,
       'amount': amount,
       'currency': currency,
-      'status': status,
+      'status': status.toStorageString(),
+      'paymentMethod': paymentMethod,
+      'invoiceId': invoiceId,
       'transactionId': transactionId,
+      'paymentLink': paymentLink,
+      'linkSent': linkSent,
       'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
+      'completedAt': completedAt?.toIso8601String(),
+      'lastUpdated': lastUpdated?.toIso8601String(),
       'metadata': metadata,
-      'errorMessage': errorMessage,
     };
   }
 
-  factory PaymentRecord.fromMap(Map<String, dynamic> map, String id) {
+  factory PaymentRecord.fromMap(Map<String, dynamic> map, String docId) {
     return PaymentRecord(
-      id: id,
-      referenceId: map['referenceId'] ?? '',
-      gatewayId: map['gatewayId'] ?? '',
-      gatewayPaymentId: map['gatewayPaymentId'] ?? '',
+      id: docId,
+      appointmentId: map['appointmentId'] ?? '',
       patientId: map['patientId'] ?? '',
-      amount: (map['amount'] is int) 
-          ? (map['amount'] as int).toDouble() 
-          : (map['amount'] as double? ?? 0.0),
-      currency: map['currency'] ?? '',
-      status: map['status'] ?? '',
+      doctorId: map['doctorId'] ?? '',
+      amount:
+          (map['amount'] is int)
+              ? (map['amount'] as int).toDouble()
+              : (map['amount'] as double? ?? 0.0),
+      currency: map['currency'] ?? 'KWD',
+      status: PaymentStatusExtension.fromString(map['status'] ?? 'pending'),
+      paymentMethod: map['paymentMethod'] ?? 'online',
+      invoiceId: map['invoiceId'],
       transactionId: map['transactionId'],
-      createdAt: map['createdAt'] is Timestamp 
-          ? (map['createdAt'] as Timestamp).toDate()
-          : DateTime.parse(map['createdAt']),
-      updatedAt: map['updatedAt'] == null
-          ? null
-          : map['updatedAt'] is Timestamp
-              ? (map['updatedAt'] as Timestamp).toDate()
-              : DateTime.parse(map['updatedAt']),
+      paymentLink: map['paymentLink'],
+      linkSent: map['linkSent'] ?? false,
+      createdAt:
+          map['createdAt'] != null
+              ? DateTime.parse(map['createdAt'])
+              : DateTime.now(),
+      completedAt:
+          map['completedAt'] != null
+              ? DateTime.parse(map['completedAt'])
+              : null,
+      lastUpdated:
+          map['lastUpdated'] != null
+              ? DateTime.parse(map['lastUpdated'])
+              : null,
       metadata: map['metadata'],
-      errorMessage: map['errorMessage'],
     );
   }
 
-  factory PaymentRecord.fromPaymentStatus(
-    PaymentStatus status, {
-    required String id,
-    required String referenceId,
-    required String gatewayId,
-    required String patientId,
-    required double amount,
-    required String currency,
-    required DateTime createdAt,
-  }) {
-    String paymentStatus;
-    switch (status.status) {
-      case PaymentStatusType.successful:
-        paymentStatus = 'successful';
-        break;
-      case PaymentStatusType.pending:
-        paymentStatus = 'pending';
-        break;
-      case PaymentStatusType.processing:
-        paymentStatus = 'processing';
-        break;
-      case PaymentStatusType.failed:
-        paymentStatus = 'failed';
-        break;
-      case PaymentStatusType.refunded:
-        paymentStatus = 'refunded';
-        break;
-      case PaymentStatusType.partiallyRefunded:
-        paymentStatus = 'partially_refunded';
-        break;
-      default:
-        paymentStatus = 'unknown';
-    }
+  factory PaymentRecord.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+
+    // Handle Timestamp objects from Firestore
+    final createdAt =
+        data['createdAt'] is Timestamp
+            ? (data['createdAt'] as Timestamp).toDate()
+            : DateTime.parse(data['createdAt']);
+
+    final completedAt =
+        data['completedAt'] == null
+            ? null
+            : data['completedAt'] is Timestamp
+            ? (data['completedAt'] as Timestamp).toDate()
+            : DateTime.parse(data['completedAt']);
+
+    final lastUpdated =
+        data['lastUpdated'] == null
+            ? null
+            : data['lastUpdated'] is Timestamp
+            ? (data['lastUpdated'] as Timestamp).toDate()
+            : DateTime.parse(data['lastUpdated']);
 
     return PaymentRecord(
-      id: id,
-      referenceId: referenceId,
-      gatewayId: gatewayId,
-      gatewayPaymentId: status.paymentId,
-      patientId: patientId,
-      amount: amount,
-      currency: currency,
-      status: paymentStatus,
-      transactionId: status.transactionId,
+      id: doc.id,
+      appointmentId: data['appointmentId'] ?? '',
+      patientId: data['patientId'] ?? '',
+      doctorId: data['doctorId'] ?? '',
+      amount:
+          (data['amount'] is int)
+              ? (data['amount'] as int).toDouble()
+              : (data['amount'] as double? ?? 0.0),
+      currency: data['currency'] ?? 'KWD',
+      status: PaymentStatusExtension.fromString(data['status'] ?? 'pending'),
+      paymentMethod: data['paymentMethod'] ?? 'online',
+      invoiceId: data['invoiceId'],
+      transactionId: data['transactionId'],
+      paymentLink: data['paymentLink'],
+      linkSent: data['linkSent'] ?? false,
       createdAt: createdAt,
-      updatedAt: DateTime.now(),
-      metadata: status.gatewayResponse,
-      errorMessage: status.errorMessage,
+      completedAt: completedAt,
+      lastUpdated: lastUpdated,
+      metadata: data['metadata'],
     );
   }
 }
