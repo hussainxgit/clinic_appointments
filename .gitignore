@@ -45,3 +45,4 @@ app.*.map.json
 /android/app/release
 lib/.my_secrets.dart
 firebase/functions/node_modules
+firebase/functions/src/.my_js_secrets.ts

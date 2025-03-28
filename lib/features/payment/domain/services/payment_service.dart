@@ -61,6 +61,7 @@ class PaymentService {
         status: PaymentStatus.pending,
         paymentMethod: 'myfatoorah',
         createdAt: DateTime.now(),
+        paymentId: '',
       );
 
       final savedPayment = await _paymentRepository.createPayment(newPayment);
