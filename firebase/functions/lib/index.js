@@ -9,63 +9,106 @@ admin.initializeApp();
  * Webhook handler for MyFatoorah payment callbacks
  */
 exports.myFatoorahWebhook = functions.onRequest(async (req, res) => {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     console.log('Webhook received:', req.method);
     console.log('Request query:', req.query);
     console.log('Request body:', req.body);
-    // Extract paymentId from query parameters
-    const paymentId = (req.query.Id ||
+    // Extract InvoiceId from query parameters or body
+    const invoiceId = (req.query.Id ||
         req.query.paymentId ||
         ((_a = req.body) === null || _a === void 0 ? void 0 : _a.InvoiceId) ||
         ((_c = (_b = req.body) === null || _b === void 0 ? void 0 : _b.Data) === null || _c === void 0 ? void 0 : _c.InvoiceId));
-    if (!paymentId) {
-        console.error('Invalid webhook data - no payment ID found');
-        res.status(400).json({
-            success: false,
-            message: 'Bad Request: Missing payment ID'
-        });
-        return;
-    }
+    // Extract status
     const invoiceStatus = (req.query.Status ||
         ((_d = req.body) === null || _d === void 0 ? void 0 : _d.InvoiceStatus) ||
         ((_f = (_e = req.body) === null || _e === void 0 ? void 0 : _e.Data) === null || _f === void 0 ? void 0 : _f.InvoiceStatus) ||
-        'paid');
+        'paid' // Default for callback URLs that don't include status
+    );
+    if (!invoiceId) {
+        console.error('Invalid webhook data - no InvoiceId found');
+        res.status(400).send('Bad Request: Missing InvoiceId');
+        return;
+    }
+    console.log('Processing payment with InvoiceId:', invoiceId, 'Status:', invoiceStatus);
     try {
-        // Find and process the payment
+        // Try different ways to find the payment record
         let paymentSnapshot = await admin
             .firestore()
             .collection('payments')
-            .where('invoiceId', '==', paymentId)
+            .where('invoiceId', '==', invoiceId)
             .limit(1)
             .get();
-        // Try alternative lookup methods if needed
+        // If not found by invoiceId, try alternative approaches
         if (paymentSnapshot.empty) {
-            // [Similar lookup logic as before]
-            // For brevity, I've omitted the previous lookup methods
-            console.log(`Payment not found with invoiceId ${paymentId}`);
+            console.log(`Payment record with invoiceId ${invoiceId} not found, trying metadata...`);
+            // Try to find by metadata.myFatoorahPaymentId
+            paymentSnapshot = await admin
+                .firestore()
+                .collection('payments')
+                .where('metadata.myFatoorahPaymentId', '==', invoiceId)
+                .limit(1)
+                .get();
+        }
+        // Try looking for partial matches in paymentLink
+        if (paymentSnapshot.empty) {
+            console.log(`Payment not found in metadata, checking pending payments...`);
+            // Get all pending payments (usually a small number)
+            const pendingSnapshot = await admin
+                .firestore()
+                .collection('payments')
+                .where('status', '==', 'pending')
+                .get();
+            // Look for invoice ID in the payment link
+            for (const doc of pendingSnapshot.docs) {
+                const paymentData = doc.data();
+                const paymentLink = paymentData.paymentLink || '';
+                // Check if the payment link contains part of the invoice ID
+                // MyFatoorah often includes part of the ID in the payment URL
+                if (invoiceId.includes(paymentData.invoiceId) ||
+                    paymentLink.includes(paymentData.invoiceId) ||
+                    (paymentData.invoiceId && invoiceId.includes(paymentData.invoiceId))) {
+                    console.log(`Found likely match in payment ${doc.id} with invoiceId ${paymentData.invoiceId}`);
+                    paymentSnapshot = {
+                        docs: [doc],
+                        empty: false,
+                        // Add these to satisfy TypeScript
+                        forEach: () => { },
+                        size: 1
+                    };
+                    break;
+                }
+            }
         }
         if (paymentSnapshot.empty) {
-            console.error(`Payment record related to ${paymentId} not found`);
-            // Still need to redirect to MyFatoorah result page
-            return res.redirect(`https://demo.myfatoorah.com/En/KWT/PayInvoice/Result?paymentId=${paymentId}`);
+            console.error(`Payment record related to ${invoiceId} not found after all lookup attempts`);
+            res.status(200).send('OK - No matching payment found');
+            return;
         }
         const paymentDoc = paymentSnapshot.docs[0];
-        const firestorePaymentId = paymentDoc.id;
+        const paymentId = paymentDoc.id;
         const paymentData = paymentDoc.data();
-        console.log(`Found payment record: ${firestorePaymentId}`);
+        console.log(`Found payment record: ${paymentId} with invoiceId: ${paymentData.invoiceId}`);
+        // Map MyFatoorah status to our status enum
         const newStatus = mapInvoiceStatus(invoiceStatus);
-        // Process payment updates if needed
+        // Only update if status has changed meaningfully
         if (shouldUpdateStatus(paymentData.status, newStatus)) {
-            // Update payment record and related data
+            // Extract transaction ID if available
+            const transactionId = ((_k = (_j = (_h = (_g = req.body) === null || _g === void 0 ? void 0 : _g.Data) === null || _h === void 0 ? void 0 : _h.InvoiceTransactions) === null || _j === void 0 ? void 0 : _j[0]) === null || _k === void 0 ? void 0 : _k.TransactionId) || null;
+            // Run a transaction to update all related records
             await admin.firestore().runTransaction(async (transaction) => {
-                var _a, _b, _c, _d;
-                const transactionId = ((_d = (_c = (_b = (_a = req.body) === null || _a === void 0 ? void 0 : _a.Data) === null || _b === void 0 ? void 0 : _b.InvoiceTransactions) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.TransactionId) || null;
-                await updatePaymentRecord(transaction, firestorePaymentId, paymentData, newStatus, transactionId, req);
+                // 1. Update payment record
+                await updatePaymentRecord(transaction, paymentId, paymentData, newStatus, transactionId, req);
+                // 2. If payment successful, update appointment status
                 if (newStatus === 'successful') {
                     await updateAppointmentStatus(transaction, paymentData.appointmentId);
+                    // 3. Send confirmation message
                     await sendPaymentConfirmation(paymentData);
                 }
             });
+            console.log(`Payment ${paymentId} updated to ${newStatus}`);
+        }
+        else {
+            console.log(`No status update needed for payment ${paymentId}`);
         }
         // Always redirect to MyFatoorah result page
         return res.redirect(`https://demo.myfatoorah.com/En/KWT/PayInvoice/Result?paymentId=${paymentId}`);
@@ -73,7 +116,7 @@ exports.myFatoorahWebhook = functions.onRequest(async (req, res) => {
     catch (error) {
         console.error('Error processing webhook:', error);
         // Even on error, redirect to MyFatoorah result page
-        return res.redirect(`https://demo.myfatoorah.com/En/KWT/PayInvoice/Result?paymentId=${paymentId}`);
+        res.status(500).send('Internal Server Error');
     }
 });
 /**
