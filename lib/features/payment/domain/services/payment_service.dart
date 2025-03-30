@@ -1,7 +1,6 @@
 import '../../data/models/payment_record.dart';
 import '../../data/services/myfatoorah_service.dart';
-import '../../../messaging/services/sms_service.dart';
-import '../../../messaging/domain/entities/sms_message.dart';
+import '../../../messaging/services/kwt_sms_service.dart';
 import '../../../appointment/data/appointment_repository.dart';
 import '../../../patient/data/patient_repository.dart';
 import '../../../../core/utils/result.dart';
@@ -14,14 +13,14 @@ import '../repositories/payment_repository.dart';
 class PaymentService {
   final PaymentRepository _paymentRepository;
   final MyFatoorahService _myFatoorahService;
-  final SmsService _smsService;
+  final KwtSmsService _smsService;
   final AppointmentRepository _appointmentRepository;
   final PatientRepository _patientRepository;
 
   PaymentService({
     required PaymentRepository paymentRepository,
     required MyFatoorahService myFatoorahService,
-    required SmsService smsService,
+    required KwtSmsService smsService,
     required AppointmentRepository appointmentRepository,
     required PatientRepository patientRepository,
   }) : _paymentRepository = paymentRepository,
@@ -155,7 +154,7 @@ class PaymentService {
       final dateFormat = DateFormat('EEEE, MMMM d, yyyy - h:mm a');
       final formattedDate = dateFormat.format(appointment.dateTime);
 
-      // Create WhatsApp message
+      // Create message text
       final messageText = PaymentConfig.paymentMessageTemplate(
         patientName: patient.name,
         appointmentDate: formattedDate,
@@ -163,27 +162,16 @@ class PaymentService {
         paymentLink: payment.paymentLink!,
       );
 
-      final whatsappMessage = SmsMessage(
-        to: patient.phone,
-        from: '', // Will be filled by provider
-        body: messageText,
-        metadata: {
-          'isWhatsApp': true,
-          'paymentId': payment.id,
-          'appointmentId': payment.appointmentId,
-        },
+      // Send SMS using the KWT SMS service
+      final result = await _smsService.sendSms(
+        phoneNumber: patient.phone,
+        message: messageText,
+        // For payment links, use English language code by default
+        languageCode: 1, // English
       );
 
-      // Send via Twilio WhatsApp
-      final messageResponse = await _smsService.sendSms(
-        whatsappMessage,
-        providerId: 'twilio',
-      );
-
-      if (!messageResponse.success) {
-        return Result.failure(
-          'Failed to send WhatsApp message: ${messageResponse.errorMessage}',
-        );
+      if (result.isFailure) {
+        return Result.failure('Failed to send payment link: ${result.error}');
       }
 
       // Update payment record as link sent
@@ -250,10 +238,7 @@ class PaymentService {
 
       // Update the appointment's payment status
       final updatedAppointment = appointment.copyWith(
-        paymentStatus:
-            appointment_entity
-                .PaymentStatus
-                .paid, // Use your appointment's payment status enum
+        paymentStatus: appointment_entity.PaymentStatus.paid,
       );
 
       await _appointmentRepository.update(updatedAppointment);
@@ -285,20 +270,12 @@ class PaymentService {
         amount: '${payment.amount.toStringAsFixed(3)} ${payment.currency}',
       );
 
-      final whatsappMessage = SmsMessage(
-        to: patient.phone,
-        from: '', // Will be filled by provider
-        body: messageText,
-        metadata: {
-          'isWhatsApp': true,
-          'type': 'payment_confirmation',
-          'paymentId': payment.id,
-          'appointmentId': payment.appointmentId,
-        },
+      // Send confirmation SMS
+      await _smsService.sendSms(
+        phoneNumber: patient.phone,
+        message: messageText,
+        languageCode: 1, // English by default for payment confirmations
       );
-
-      // Send via WhatsApp
-      await _smsService.sendSms(whatsappMessage, providerId: 'twilio');
     } catch (e) {
       print('Error sending payment confirmation: $e');
     }

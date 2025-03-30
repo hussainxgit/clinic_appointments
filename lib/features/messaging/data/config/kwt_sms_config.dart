@@ -4,12 +4,12 @@
 class KwtSmsConfig {
   // API credentials
   static const String apiUsername =
-      'YOUR_API_USERNAME'; // Replace with your actual API username
+      'hussainsk'; // API username
   static const String apiPassword =
-      'YOUR_API_PASSWORD'; // Replace with your actual API password
+      '-W6SNJpXzT'; // API password
 
   // Sender ID (11 characters max, case-sensitive)
-  static const String defaultSenderId = 'EyeClinic';
+  static const String defaultSenderId = 'KWT-SMS';
 
   // Language codes
   static const int englishLanguage = 1; // English

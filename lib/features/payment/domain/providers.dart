@@ -4,7 +4,7 @@ import '../data/repositories/payment_repository_impl.dart';
 import '../data/services/myfatoorah_service.dart';
 import 'repositories/payment_repository.dart';
 import 'services/payment_service.dart';
-import '../../../features/messaging/services/sms_service.dart';
+import '../../../features/messaging/services/kwt_sms_service.dart';
 import '../../../features/appointment/data/appointment_providers.dart';
 import '../../../features/patient/data/patient_providers.dart';
 
@@ -23,7 +23,7 @@ final myFatoorahServiceProvider = Provider<MyFatoorahService>((ref) {
 final paymentServiceProvider = Provider<PaymentService>((ref) {
   final paymentRepository = ref.watch(paymentRepositoryProvider);
   final myFatoorahService = ref.watch(myFatoorahServiceProvider);
-  final smsService = ref.watch(smsServiceProvider);
+  final smsService = ref.watch(kwtSmsServiceProvider);
   final appointmentRepository = ref.watch(appointmentRepositoryProvider);
   final patientRepository = ref.watch(patientRepositoryProvider);
 
@@ -37,11 +37,10 @@ final paymentServiceProvider = Provider<PaymentService>((ref) {
 });
 
 // Payment history state provider
-final paymentHistoryProvider =
-    StateNotifierProvider<PaymentHistoryNotifier, PaymentHistoryState>((ref) {
-      final paymentRepository = ref.watch(paymentRepositoryProvider);
-      return PaymentHistoryNotifier(paymentRepository);
-    });
+final paymentHistoryProvider = StateNotifierProvider<PaymentHistoryNotifier, PaymentHistoryState>((ref) {
+  final paymentRepository = ref.watch(paymentRepositoryProvider);
+  return PaymentHistoryNotifier(paymentRepository);
+});
 
 // Payment history state
 class PaymentHistoryState {
@@ -72,8 +71,7 @@ class PaymentHistoryState {
 class PaymentHistoryNotifier extends StateNotifier<PaymentHistoryState> {
   final PaymentRepository _repository;
 
-  PaymentHistoryNotifier(this._repository)
-    : super(PaymentHistoryState(payments: []));
+  PaymentHistoryNotifier(this._repository) : super(PaymentHistoryState(payments: []));
 
   Future<void> loadAllPayments() async {
     state = state.copyWith(isLoading: true, error: null);
@@ -101,9 +99,7 @@ class PaymentHistoryNotifier extends StateNotifier<PaymentHistoryState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final payments = await _repository.getPaymentsByAppointment(
-        appointmentId,
-      );
+      final payments = await _repository.getPaymentsByAppointment(appointmentId);
       state = state.copyWith(payments: payments, isLoading: false);
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);

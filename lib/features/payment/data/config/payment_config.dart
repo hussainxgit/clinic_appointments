@@ -1,4 +1,4 @@
-import '../../../../.my_secrets.dart'; // Import your API key
+import '../../../../.my_secrets.dart';
 
 class PaymentConfig {
   // MyFatoorah Configuration

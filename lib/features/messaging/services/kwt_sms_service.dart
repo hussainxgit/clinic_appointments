@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../data/config/kwt_sms_config.dart';
 import '../data/repositories/kwt_sms_repository.dart';
 import '../domain/entities/sms_message.dart';
 import '../domain/entities/sms_response.dart';
@@ -12,15 +13,15 @@ part 'kwt_sms_service.g.dart';
 // Define a configuration provider for the KWT-SMS API
 final kwtSmsConfigProvider = Provider<Map<String, dynamic>>((ref) {
   return {
-    'username': 'YOUR_USERNAME',
-    'password': 'YOUR_PASSWORD',
-    'sender': 'Eye Clinic',
-    'defaultLanguage': 1, // 1 for English
+    'username': KwtSmsConfig.apiUsername,
+    'password': KwtSmsConfig.apiPassword,
+    'sender': KwtSmsConfig.defaultSenderId,
+    'defaultLanguage': KwtSmsConfig.englishLanguage,
   };
 });
 
 @riverpod
-KwtSmsService kwtSmsService(KwtSmsServiceRef ref) {
+KwtSmsService kwtSmsService(Ref ref) {
   final repository = ref.watch(kwtSmsRepositoryProvider);
   final config = ref.watch(kwtSmsConfigProvider);
   return KwtSmsService(repository: repository, config: config);
