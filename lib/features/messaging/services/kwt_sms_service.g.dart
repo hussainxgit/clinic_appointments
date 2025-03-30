@@ -1,28 +1,28 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'sms_repository.dart';
+part of 'kwt_sms_service.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$smsRepositoryHash() => r'7393750d8dbf0cc88748876bdc4f8010f1bb7018';
+String _$kwtSmsServiceHash() => r'a1dea8d9ce08b32e01083c907880ef3b4a872cfd';
 
-/// See also [smsRepository].
-@ProviderFor(smsRepository)
-final smsRepositoryProvider = AutoDisposeProvider<SmsRepository>.internal(
-  smsRepository,
-  name: r'smsRepositoryProvider',
+/// See also [kwtSmsService].
+@ProviderFor(kwtSmsService)
+final kwtSmsServiceProvider = AutoDisposeProvider<KwtSmsService>.internal(
+  kwtSmsService,
+  name: r'kwtSmsServiceProvider',
   debugGetCreateSourceHash:
       const bool.fromEnvironment('dart.vm.product')
           ? null
-          : _$smsRepositoryHash,
+          : _$kwtSmsServiceHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef SmsRepositoryRef = AutoDisposeProviderRef<SmsRepository>;
+typedef KwtSmsServiceRef = AutoDisposeProviderRef<KwtSmsService>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

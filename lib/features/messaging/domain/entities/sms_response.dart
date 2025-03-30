@@ -1,51 +1,37 @@
-// lib/features/messaging/domain/entities/sms_response.dart
-enum SmsDeliveryStatus {
-  sent,
-  delivered,
-  failed,
-  undelivered,
-  queued,
-  unknown
-}
-
-class SmsResponse {
-  final bool success;
+class KwtSmsResponse {
+  final bool isSuccess;
   final String? messageId;
+  final int? numbersProcessed;
+  final int? pointsCharged;
+  final int? balanceAfter;
+  final int? timestamp;
   final String? errorMessage;
-  final SmsDeliveryStatus status;
-  final Map<String, dynamic>? providerResponse;
 
-  SmsResponse._({
-    required this.success,
+  KwtSmsResponse({
+    required this.isSuccess,
     this.messageId,
+    this.numbersProcessed,
+    this.pointsCharged,
+    this.balanceAfter,
+    this.timestamp,
     this.errorMessage,
-    this.status = SmsDeliveryStatus.unknown,
-    this.providerResponse,
   });
 
-  factory SmsResponse.success({
-    required String messageId,
-    SmsDeliveryStatus status = SmsDeliveryStatus.sent,
-    Map<String, dynamic>? providerResponse,
-  }) {
-    return SmsResponse._(
-      success: true,
-      messageId: messageId,
-      status: status,
-      providerResponse: providerResponse,
+  factory KwtSmsResponse.fromMap(Map<String, dynamic> map) {
+    final isSuccess = map['result'] == 'OK';
+
+    return KwtSmsResponse(
+      isSuccess: isSuccess,
+      messageId: map['msg-id'],
+      numbersProcessed: map['numbers'],
+      pointsCharged: map['pointscharged'],
+      balanceAfter: map['balance-after'],
+      timestamp: map['unix-timestamp'],
+      errorMessage: isSuccess ? null : map['error'],
     );
   }
 
-  factory SmsResponse.error({
-    required String errorMessage,
-    SmsDeliveryStatus status = SmsDeliveryStatus.failed,
-    Map<String, dynamic>? providerResponse,
-  }) {
-    return SmsResponse._(
-      success: false,
-      errorMessage: errorMessage,
-      status: status,
-      providerResponse: providerResponse,
-    );
+  factory KwtSmsResponse.error(String message) {
+    return KwtSmsResponse(isSuccess: false, errorMessage: message);
   }
 }

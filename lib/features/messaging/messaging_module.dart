@@ -1,13 +1,12 @@
-// lib/features/messaging/messaging_module.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/module/feature_module.dart';
-import 'data/providers/twilio_provider.dart';
-import 'data/repositories/sms_repository.dart';
-import 'presentation/screen/messaging_history_screen.dart';
-import 'presentation/screen/messaging_screen.dart';
-import 'presentation/screen/template_message_screen.dart';
-import 'services/sms_service.dart';
+import 'data/repositories/kwt_sms_repository.dart';
+import 'presentation/screens/messaging_screen.dart';
+import 'presentation/screens/message_form_screen.dart';
+import 'services/kwt_sms_service.dart';
+import 'presentation/providers/messaging_notifier.dart';
 
 class MessagingModule implements FeatureModule {
   @override
@@ -17,23 +16,23 @@ class MessagingModule implements FeatureModule {
   String get moduleName => 'Messaging';
 
   @override
-  String? get moduleDescription => 'SMS messaging functionality';
+  String? get moduleDescription => 'Send SMS messages to patients and contacts';
 
   @override
-  List<String> get dependsOn => [];
+  List<String> get dependsOn => ['patient'];
 
   @override
   List<ProviderBase> get providers => [
-    smsRepositoryProvider,
-    smsServiceProvider,
-    smsConfigProvider,
+    kwtSmsRepositoryProvider,
+    kwtSmsServiceProvider,
+    kwtSmsConfigProvider,
+    messagingProvider,
   ];
 
   @override
   Map<String, WidgetBuilder> get routes => {
     '/messaging': (_) => const MessagingScreen(),
-    '/messaging/template': (_) => const TemplateMessageScreen(),
-    '/messaging/history': (_) => const MessagingHistoryScreen(),
+    '/messaging/new': (_) => const MessageFormScreen(),
   };
 
   @override
@@ -45,29 +44,10 @@ class MessagingModule implements FeatureModule {
       selectedIcon: Icons.message,
       screen: const MessagingScreen(),
     ),
-    NavigationItem(
-      routePath: '/messaging/template',
-      title: 'Templates',
-      icon: Icons.format_quote_outlined,
-      selectedIcon: Icons.format_quote,
-      screen: const TemplateMessageScreen(),
-    ),
   ];
 
   @override
   Future<void> initialize() async {
-    // Register SMS providers
-    final twilio = TwilioProvider();
-
-    // Access providers directly for initialization
-    // In a real app, this would be done more elegantly
-    final container = ProviderContainer();
-    final smsService = container.read(smsServiceProvider);
-    final config = container.read(smsConfigProvider);
-
-    // Register the Twilio provider
-    final twilioConfig =
-        (config['providers'] as Map<String, dynamic>)['twilio'];
-    smsService.registerProvider(twilio, config: twilioConfig);
+    // No initialization required
   }
 }

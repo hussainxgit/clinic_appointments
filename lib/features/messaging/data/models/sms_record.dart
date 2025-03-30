@@ -1,90 +1,79 @@
-// lib/features/messaging/data/models/sms_record.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class SmsRecord {
   final String id;
-  final String providerId;
-  final String messageId;
-  final String to;
-  final String from;
-  final String body;
+  final String recipient;
+  final String message;
+  final String sender;
   final String status;
   final DateTime createdAt;
-  final DateTime? updatedAt;
-  final String? errorMessage;
+  final String? messageId;
   final Map<String, dynamic>? metadata;
 
   SmsRecord({
-    required this.id,
-    required this.providerId,
-    this.messageId = '',
-    required this.to,
-    required this.from,
-    required this.body,
-    required this.status,
-    required this.createdAt,
-    this.updatedAt,
-    this.errorMessage,
+    this.id = '',
+    required this.recipient,
+    required this.message,
+    required this.sender,
+    this.status = 'pending',
+    DateTime? createdAt,
+    this.messageId,
     this.metadata,
-  });
+  }) : createdAt = createdAt ?? DateTime.now();
 
   SmsRecord copyWith({
     String? id,
-    String? providerId,
-    String? messageId,
-    String? to,
-    String? from,
-    String? body,
+    String? recipient,
+    String? message,
+    String? sender,
     String? status,
     DateTime? createdAt,
-    DateTime? updatedAt,
-    String? errorMessage,
+    String? messageId,
     Map<String, dynamic>? metadata,
   }) {
     return SmsRecord(
       id: id ?? this.id,
-      providerId: providerId ?? this.providerId,
-      messageId: messageId ?? this.messageId,
-      to: to ?? this.to,
-      from: from ?? this.from,
-      body: body ?? this.body,
+      recipient: recipient ?? this.recipient,
+      message: message ?? this.message,
+      sender: sender ?? this.sender,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      errorMessage: errorMessage ?? this.errorMessage,
+      messageId: messageId ?? this.messageId,
       metadata: metadata ?? this.metadata,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'providerId': providerId,
-      'messageId': messageId,
-      'to': to,
-      'from': from,
-      'body': body,
+      'recipient': recipient,
+      'message': message,
+      'sender': sender,
       'status': status,
       'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
-      'errorMessage': errorMessage,
+      'messageId': messageId,
       'metadata': metadata,
     };
   }
 
-  factory SmsRecord.fromMap(Map<String, dynamic> map, String id) {
+  factory SmsRecord.fromMap(Map<String, dynamic> map, String documentId) {
+    // Handle Timestamp objects from Firestore
+    DateTime createdAt;
+    if (map['createdAt'] is Timestamp) {
+      createdAt = (map['createdAt'] as Timestamp).toDate();
+    } else if (map['createdAt'] is String) {
+      createdAt = DateTime.parse(map['createdAt']);
+    } else {
+      createdAt = DateTime.now();
+    }
+
     return SmsRecord(
-      id: id,
-      providerId: map['providerId'] ?? '',
-      messageId: map['messageId'] ?? '',
-      to: map['to'] ?? '',
-      from: map['from'] ?? '',
-      body: map['body'] ?? '',
+      id: documentId,
+      recipient: map['recipient'] ?? '',
+      message: map['message'] ?? '',
+      sender: map['sender'] ?? '',
       status: map['status'] ?? 'unknown',
-      createdAt: map['createdAt'] != null 
-          ? DateTime.parse(map['createdAt'])
-          : DateTime.now(),
-      updatedAt: map['updatedAt'] != null
-          ? DateTime.parse(map['updatedAt'])
-          : null,
-      errorMessage: map['errorMessage'],
+      createdAt: createdAt,
+      messageId: map['messageId'],
       metadata: map['metadata'],
     );
   }

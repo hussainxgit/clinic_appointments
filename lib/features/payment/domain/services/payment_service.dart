@@ -61,7 +61,6 @@ class PaymentService {
         status: PaymentStatus.pending,
         paymentMethod: 'myfatoorah',
         createdAt: DateTime.now(),
-        paymentId: '',
       );
 
       final savedPayment = await _paymentRepository.createPayment(newPayment);
@@ -115,7 +114,6 @@ class PaymentService {
         metadata: {
           ...payment.metadata ?? {},
           'invoiceCreatedAt': DateTime.now().toIso8601String(),
-          'myFatoorahPaymentId': response.paymentId,
         },
       );
 

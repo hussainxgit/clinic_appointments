@@ -32,7 +32,6 @@ class PaymentRecord {
   final DateTime? completedAt;
   final DateTime? lastUpdated;
   final Map<String, dynamic>? metadata;
-  final String paymentId;
   PaymentRecord({
     required this.id,
     required this.appointmentId,
@@ -50,7 +49,6 @@ class PaymentRecord {
     this.completedAt,
     this.lastUpdated,
     this.metadata,
-    required this.paymentId,
   });
 
   PaymentRecord copyWith({
@@ -89,7 +87,6 @@ class PaymentRecord {
       completedAt: completedAt ?? this.completedAt,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       metadata: metadata ?? this.metadata,
-      paymentId: paymentId ?? this.paymentId,
     );
   }
 
@@ -110,7 +107,6 @@ class PaymentRecord {
       'completedAt': completedAt?.toIso8601String(),
       'lastUpdated': lastUpdated?.toIso8601String(),
       'metadata': metadata,
-      'paymentId': paymentId,
     };
   }
 
@@ -144,7 +140,6 @@ class PaymentRecord {
               ? DateTime.parse(map['lastUpdated'])
               : null,
       metadata: map['metadata'],
-      paymentId: map['paymentId'] ?? '',
     );
   }
 
@@ -191,7 +186,6 @@ class PaymentRecord {
       completedAt: completedAt,
       lastUpdated: lastUpdated,
       metadata: data['metadata'],
-      paymentId: data['paymentId'] ?? '',
     );
   }
 }

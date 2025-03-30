@@ -3,7 +3,6 @@ import '../../data/models/payment_record.dart';
 class PaymentResponse {
   final bool success;
   final String? invoiceId;
-  final String? paymentId;
   final String? invoiceUrl;
   final String? customerReference;
   final String? transactionId;
@@ -14,7 +13,6 @@ class PaymentResponse {
   PaymentResponse({
     required this.success,
     this.invoiceId,
-    this.paymentId,
     this.invoiceUrl,
     this.customerReference,
     this.transactionId,

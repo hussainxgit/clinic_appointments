@@ -147,12 +147,13 @@ class PaymentLinkScreen extends ConsumerStatefulWidget {
 }
 
 class _PaymentLinkScreenState extends ConsumerState<PaymentLinkScreen> {
-  late final Map<String, dynamic> args;
+  Map<String, dynamic>? _args;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    // Only initialize if it hasn't been set yet
+    _args ??= ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
   }
 
   @override
@@ -160,12 +161,12 @@ class _PaymentLinkScreenState extends ConsumerState<PaymentLinkScreen> {
     final navigationService = ref.read(navigationServiceProvider);
     final processingState = ref.watch(paymentProcessingProvider);
 
-    final appointmentId = args['appointmentId'] as String;
-    final amount = args['amount'] as double;
-    final currency = args['currency'] as String? ?? 'KWD';
-    final patient = args['patient'] as Patient;
-    final doctorId = args['doctorId'] as String;
-    final appointmentDate = args['appointmentDate'] as DateTime?;
+    final appointmentId = _args!['appointmentId'] as String;
+    final amount = _args!['amount'] as double;
+    final currency = _args!['currency'] as String? ?? 'KWD';
+    final patient = _args!['patient'] as Patient;
+    final doctorId = _args!['doctorId'] as String;
+    final appointmentDate = _args!['appointmentDate'] as DateTime?;
 
     return Scaffold(
       appBar: AppBar(
