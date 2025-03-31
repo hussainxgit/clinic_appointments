@@ -151,14 +151,14 @@ class PaymentService {
       }
 
       // Format appointment date
-      final dateFormat = DateFormat('EEEE, MMMM d, yyyy - h:mm a');
+      final dateFormat = DateFormat('MMM d, yyyy, h a');
       final formattedDate = dateFormat.format(appointment.dateTime);
 
       // Create message text
       final messageText = PaymentConfig.paymentMessageTemplate(
         patientName: patient.name,
         appointmentDate: formattedDate,
-        amount: '${payment.amount.toStringAsFixed(3)} ${payment.currency}',
+        amount: '${payment.amount.toStringAsFixed(2)} ${payment.currency}',
         paymentLink: payment.paymentLink!,
       );
 

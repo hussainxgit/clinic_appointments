@@ -17,6 +17,7 @@ class KwtSmsResponse {
     this.errorMessage,
   });
 
+  // In the KwtSmsResponse class
   factory KwtSmsResponse.fromMap(Map<String, dynamic> map) {
     final isSuccess = map['result'] == 'OK';
 

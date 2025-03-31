@@ -34,15 +34,7 @@ class PaymentConfig {
     required String amount,
     required String paymentLink,
   }) {
-    return '''Thank you $patientName for booking your appointment on $appointmentDate.
-
-Please complete your payment of $amount $defaultCurrency through this secure link:
-$paymentLink
-
-The payment will be confirmed automatically.
-
-Eye Clinic Team
-''';
+    return '''$patientName, confirm your $appointmentDate booking by paying $amount\n$paymentLink\nEye Clinic''';
   }
 
   static String paymentConfirmationTemplate({

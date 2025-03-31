@@ -48,8 +48,41 @@ class KwtSmsRepositoryImpl implements KwtSmsRepository {
       final response = await client.post(Uri.parse(apiUrl), body: payload);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        final jsonResponse = json.decode(response.body);
-        return KwtSmsResponse.fromMap(jsonResponse);
+        final responseBody = response.body.trim();
+
+        // Check if the response is in the format "OK:messageId:numbers:charged:balance:timestamp"
+        if (responseBody.startsWith('OK:')) {
+          final parts = responseBody.split(':');
+          if (parts.length >= 6) {
+            return KwtSmsResponse(
+              isSuccess: true,
+              messageId: parts[1],
+              numbersProcessed: int.tryParse(parts[2]),
+              pointsCharged: int.tryParse(parts[3]),
+              balanceAfter: int.tryParse(parts[4]),
+              timestamp: int.tryParse(parts[5]),
+            );
+          }
+        }
+
+        // Try parsing as JSON if it's not in the string format
+        try {
+          final jsonResponse = json.decode(responseBody);
+          return KwtSmsResponse.fromMap(jsonResponse);
+        } catch (jsonError) {
+          // If we can't parse as JSON and it starts with "OK", consider it a success
+          if (responseBody.startsWith('OK')) {
+            return KwtSmsResponse(
+              isSuccess: true,
+              messageId: responseBody.substring(3).trim(),
+            );
+          }
+
+          // Otherwise, return the error message
+          return KwtSmsResponse.error(
+            'Failed to parse API response: $responseBody',
+          );
+        }
       } else {
         return KwtSmsResponse.error(
           'HTTP Error: ${response.statusCode} ${response.reasonPhrase}',
