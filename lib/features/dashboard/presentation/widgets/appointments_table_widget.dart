@@ -102,7 +102,7 @@ class AppointmentsTableWidget extends ConsumerWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: bgColor,
+                        color: bgColor.withAlpha((1.0 * 255).toInt()),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(

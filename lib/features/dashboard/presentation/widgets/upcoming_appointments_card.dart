@@ -32,7 +32,6 @@ class _UpcomingAppointmentsWidgetState
   @override
   Widget build(BuildContext context) {
     final appointmentState = ref.watch(appointmentNotifierProvider);
-    final navigationService = ref.read(navigationServiceProvider);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -105,7 +104,9 @@ class _UpcomingAppointmentsWidgetState
               margin: const EdgeInsets.symmetric(horizontal: 5),
               decoration: BoxDecoration(
                 color:
-                    isSelected ? const Color(0xFF0F5A5C) : Colors.transparent,
+                    isSelected
+                        ? const Color(0xFF0F5A5C).withAlpha((1.0 * 255).toInt())
+                        : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -188,7 +189,9 @@ class _UpcomingAppointmentsWidgetState
 
     return InkWell(
       onTap:
-          () => ref.read(navigationServiceProvider).navigateTo('/appointment-slot/details',),
+          () => ref
+              .read(navigationServiceProvider)
+              .navigateTo('/appointment-slot/details'),
       child: Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: Row(

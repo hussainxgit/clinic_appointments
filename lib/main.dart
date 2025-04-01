@@ -28,7 +28,7 @@ void main() async {
 
   // Prepare feature registry
   final featureRegistry = FeatureRegistry();
-  
+
   // Register modules in correct order
   featureRegistry.registerModule(DashboardModule());
   featureRegistry.registerModule(DoctorModule());
@@ -38,14 +38,9 @@ void main() async {
   featureRegistry.registerModule(PaymentModule());
   featureRegistry.registerModule(MessagingModule());
 
-  
   await featureRegistry.initializeAllModules();
 
-  runApp(
-    ProviderScope(
-      child: ClinicApp(featureRegistry: featureRegistry),
-    ),
-  );
+  runApp(ProviderScope(child: ClinicApp(featureRegistry: featureRegistry)));
 }
 
 class ClinicApp extends ConsumerWidget {
@@ -76,39 +71,142 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key, required this.featureRegistry});
 
   @override
-  ConsumerState<MainNavigationScreen> createState() => _MainNavigationScreenState();
+  ConsumerState<MainNavigationScreen> createState() =>
+      _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   int _selectedIndex = 0;
+  bool _isExpanded = true;
 
   @override
   Widget build(BuildContext context) {
     final navigationItems = widget.featureRegistry.allNavigationItems;
 
     if (navigationItems.isEmpty) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: navigationItems.map((item) => item.screen).toList(),
+      body: Row(
+        children: [
+          // Collapsible Side Navigation
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: _isExpanded ? 200 : 70,
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    red: 0,
+                    green: 0,
+                    blue: 0,
+                    alpha: 0.2,
+                  ),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                SizedBox(height: 50),
+                // Toggle button
+                IconButton(
+                  icon: Icon(
+                    _isExpanded
+                        ? Icons.arrow_back_ios
+                        : Icons.arrow_forward_ios,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isExpanded = !_isExpanded;
+                    });
+                  },
+                ),
+                SizedBox(height: 20),
+                // Navigation items
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: navigationItems.length,
+                    itemBuilder: (context, index) {
+                      final item = navigationItems[index];
+                      return NavItem(
+                        title: item.title,
+                        icon:
+                            index == _selectedIndex
+                                ? item.selectedIcon
+                                : item.icon,
+                        isSelected: index == _selectedIndex,
+                        isExpanded: _isExpanded,
+                        onTap: () => setState(() => _selectedIndex = index),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Main Content
+          Expanded(child: navigationItems[_selectedIndex].screen),
+        ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        items: navigationItems.map((item) {
-          return BottomNavigationBarItem(
-            icon: Icon(item.icon),
-            activeIcon: Icon(item.selectedIcon),
-            label: item.title,
-          );
-        }).toList(),
+    );
+  }
+}
+
+class NavItem extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final bool isSelected;
+  final bool isExpanded;
+  final VoidCallback onTap;
+
+  const NavItem({
+    super.key,
+    required this.title,
+    required this.icon,
+    required this.isSelected,
+    required this.isExpanded,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color:
+              isSelected
+                  ? Theme.of(context).primaryColorLight
+                  : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            Icon(icon, color: isSelected ? Colors.white : Colors.white70),
+            if (isExpanded)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16.0),
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.white70,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

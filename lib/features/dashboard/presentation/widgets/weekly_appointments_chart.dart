@@ -263,7 +263,7 @@ class _WeeklyAppointmentsChartState
         horizontalInterval: 5,
         getDrawingHorizontalLine:
             (value) =>
-                FlLine(color: Colors.grey.withOpacity(0.2), strokeWidth: 1),
+                FlLine(color: Colors.grey.withAlpha((0.2 * 255).toInt()), strokeWidth: 1),
       ),
       maxY: _getMaxY(),
     );
@@ -279,12 +279,12 @@ class _WeeklyAppointmentsChartState
         barRods: [
           BarChartRodData(
             toY: _appointmentCounts[index].toDouble(),
-            color: _touchedIndex == index ? _touchedBarColor : _barColor,
+            color: _touchedIndex == index ? _touchedBarColor.withAlpha((0.8 * 255).toInt()) : _barColor,
             width: 20,
             borderSide:
                 _touchedIndex == index
                     ? BorderSide(
-                      color: _touchedBarColor.withOpacity(0.8),
+                      color: _touchedBarColor.withAlpha((0.8 * 255).toInt()),
                       width: 2,
                     )
                     : BorderSide.none,

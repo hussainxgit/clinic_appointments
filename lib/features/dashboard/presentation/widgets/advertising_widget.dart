@@ -39,7 +39,9 @@ class AdvertisingWidget extends StatelessWidget {
             // Badge/Tag
             Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7), // More contrast
+                color: Colors.black.withAlpha(
+                  (0.7 * 255).toInt(),
+                ), // More contrast
                 borderRadius: BorderRadius.circular(
                   8,
                 ), // Smaller radius for badge

@@ -160,9 +160,9 @@ class _AppointmentSlotFormScreenState
 
     final doctors = doctorState.doctors.where((d) => d.isAvailable).toList();
     if (doctors.isEmpty) {
-      return const Card(
-        color: Colors.amber,
-        child: Padding(
+      return Card(
+        color: Colors.amber.withAlpha((1.0 * 255).toInt()),
+        child: const Padding(
           padding: EdgeInsets.all(16.0),
           child: Text(
             'No available doctors found. Please make sure at least one doctor is marked as available.',

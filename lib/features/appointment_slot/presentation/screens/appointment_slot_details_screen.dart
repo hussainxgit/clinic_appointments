@@ -163,12 +163,16 @@ class AppointmentSlotDetailsState
                         children: [
                           Expanded(
                             flex: 2,
-                            child: _buildPatientsList(filteredAppointments.cast<Map<String, dynamic>>()),
+                            child: _buildPatientsList(
+                              filteredAppointments.cast<Map<String, dynamic>>(),
+                            ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             flex: 3,
-                            child: _buildPatientDetails(filteredAppointments.cast<Map<String, dynamic>>()),
+                            child: _buildPatientDetails(
+                              filteredAppointments.cast<Map<String, dynamic>>(),
+                            ),
                           ),
                         ],
                       ),
@@ -381,7 +385,10 @@ class AppointmentSlotDetailsState
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+          colors: [
+            Colors.transparent,
+            Colors.black.withAlpha((0.7 * 255).toInt()),
+          ],
         ),
       ),
       child: Row(
@@ -879,8 +886,6 @@ class AppointmentSlotDetailsState
         return 'Completed';
       case AppointmentStatus.cancelled:
         return 'Cancelled';
-      default:
-        return 'Unknown';
     }
   }
 }

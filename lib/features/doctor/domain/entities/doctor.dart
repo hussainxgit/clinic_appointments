@@ -64,7 +64,7 @@ class Doctor {
           json['socialMedia'] != null
               ? Map<String, String>.from(json['socialMedia'])
               : null,
-      createdAt: json['createdAt'],
+      createdAt: DateTime.parse(json['createdAt']),
     );
   }
 

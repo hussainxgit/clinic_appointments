@@ -50,7 +50,7 @@ class _AppointmentSlotsScreenState
           // Filter section
           Container(
             padding: const EdgeInsets.all(16),
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            color: Theme.of(context).primaryColor.withAlpha((0.1 * 255).toInt()),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -232,13 +232,13 @@ class _AppointmentSlotsScreenState
               children: [
                 Icon(
                   slot.isFullyBooked ? Icons.event_busy : Icons.event_available,
-                  color: availabilityColor,
+                  color: availabilityColor.withAlpha((1.0 * 255).toInt()),
                   size: 16,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '${slot.bookedPatients}/${slot.maxPatients} booked',
-                  style: TextStyle(color: availabilityColor),
+                  style: TextStyle(color: availabilityColor.withAlpha((1.0 * 255).toInt())),
                 ),
               ],
             ),
