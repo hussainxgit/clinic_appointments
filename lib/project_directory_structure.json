@@ -1,0 +1,922 @@
+{
+    "name": "clinic_appointments",
+    "type": "directory",
+    "children": [
+        {
+            "name": "assets",
+            "type": "directory",
+            "children": [
+                {
+                    "name": "app_logo.png",
+                    "type": "file"
+                },
+                {
+                    "name": "app_logo_wide.png",
+                    "type": "file"
+                }
+            ]
+        },
+        {
+            "name": "firebase",
+            "type": "directory",
+            "children": [
+                {
+                    "name": "functions",
+                    "type": "directory",
+                    "children": [
+                        {
+                            "name": "index.js",
+                            "type": "file"
+                        },
+                        {
+                            "name": "lib",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "index.js",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "index.js.map",
+                                    "type": "file"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "package-lock.json",
+                            "type": "file"
+                        },
+                        {
+                            "name": "package.json",
+                            "type": "file"
+                        },
+                        {
+                            "name": "src",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "index.ts",
+                                    "type": "file"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "tsconfig.json",
+                            "type": "file"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "firebase.json",
+            "type": "file"
+        },
+        {
+            "name": "lib",
+            "type": "directory",
+            "children": [
+                {
+                    "name": "core",
+                    "type": "directory",
+                    "children": [
+                        {
+                            "name": "data",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "firebase_repository.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "repository.dart",
+                                    "type": "file"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "di",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "core_providers.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "core_providers.g.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "riverpod_container.dart",
+                                    "type": "file"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "events",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "app_event.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "domain_events.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "event_bus.dart",
+                                    "type": "file"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "firebase",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "firebase_providers.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "firebase_providers.g.dart",
+                                    "type": "file"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "module",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "feature_module.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "feature_registry.dart",
+                                    "type": "file"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "navigation",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "navigation_service.dart",
+                                    "type": "file"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "ui",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "base_screen.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "theme",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "app_theme.dart",
+                                            "type": "file"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "widgets",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "app_card.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "empty_state.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "loading_button.dart",
+                                            "type": "file"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "utils",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "logger.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "result.dart",
+                                    "type": "file"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "features",
+                    "type": "directory",
+                    "children": [
+                        {
+                            "name": "appointment",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "appointment_module.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "data",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "appointment_providers.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "appointment_providers.g.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "appointment_repository.dart",
+                                            "type": "file"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "domain",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "entities",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "appointment.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "exceptions",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "appointment_exception.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "presentation",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "providers",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "appointment_notifier.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "appointment_notifier.g.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "screens",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "appointment_details_screen.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "appointment_form_screen.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "appointment_payment_screen.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "appointment_screens.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "services",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "appointment_service.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "appointment_service.g.dart",
+                                            "type": "file"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "appointment_slot",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "appointment_slot_module.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "data",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "appointment_slot_providers.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "appointment_slot_providers.g.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "appointment_slot_repository.dart",
+                                            "type": "file"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "domain",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "entities",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "appointment_slot.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "exceptions",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "slot_exception.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "presentation",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "providers",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "appointment_slot_notifier.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "appointment_slot_notifier.g.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "screens",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "appointment_slots_screen.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "appointment_slot_details_screen.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "appointment_slot_form_screen.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "dashboard",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "dashboard_module.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "presentation",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "dashboard_screen.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "providers",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "dashboard_notifier.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "dashboard_notifier.g.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "widgets",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "advertising_widget.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "appointments_table_widget.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "dashboard_statistics.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "upcoming_appointments_card.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "weekly_appointments_chart.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "doctor",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "data",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "doctor_provider.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "doctor_provider.g.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "doctor_repository.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "mock_doctor_data.dart",
+                                            "type": "file"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "doctor_module.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "domain",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "entities",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "doctor.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "exceptions",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "doctor_exception.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "presentation",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "provider",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "doctor_notifier.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "doctor_notifier.g.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "screens",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "doctors_screen.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "doctor_details_screen.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "doctor_form_screen.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "messaging",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "data",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "config",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "kwt_sms_config.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "models",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "sms_record.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "repositories",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "kwt_sms_repository.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "domain",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "entities",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "sms_message.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "sms_response.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "messaging_module.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "presentation",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "providers",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "messaging_notifier.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "screens",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "message_form_screen.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "messaging_screen.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "services",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "kwt_sms_service.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "kwt_sms_service.g.dart",
+                                            "type": "file"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "patient",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "data",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "patient_providers.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "patient_providers.g.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "patient_repository.dart",
+                                            "type": "file"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "domain",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "entities",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "patient.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "patient_module.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "presentation",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "providers",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "patient_notifier.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "patient_notifier.g.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "screens",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "patient_details_screen.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "patient_form_screen.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "patient_screen.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "payment",
+                            "type": "directory",
+                            "children": [
+                                {
+                                    "name": "data",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "config",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "payment_config.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "gateways",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "myfatoorah_gateway.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "models",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "payment_record.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "repositories",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "payment_repository_impl.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "services",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "myfatoorah_service.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "domain",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "entities",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "payment_response.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "providers.dart",
+                                            "type": "file"
+                                        },
+                                        {
+                                            "name": "repositories",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "payment_repository.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "services",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "payment_service.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "payment_module.dart",
+                                    "type": "file"
+                                },
+                                {
+                                    "name": "presentation",
+                                    "type": "directory",
+                                    "children": [
+                                        {
+                                            "name": "screens",
+                                            "type": "directory",
+                                            "children": [
+                                                {
+                                                    "name": "payment_history_screen.dart",
+                                                    "type": "file"
+                                                },
+                                                {
+                                                    "name": "payment_link_screen.dart",
+                                                    "type": "file"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "firebase_options.dart",
+            "type": "file"
+        },
+        {
+            "name": "main.dart",
+            "type": "file"
+        },
+        {
+            "name": "notes.txt",
+            "type": "file"
+        }
+    ]
+}
