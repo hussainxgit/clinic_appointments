@@ -1,4 +1,5 @@
 // lib/features/appointment/services/appointment_service.dart
+
 import 'package:clinic_appointments/core/di/core_providers.dart';
 import 'package:clinic_appointments/features/appointment/data/appointment_repository.dart';
 import 'package:clinic_appointments/features/appointment_slot/data/appointment_slot_repository.dart';
