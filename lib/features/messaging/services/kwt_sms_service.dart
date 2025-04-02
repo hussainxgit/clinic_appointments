@@ -1,14 +1,25 @@
+// lib/features/messaging/services/kwt_sms_service.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../core/firebase/firebase_providers.dart';
 import '../data/config/kwt_sms_config.dart';
 import '../data/repositories/kwt_sms_repository.dart';
 import '../domain/entities/sms_message.dart';
 import '../domain/entities/sms_response.dart';
 import '../data/models/sms_record.dart';
 import '../../../../core/utils/result.dart';
+import '../../../../core/utils/error_handler.dart';
 
 part 'kwt_sms_service.g.dart';
+
+// Define the repository provider first
+final kwtSmsRepositoryProvider = Provider<KwtSmsRepository>((ref) {
+  // You need to provide the correct implementation here
+  final firestore = ref.watch(firestoreProvider);
+  return KwtSmsRepositoryImpl(client: http.Client(), firestore: firestore);
+});
 
 // Define a configuration provider for the KWT-SMS API
 final kwtSmsConfigProvider = Provider<Map<String, dynamic>>((ref) {
@@ -44,7 +55,7 @@ class KwtSmsService {
     String? sender,
     int? languageCode,
     bool isTest = false,
-  }) async {
+  }) {
     return sendBulkSms(
       phoneNumbers: [phoneNumber],
       message: message,
@@ -61,8 +72,16 @@ class KwtSmsService {
     String? sender,
     int? languageCode,
     bool isTest = false,
-  }) async {
-    try {
+  }) {
+    return ErrorHandler.guardAsync(() async {
+      if (phoneNumbers.isEmpty) {
+        throw 'At least one phone number is required';
+      }
+
+      if (message.isEmpty) {
+        throw 'Message content cannot be empty';
+      }
+
       final formattedNumbers = KwtSmsMessage.formatMobileNumbers(phoneNumbers);
 
       // Create the message object
@@ -88,7 +107,12 @@ class KwtSmsService {
       );
 
       // Save the record first
-      final savedRecord = await _repository.saveSmsRecord(record);
+      final savedRecordResult = await _repository.saveSmsRecord(record);
+      if (savedRecordResult.isFailure) {
+        throw 'Failed to save SMS record: ${savedRecordResult.error}';
+      }
+
+      final savedRecord = savedRecordResult.data;
 
       // Send the SMS
       final response = await _repository.sendSms(
@@ -97,42 +121,56 @@ class KwtSmsService {
         password: _config['password'],
       );
 
+      if (response.isFailure) {
+        // Update the record with failed status
+        await _repository.saveSmsRecord(
+          savedRecord.copyWith(
+            status: 'failed',
+            metadata: {
+              ...savedRecord.metadata ?? {},
+              'error': response.error,
+              'timestamp': DateTime.now().toIso8601String(),
+            },
+          ),
+        );
+
+        throw response.error;
+      }
+
       // Update the record with the result
       await _repository.saveSmsRecord(
         savedRecord.copyWith(
-          status: response.isSuccess ? 'sent' : 'failed',
-          messageId: response.messageId,
+          status: 'sent',
+          messageId: response.data.messageId,
           metadata: {
             ...savedRecord.metadata ?? {},
             'response': {
-              'isSuccess': response.isSuccess,
-              'numbersProcessed': response.numbersProcessed,
-              'pointsCharged': response.pointsCharged,
-              'balanceAfter': response.balanceAfter,
-              'timestamp': response.timestamp,
-              'errorMessage': response.errorMessage,
+              'isSuccess': response.data.isSuccess,
+              'numbersProcessed': response.data.numbersProcessed,
+              'pointsCharged': response.data.pointsCharged,
+              'balanceAfter': response.data.balanceAfter,
+              'timestamp': response.data.timestamp,
             },
           },
         ),
       );
 
-      if (response.isSuccess) {
-        return Result.success(response);
-      } else {
-        return Result.failure(response.errorMessage ?? 'Failed to send SMS');
-      }
-    } catch (e) {
-      return Result.failure('Error in SMS service: $e');
-    }
+      return response.data;
+    }, 'sending SMS message');
   }
 
   /// Get message history for a specific recipient or all messages
-  Future<Result<List<SmsRecord>>> getMessageHistory({String? recipient}) async {
-    try {
-      final records = await _repository.getMessageHistory(recipient: recipient);
-      return Result.success(records);
-    } catch (e) {
-      return Result.failure('Failed to get message history: $e');
-    }
+  Future<Result<List<SmsRecord>>> getMessageHistory({String? recipient}) {
+    return ErrorHandler.guardAsync(() async {
+      final recordsResult = await _repository.getMessageHistory(
+        recipient: recipient,
+      );
+
+      if (recordsResult.isFailure) {
+        throw recordsResult.error;
+      }
+
+      return recordsResult.data;
+    }, 'getting message history');
   }
 }

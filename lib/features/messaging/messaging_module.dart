@@ -1,12 +1,23 @@
+// lib/features/messaging/messaging_module.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:http/http.dart' as http;
 import '../../core/module/feature_module.dart';
+import '../../core/firebase/firebase_providers.dart';
 import 'data/repositories/kwt_sms_repository.dart';
 import 'presentation/screens/messaging_screen.dart';
 import 'presentation/screens/message_form_screen.dart';
 import 'services/kwt_sms_service.dart';
 import 'presentation/providers/messaging_notifier.dart';
+
+// Define repository provider here to avoid circular dependencies
+final kwtSmsRepositoryProvider = Provider<KwtSmsRepository>((ref) {
+  final firestore = ref.watch(firestoreProvider);
+  return KwtSmsRepositoryImpl(
+    client: http.Client(),
+    firestore: firestore,
+  );
+});
 
 class MessagingModule implements FeatureModule {
   @override

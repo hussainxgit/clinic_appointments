@@ -40,8 +40,8 @@ class PaymentService {
       // Check if payment already exists
       final existingPayments = await _paymentRepository
           .getPaymentsByAppointment(appointmentId);
-      if (existingPayments.isNotEmpty) {
-        final latestPayment = existingPayments.first;
+      if (existingPayments.data.isNotEmpty) {
+        final latestPayment = existingPayments.data.first;
         if (latestPayment.status == PaymentStatus.successful) {
           return Result.success(latestPayment);
         } else if (latestPayment.status == PaymentStatus.pending) {
@@ -63,7 +63,7 @@ class PaymentService {
       );
 
       final savedPayment = await _paymentRepository.createPayment(newPayment);
-      return Result.success(savedPayment);
+      return Result.success(savedPayment.data);
     } catch (e) {
       return Result.failure('Failed to create payment: $e');
     }
@@ -72,32 +72,18 @@ class PaymentService {
   Future<Result<PaymentRecord>> generatePaymentLink(String paymentId) async {
     try {
       final payment = await _paymentRepository.getPaymentById(paymentId);
-      if (payment == null) {
-        return Result.failure('Payment not found');
-      }
 
       // Get patient details
-      final patient = await _patientRepository.getById(payment.patientId);
-      if (patient == null) {
-        return Result.failure('Patient not found');
-      }
-
-      // Get appointment details for reference
-      final appointment = await _appointmentRepository.getById(
-        payment.appointmentId,
-      );
-      if (appointment == null) {
-        return Result.failure('Appointment not found');
-      }
+      final patient = await _patientRepository.getById(payment.data!.patientId);
 
       // Create invoice link
       final response = await _myFatoorahService.createInvoiceLink(
-        appointmentId: payment.appointmentId,
-        patientName: patient.name,
-        patientEmail: patient.email ?? 'noemail@example.com',
-        patientMobile: patient.phone,
-        amount: payment.amount,
-        currency: payment.currency,
+        appointmentId: payment.data!.appointmentId,
+        patientName: patient.data!.name,
+        patientEmail: patient.data!.email ?? 'noemail@example.com',
+        patientMobile: patient.data!.phone,
+        amount: payment.data!.amount,
+        currency: payment.data!.currency,
       );
 
       if (!response.success) {
@@ -107,11 +93,11 @@ class PaymentService {
       }
 
       // Update payment record with invoice details
-      final updatedPayment = payment.copyWith(
+      final updatedPayment = payment.data!.copyWith(
         invoiceId: response.invoiceId,
         paymentLink: response.invoiceUrl,
         metadata: {
-          ...payment.metadata ?? {},
+          ...payment.data!.metadata ?? {},
           'invoiceCreatedAt': DateTime.now().toIso8601String(),
         },
       );
@@ -119,7 +105,7 @@ class PaymentService {
       final savedPayment = await _paymentRepository.updatePayment(
         updatedPayment,
       );
-      return Result.success(savedPayment);
+      return Result.success(savedPayment.data);
     } catch (e) {
       return Result.failure('Failed to generate payment link: $e');
     }
@@ -128,43 +114,35 @@ class PaymentService {
   Future<Result<bool>> sendPaymentLinkViaWhatsApp(String paymentId) async {
     try {
       final payment = await _paymentRepository.getPaymentById(paymentId);
-      if (payment == null) {
-        return Result.failure('Payment not found');
-      }
 
-      if (payment.paymentLink == null) {
+      if (payment.data!.paymentLink == null) {
         return Result.failure('Payment link not generated yet');
       }
 
       // Get patient details
-      final patient = await _patientRepository.getById(payment.patientId);
-      if (patient == null) {
-        return Result.failure('Patient not found');
-      }
+      final patient = await _patientRepository.getById(payment.data!.patientId);
 
       // Get appointment details for the message
       final appointment = await _appointmentRepository.getById(
-        payment.appointmentId,
+        payment.data!.appointmentId,
       );
-      if (appointment == null) {
-        return Result.failure('Appointment not found');
-      }
 
       // Format appointment date
       final dateFormat = DateFormat('MMM d, yyyy, h a');
-      final formattedDate = dateFormat.format(appointment.dateTime);
+      final formattedDate = dateFormat.format(appointment.data!.dateTime);
 
       // Create message text
       final messageText = PaymentConfig.paymentMessageTemplate(
-        patientName: patient.name,
+        patientName: patient.data!.name,
         appointmentDate: formattedDate,
-        amount: '${payment.amount.toStringAsFixed(2)} ${payment.currency}',
-        paymentLink: payment.paymentLink!,
+        amount:
+            '${payment.data!.amount.toStringAsFixed(2)} ${payment.data!.currency}',
+        paymentLink: payment.data!.paymentLink!,
       );
 
       // Send SMS using the KWT SMS service
       final result = await _smsService.sendSms(
-        phoneNumber: patient.phone,
+        phoneNumber: patient.data!.phone,
         message: messageText,
         // For payment links, use English language code by default
         languageCode: 1, // English
@@ -175,13 +153,14 @@ class PaymentService {
       }
 
       // Update payment record as link sent
-      final updatedPayment = payment.copyWith(
-        linkSent: true,
-        metadata: {
-          ...payment.metadata ?? {},
-          'linkSentAt': DateTime.now().toIso8601String(),
-        },
-      );
+      final updatedPayment =
+          payment.data!..copyWith(
+            linkSent: true,
+            metadata: {
+              ...payment.data!.metadata ?? {},
+              'linkSentAt': DateTime.now().toIso8601String(),
+            },
+          );
 
       await _paymentRepository.updatePayment(updatedPayment);
       return Result.success(true);
@@ -193,16 +172,13 @@ class PaymentService {
   Future<Result<PaymentStatus>> checkPaymentStatus(String paymentId) async {
     try {
       final payment = await _paymentRepository.getPaymentById(paymentId);
-      if (payment == null) {
-        return Result.failure('Payment not found');
-      }
 
-      if (payment.invoiceId == null) {
+      if (payment.data!.invoiceId == null) {
         return Result.failure('No invoice ID associated with this payment');
       }
 
       final response = await _myFatoorahService.checkPaymentStatus(
-        payment.invoiceId!,
+        payment.data!.invoiceId!,
       );
       if (!response.success) {
         return Result.failure(
@@ -211,17 +187,17 @@ class PaymentService {
       }
 
       // If status has changed, update the payment record
-      if (response.status != payment.status) {
+      if (response.status != payment.data!.status) {
         await _paymentRepository.updatePaymentStatus(
-          payment.id,
+          payment.data!.id,
           response.status,
           transactionId: response.transactionId,
         );
 
         // If payment is successful, update the appointment payment status
         if (response.status == PaymentStatus.successful) {
-          await _updateAppointmentPaymentStatus(payment.appointmentId);
-          await _sendPaymentConfirmation(payment);
+          await _updateAppointmentPaymentStatus(payment.data!.appointmentId);
+          await _sendPaymentConfirmation(payment.data!);
         }
       }
 
@@ -234,10 +210,9 @@ class PaymentService {
   Future<void> _updateAppointmentPaymentStatus(String appointmentId) async {
     try {
       final appointment = await _appointmentRepository.getById(appointmentId);
-      if (appointment == null) return;
 
       // Update the appointment's payment status
-      final updatedAppointment = appointment.copyWith(
+      final updatedAppointment = appointment.data!.copyWith(
         paymentStatus: appointment_entity.PaymentStatus.paid,
       );
 
@@ -251,28 +226,26 @@ class PaymentService {
     try {
       // Get patient details
       final patient = await _patientRepository.getById(payment.patientId);
-      if (patient == null) return;
 
       // Get appointment details
       final appointment = await _appointmentRepository.getById(
         payment.appointmentId,
       );
-      if (appointment == null) return;
 
       // Format appointment date
       final dateFormat = DateFormat('EEEE, MMMM d, yyyy - h:mm a');
-      final formattedDate = dateFormat.format(appointment.dateTime);
+      final formattedDate = dateFormat.format(appointment.data!.dateTime);
 
       // Create confirmation message
       final messageText = PaymentConfig.paymentConfirmationTemplate(
-        patientName: patient.name,
+        patientName: patient.data!.name,
         appointmentDate: formattedDate,
         amount: '${payment.amount.toStringAsFixed(3)} ${payment.currency}',
       );
 
       // Send confirmation SMS
       await _smsService.sendSms(
-        phoneNumber: patient.phone,
+        phoneNumber: patient.data!.phone,
         message: messageText,
         languageCode: 1, // English by default for payment confirmations
       );

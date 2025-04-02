@@ -10,6 +10,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/events/event_bus.dart';
 import '../../../../core/events/domain_events.dart';
+import '../../../core/utils/error_handler.dart';
 import '../../appointment_slot/data/appointment_slot_providers.dart';
 import '../../patient/data/patient_providers.dart';
 import '../../doctor/data/doctor_provider.dart';
@@ -55,54 +56,51 @@ class AppointmentService {
        _eventBus = eventBus;
 
   /// Creates a new appointment with all necessary validations
-  ///
-  /// This operation affects multiple entities:
-  /// - Validates patient, doctor and slot
-  /// - Checks for conflicting appointments
-  /// - Updates the slot booking
-  /// - Creates the appointment
-  /// - Updates the patient's appointment list
-  /// - Publishes an event
   Future<Result<Appointment>> createAppointment(Appointment appointment) async {
-    try {
+    return ErrorHandler.guardAsync(() async {
       // Validate all entities and business rules
       final validationResult = await _validateAppointmentCreation(appointment);
       if (validationResult.isFailure) {
-        return Result.failure(validationResult.error);
+        throw validationResult.error;
       }
 
       final patient = validationResult.data['patient'];
       final slot = validationResult.data['slot'];
 
       // Execute the creation transaction
-      return await _executeAppointmentCreation(appointment, patient, slot);
-    } catch (e) {
-      return Result.failure('Failed to create appointment: ${e.toString()}');
-    }
+      final result = await _executeAppointmentCreation(
+        appointment,
+        patient,
+        slot,
+      );
+
+      return result;
+    }, 'creating appointment');
   }
 
   /// Updates an existing appointment
-  ///
-  /// Handles:
-  /// - Slot changes (canceling old slot, booking new slot)
-  /// - Patient changes (removing from old patient, adding to new)
-  /// - Status changes
   Future<Result<Appointment>> updateAppointment(
     Appointment updatedAppointment,
   ) async {
-    try {
+    return ErrorHandler.guardAsync(() async {
       // Find and validate the existing appointment
-      final existingAppointment = await _appointmentRepository.getById(
+      final existingAppointmentResult = await _appointmentRepository.getById(
         updatedAppointment.id,
       );
+
+      if (existingAppointmentResult.isFailure) {
+        throw existingAppointmentResult.error;
+      }
+
+      final existingAppointment = existingAppointmentResult.data;
       if (existingAppointment == null) {
-        return Result.failure('Appointment not found');
+        throw 'Appointment not found';
       }
 
       // Validate doctor
       final doctorResult = await _validateDoctor(updatedAppointment.doctorId);
       if (doctorResult.isFailure) {
-        return Result.failure(doctorResult.error);
+        throw doctorResult.error;
       }
 
       // Handle slot changes
@@ -113,7 +111,7 @@ class AppointmentService {
           updatedAppointment,
         );
         if (slotChangeResult.isFailure) {
-          return Result.failure(slotChangeResult.error);
+          throw slotChangeResult.error;
         }
       }
 
@@ -124,54 +122,85 @@ class AppointmentService {
           updatedAppointment,
         );
         if (patientChangeResult.isFailure) {
-          return Result.failure(patientChangeResult.error);
+          throw patientChangeResult.error;
         }
       }
 
       // Update the appointment
-      final savedAppointment = await _appointmentRepository.update(
+      final savedAppointmentResult = await _appointmentRepository.update(
         updatedAppointment,
       );
 
+      if (savedAppointmentResult.isFailure) {
+        throw savedAppointmentResult.error;
+      }
+
       // Publish update event
       _eventBus.publish(
-        AppointmentUpdatedEvent(savedAppointment, existingAppointment),
+        AppointmentUpdatedEvent(
+          savedAppointmentResult.data,
+          existingAppointment,
+        ),
       );
 
-      return Result.success(savedAppointment);
-    } catch (e) {
-      return Result.failure('Failed to update appointment: ${e.toString()}');
-    }
+      return savedAppointmentResult.data;
+    }, 'updating appointment');
   }
 
   /// Cancels an appointment and updates related entities
   Future<Result<bool>> cancelAppointment(String appointmentId) async {
-    try {
+    return ErrorHandler.guardAsync(() async {
       // Find appointment
-      final appointment = await _appointmentRepository.getById(appointmentId);
+      final appointmentResult = await _appointmentRepository.getById(
+        appointmentId,
+      );
+
+      if (appointmentResult.isFailure) {
+        throw appointmentResult.error;
+      }
+
+      final appointment = appointmentResult.data;
       if (appointment == null) {
-        return Result.failure('Appointment not found');
+        throw 'Appointment not found';
       }
 
       // Update appointment status
       final cancelledAppointment = appointment.copyWith(
         status: AppointmentStatus.cancelled,
       );
-      await _appointmentRepository.update(cancelledAppointment);
+
+      final updateResult = await _appointmentRepository.update(
+        cancelledAppointment,
+      );
+      if (updateResult.isFailure) {
+        throw updateResult.error;
+      }
 
       // Cancel slot booking
-      await _cancelSlotBooking(appointment.appointmentSlotId, appointmentId);
+      final cancelSlotResult = await _cancelSlotBooking(
+        appointment.appointmentSlotId,
+        appointmentId,
+      );
+      if (cancelSlotResult.isFailure) {
+        // Consider whether to roll back appointment status
+        throw cancelSlotResult.error;
+      }
 
       // Remove from patient's appointments
-      await _removeAppointmentFromPatient(appointment.patientId, appointmentId);
+      final removeFromPatientResult = await _removeAppointmentFromPatient(
+        appointment.patientId,
+        appointmentId,
+      );
+      if (removeFromPatientResult.isFailure) {
+        // Log but don't fail the operation
+        print('Warning: ${removeFromPatientResult.error}');
+      }
 
       // Publish cancellation event
       _eventBus.publish(AppointmentCancelledEvent(appointmentId));
 
-      return Result.success(true);
-    } catch (e) {
-      return Result.failure('Failed to cancel appointment: ${e.toString()}');
-    }
+      return true;
+    }, 'cancelling appointment');
   }
 
   /// Marks an appointment as completed
@@ -180,20 +209,28 @@ class AppointmentService {
     String? notes,
     PaymentStatus paymentStatus = PaymentStatus.paid,
   }) async {
-    try {
+    return ErrorHandler.guardAsync(() async {
       // Find appointment
-      final appointment = await _appointmentRepository.getById(appointmentId);
+      final appointmentResult = await _appointmentRepository.getById(
+        appointmentId,
+      );
+
+      if (appointmentResult.isFailure) {
+        throw appointmentResult.error;
+      }
+
+      final appointment = appointmentResult.data;
       if (appointment == null) {
-        return Result.failure('Appointment not found');
+        throw 'Appointment not found';
       }
 
       // Validate current status
       if (appointment.status == AppointmentStatus.completed) {
-        return Result.failure('Appointment is already completed');
+        throw 'Appointment is already completed';
       }
 
       if (appointment.status == AppointmentStatus.cancelled) {
-        return Result.failure('Cannot complete a cancelled appointment');
+        throw 'Cannot complete a cancelled appointment';
       }
 
       // Update appointment
@@ -203,17 +240,19 @@ class AppointmentService {
         notes: notes ?? appointment.notes,
       );
 
-      final savedAppointment = await _appointmentRepository.update(
+      final savedAppointmentResult = await _appointmentRepository.update(
         completedAppointment,
       );
 
-      // Publish completion event
-      _eventBus.publish(AppointmentCompletedEvent(savedAppointment));
+      if (savedAppointmentResult.isFailure) {
+        throw savedAppointmentResult.error;
+      }
 
-      return Result.success(savedAppointment);
-    } catch (e) {
-      return Result.failure('Failed to complete appointment: ${e.toString()}');
-    }
+      // Publish completion event
+      _eventBus.publish(AppointmentCompletedEvent(savedAppointmentResult.data));
+
+      return savedAppointmentResult.data;
+    }, 'completing appointment');
   }
 
   /// Fetches appointments with related patient and doctor data
@@ -223,28 +262,41 @@ class AppointmentService {
     DateTime? date,
     String? status,
   }) async {
-    try {
-      List<Appointment> appointments;
+    return ErrorHandler.guardAsync(() async {
+      Result<List<Appointment>> appointmentsResult;
 
       // Apply filters
       if (patientId != null) {
-        appointments = await _appointmentRepository.getByPatientId(patientId);
+        appointmentsResult = await _appointmentRepository.getByPatientId(
+          patientId,
+        );
       } else if (doctorId != null) {
-        appointments = await _appointmentRepository.getByDoctorId(doctorId);
+        appointmentsResult = await _appointmentRepository.getByDoctorId(
+          doctorId,
+        );
       } else if (date != null) {
-        appointments = await _appointmentRepository.getByDate(date);
+        appointmentsResult = await _appointmentRepository.getByDate(date);
       } else if (status != null) {
-        appointments = await _appointmentRepository.getByStatus(status);
+        appointmentsResult = await _appointmentRepository.getByStatus(status);
       } else {
-        appointments = await _appointmentRepository.getAll();
+        appointmentsResult = await _appointmentRepository.getAll();
+      }
+
+      if (appointmentsResult.isFailure) {
+        throw appointmentsResult.error;
       }
 
       // Combine with patient and doctor data
-      final result = await _attachRelatedData(appointments);
-      return Result.success(result);
-    } catch (e) {
-      return Result.failure('Failed to get appointments: ${e.toString()}');
-    }
+      final relatedDataResult = await _attachRelatedData(
+        appointmentsResult.data,
+      );
+
+      if (relatedDataResult.isFailure) {
+        throw relatedDataResult.error;
+      }
+
+      return relatedDataResult.data;
+    }, 'fetching combined appointments');
   }
 
   // PRIVATE HELPER METHODS
@@ -253,147 +305,168 @@ class AppointmentService {
   Future<Result<Map<String, dynamic>>> _validateAppointmentCreation(
     Appointment appointment,
   ) async {
-    // 1. Basic data validation
-    if (appointment.patientId.isEmpty) {
-      return Result.failure('Patient ID cannot be empty');
-    }
+    return ErrorHandler.guardAsync(() async {
+      // 1. Basic data validation
+      if (appointment.patientId.isEmpty) {
+        throw 'Patient ID cannot be empty';
+      }
 
-    if (appointment.doctorId.isEmpty) {
-      return Result.failure('Doctor ID cannot be empty');
-    }
+      if (appointment.doctorId.isEmpty) {
+        throw 'Doctor ID cannot be empty';
+      }
 
-    if (appointment.appointmentSlotId.isEmpty) {
-      return Result.failure('Appointment slot ID cannot be empty');
-    }
+      if (appointment.appointmentSlotId.isEmpty) {
+        throw 'Appointment slot ID cannot be empty';
+      }
 
-    if (appointment.dateTime.isBefore(DateTime.now())) {
-      return Result.failure('Appointment cannot be scheduled in the past');
-    }
+      if (appointment.dateTime.isBefore(DateTime.now())) {
+        throw 'Appointment cannot be scheduled in the past';
+      }
 
-    // 2. Validate patient exists and is active
-    final patient = await _patientRepository.getById(appointment.patientId);
-    if (patient == null) {
-      return Result.failure('Patient not found');
-    }
-
-    if (patient.status != PatientStatus.active) {
-      return Result.failure('Patient is not active');
-    }
-
-    // 3. Validate doctor exists and is available
-    final doctorResult = await _validateDoctor(appointment.doctorId);
-    if (doctorResult.isFailure) {
-      return Result.failure(doctorResult.error);
-    }
-
-    // 4. Validate slot
-    final slot = await _slotRepository.getById(appointment.appointmentSlotId);
-    if (slot == null) {
-      return Result.failure('Appointment slot not found');
-    }
-
-    if (slot.isFullyBooked) {
-      return Result.failure('Appointment slot is fully booked');
-    }
-
-    // 5. Validate slot belongs to selected doctor
-    if (slot.doctorId != appointment.doctorId) {
-      return Result.failure(
-        'Appointment slot does not belong to the selected doctor',
+      // 2. Validate patient exists and is active
+      final patientResult = await _patientRepository.getById(
+        appointment.patientId,
       );
-    }
 
-    // 6. Validate appointment time matches slot time
-    if (!_isSameDateTime(slot.date, appointment.dateTime)) {
-      return Result.failure('Appointment time does not match slot time');
-    }
+      if (patientResult.isFailure) {
+        throw patientResult.error;
+      }
 
-    // 7. Check patient doesn't have another appointment on the same day
-    final patientAppointments = await _appointmentRepository.getByPatientId(
-      appointment.patientId,
-    );
-    final hasConflict = patientAppointments.any(
-      (a) =>
-          a.status == AppointmentStatus.scheduled &&
-          a.isSameDay(appointment.dateTime) &&
-          a.id !=
-              appointment.id, // Skip checking current appointment (for updates)
-    );
+      if (patientResult.data == null) {
+        throw 'Patient not found';
+      }
 
-    if (hasConflict) {
-      return Result.failure('Patient already has an appointment on this day');
-    }
+      final patient = patientResult.data!;
+      if (patient.status != PatientStatus.active) {
+        throw 'Patient is not active';
+      }
 
-    return Result.success({'patient': patient, 'slot': slot});
+      // 3. Validate doctor exists and is available
+      final doctorResult = await _validateDoctor(appointment.doctorId);
+      if (doctorResult.isFailure) {
+        throw doctorResult.error;
+      }
+
+      // 4. Validate slot
+      final slotResult = await _slotRepository.getById(
+        appointment.appointmentSlotId,
+      );
+
+      if (slotResult.isFailure) {
+        throw slotResult.error;
+      }
+
+      if (slotResult.data == null) {
+        throw 'Appointment slot not found';
+      }
+
+      final slot = slotResult.data!;
+      if (slot.isFullyBooked) {
+        throw 'Appointment slot is fully booked';
+      }
+
+      // 5. Validate slot belongs to selected doctor
+      if (slot.doctorId != appointment.doctorId) {
+        throw 'Appointment slot does not belong to the selected doctor';
+      }
+
+      // 6. Validate appointment time matches slot time
+      if (!_isSameDateTime(slot.date, appointment.dateTime)) {
+        throw 'Appointment time does not match slot time';
+      }
+
+      // 7. Check patient doesn't have another appointment on the same day
+      final patientAppointmentsResult = await _appointmentRepository
+          .getByPatientId(appointment.patientId);
+
+      if (patientAppointmentsResult.isFailure) {
+        throw patientAppointmentsResult.error;
+      }
+
+      final patientAppointments = patientAppointmentsResult.data;
+      final hasConflict = patientAppointments.any(
+        (a) =>
+            a.status == AppointmentStatus.scheduled &&
+            a.isSameDay(appointment.dateTime) &&
+            a.id !=
+                appointment
+                    .id, // Skip checking current appointment (for updates)
+      );
+
+      if (hasConflict) {
+        throw 'Patient already has an appointment on this day';
+      }
+
+      return {'patient': patient, 'slot': slot};
+    }, 'validating appointment creation');
   }
 
   /// Execute appointment creation after validation
-  Future<Result<Appointment>> _executeAppointmentCreation(
+  /// Execute appointment creation after validation
+  Future<Appointment> _executeAppointmentCreation(
     Appointment appointment,
     dynamic patient,
     dynamic slot,
   ) async {
+    bool slotUpdated = false;
+    bool appointmentCreated = false;
+    String? appointmentId;
+
     try {
-      // Track which operations have succeeded for potential rollback
-      bool slotUpdated = false;
-      bool appointmentCreated = false;
-      String? appointmentId;
-
       // 1. Create appointment first (so we have the ID)
-      try {
-        final savedAppointment = await _appointmentRepository.create(
-          appointment,
-        );
-        appointmentCreated = true;
-        appointmentId = savedAppointment.id;
+      final savedAppointmentResult = await _appointmentRepository.create(
+        appointment,
+      );
 
-        // 2. Book the slot with the actual appointment ID
-        try {
-          final updatedSlot = slot.bookAppointment(savedAppointment.id);
-          await _slotRepository.update(updatedSlot);
-          slotUpdated = true;
-        } catch (e) {
-          // Rollback the appointment creation
-          if (appointmentCreated) {
-            try {
-              await _appointmentRepository.delete(savedAppointment.id);
-            } catch (rollbackErr) {
-              print(
-                'Rollback error - could not delete appointment: $rollbackErr',
-              );
-            }
-          }
-          return Result.failure('Error booking slot: ${e.toString()}');
-        }
-
-        // 3. Update patient's appointment references
-        try {
-          // Make sure we have a fresh List<String>
-          final List<String> currentAppointments = List<String>.from(
-            patient.appointmentIds,
-          );
-
-          final updatedPatient = patient.copyWith(
-            appointmentIds: [...currentAppointments, savedAppointment.id],
-          );
-          await _patientRepository.update(updatedPatient);
-
-          return Result.success(savedAppointment);
-        } catch (e) {
-          // Rollback slot and appointment
-          await _rollbackOperations(
-            slotUpdated: slotUpdated,
-            slotId: slot.id,
-            appointmentId: appointmentId,
-            appointmentCreated: appointmentCreated,
-          );
-          return Result.failure('Error updating patient: ${e.toString()}');
-        }
-      } catch (e) {
-        return Result.failure('Error creating appointment: ${e.toString()}');
+      if (savedAppointmentResult.isFailure) {
+        throw savedAppointmentResult.error;
       }
+
+      final savedAppointment = savedAppointmentResult.data;
+      appointmentCreated = true;
+      appointmentId = savedAppointment.id;
+
+      // 2. Book the slot with the actual appointment ID
+      final updatedSlot = slot.bookAppointment(savedAppointment.id);
+      final slotUpdateResult = await _slotRepository.update(updatedSlot);
+
+      if (slotUpdateResult.isFailure) {
+        throw slotUpdateResult.error;
+      }
+
+      slotUpdated = true;
+
+      // 3. Update patient's appointment references
+      // Make sure we have a fresh List<String>
+      final List<String> currentAppointments = List<String>.from(
+        patient.appointmentIds,
+      );
+
+      final updatedPatient = patient.copyWith(
+        appointmentIds: [...currentAppointments, savedAppointment.id],
+      );
+
+      final patientUpdateResult = await _patientRepository.update(
+        updatedPatient,
+      );
+
+      if (patientUpdateResult.isFailure) {
+        throw patientUpdateResult.error;
+      }
+
+      // Publish event for successful creation
+      _eventBus.publish(AppointmentCreatedEvent(savedAppointment));
+
+      return savedAppointment;
     } catch (e) {
-      return Result.failure('Error in appointment creation: ${e.toString()}');
+      // Rollback operations if needed
+      await _rollbackOperations(
+        slotUpdated: slotUpdated,
+        slotId: slot.id,
+        appointmentId: appointmentId,
+        appointmentCreated: appointmentCreated,
+      );
+      rethrow;
     }
   }
 
@@ -406,40 +479,57 @@ class AppointmentService {
   }) async {
     // First try to cancel the slot booking
     if (slotUpdated && appointmentId != null) {
-      try {
-        final slot = await _slotRepository.getById(slotId);
-        if (slot != null) {
-          // Use the fixed cancelAppointment that won't throw if not found
-          final updatedSlot = slot.cancelAppointment(appointmentId);
-          await _slotRepository.update(updatedSlot);
+      await ErrorHandler.guardAsync(() async {
+        final slotResult = await _slotRepository.getById(slotId);
+        if (slotResult.isFailure) {
+          throw slotResult.error;
         }
-      } catch (e) {
-        print('Rollback error - could not restore slot: $e');
-      }
+
+        if (slotResult.data != null) {
+          // Use the fixed cancelAppointment that won't throw if not found
+          final updatedSlot = slotResult.data!.cancelAppointment(appointmentId);
+          final updateResult = await _slotRepository.update(updatedSlot);
+          if (updateResult.isFailure) {
+            throw updateResult.error;
+          }
+        }
+      }, 'restoring slot during rollback').catchError((error) {
+        print('Rollback warning: $error');
+      });
     }
 
     // Then try to delete the appointment
     if (appointmentCreated && appointmentId != null) {
-      try {
-        await _appointmentRepository.delete(appointmentId);
-      } catch (e) {
-        print('Rollback error - could not delete appointment: $e');
-      }
+      await ErrorHandler.guardAsync(() async {
+        final deleteResult = await _appointmentRepository.delete(
+          appointmentId,
+        );
+        if (deleteResult.isFailure) {
+          throw deleteResult.error;
+        }
+      }, 'deleting appointment during rollback').catchError((error) {
+        print('Rollback warning: $error');
+      });
     }
-  } 
+  }
 
   /// Validate that doctor exists and is available
   Future<Result<void>> _validateDoctor(String doctorId) async {
-    final doctor = await _doctorRepository.getById(doctorId);
-    if (doctor == null) {
-      return Result.failure('Doctor not found');
-    }
+    return ErrorHandler.guardAsync(() async {
+      final doctorResult = await _doctorRepository.getById(doctorId);
 
-    if (!doctor.isAvailable) {
-      return Result.failure('Doctor is not available');
-    }
+      if (doctorResult.isFailure) {
+        throw doctorResult.error;
+      }
 
-    return Result.success(null);
+      if (doctorResult.data == null) {
+        throw 'Doctor not found';
+      }
+
+      if (!doctorResult.data!.isAvailable) {
+        throw 'Doctor is not available';
+      }
+    }, 'validating doctor');
   }
 
   /// Handle changes to the slot when updating an appointment
@@ -447,37 +537,47 @@ class AppointmentService {
     Appointment existingAppointment,
     Appointment updatedAppointment,
   ) async {
-    try {
+    return ErrorHandler.guardAsync(() async {
       // Cancel old slot
-      final oldSlot = await _slotRepository.getById(
+      final oldSlotResult = await _slotRepository.getById(
         existingAppointment.appointmentSlotId,
       );
-      if (oldSlot != null) {
-        final cancelledSlot = oldSlot.cancelAppointment(existingAppointment.id);
-        await _slotRepository.update(cancelledSlot);
+
+      if (oldSlotResult.isFailure) {
+        throw oldSlotResult.error;
+      }
+
+      final cancelledSlot = oldSlotResult.data!.cancelAppointment(
+        existingAppointment.id,
+      );
+      final updateOldSlotResult = await _slotRepository.update(cancelledSlot);
+
+      if (updateOldSlotResult.isFailure) {
+        throw updateOldSlotResult.error;
       }
 
       // Book new slot
-      final newSlot = await _slotRepository.getById(
+      final newSlotResult = await _slotRepository.getById(
         updatedAppointment.appointmentSlotId,
       );
-      if (newSlot == null) {
-        return Result.failure('New appointment slot not found');
+
+      if (newSlotResult.isFailure) {
+        throw newSlotResult.error;
       }
 
-      if (newSlot.isFullyBooked) {
-        return Result.failure('New appointment slot is fully booked');
+      if (newSlotResult.data!.isFullyBooked) {
+        throw 'New appointment slot is fully booked';
       }
 
-      final bookedSlot = newSlot.bookAppointment(updatedAppointment.id);
-      await _slotRepository.update(bookedSlot);
-
-      return Result.success(null);
-    } catch (e) {
-      return Result.failure(
-        'Failed to update appointment slots: ${e.toString()}',
+      final bookedSlot = newSlotResult.data!.bookAppointment(
+        updatedAppointment.id,
       );
-    }
+      final bookSlotResult = await _slotRepository.update(bookedSlot);
+
+      if (bookSlotResult.isFailure) {
+        throw bookSlotResult.error;
+      }
+    }, 'updating appointment slots');
   }
 
   /// Handle changes to the patient when updating an appointment
@@ -485,75 +585,138 @@ class AppointmentService {
     Appointment existingAppointment,
     Appointment updatedAppointment,
   ) async {
-    try {
+    return ErrorHandler.guardAsync(() async {
       // Remove from old patient
-      await _removeAppointmentFromPatient(
+      final removeResult = await _removeAppointmentFromPatient(
         existingAppointment.patientId,
         existingAppointment.id,
       );
 
-      // Add to new patient
-      final newPatient = await _patientRepository.getById(
-        updatedAppointment.patientId,
-      );
-      if (newPatient == null) {
-        return Result.failure('New patient not found');
+      if (removeResult.isFailure) {
+        throw removeResult.error;
       }
 
-      final updatedNewPatient = newPatient.copyWith(
-        appointmentIds: [...newPatient.appointmentIds, updatedAppointment.id],
+      // Add to new patient
+      final newPatientResult = await _patientRepository.getById(
+        updatedAppointment.patientId,
       );
-      await _patientRepository.update(updatedNewPatient);
 
-      return Result.success(null);
-    } catch (e) {
-      return Result.failure(
-        'Failed to update patient references: ${e.toString()}',
+      if (newPatientResult.isFailure) {
+        throw newPatientResult.error;
+      }
+
+      if (newPatientResult.data == null) {
+        throw 'New patient not found';
+      }
+
+      final updatedNewPatient = newPatientResult.data!.copyWith(
+        appointmentIds: [
+          ...newPatientResult.data!.appointmentIds,
+          updatedAppointment.id,
+        ],
       );
-    }
+
+      final updateResult = await _patientRepository.update(updatedNewPatient);
+      if (updateResult.isFailure) {
+        throw updateResult.error;
+      }
+    }, 'updating patient references');
   }
 
   /// Cancel a booking in a slot
-  Future<void> _cancelSlotBooking(String slotId, String appointmentId) async {
-    final slot = await _slotRepository.getById(slotId);
-    if (slot != null) {
-      final updatedSlot = slot.cancelAppointment(appointmentId);
-      await _slotRepository.update(updatedSlot);
-    }
+  Future<Result<void>> _cancelSlotBooking(
+    String slotId,
+    String appointmentId,
+  ) async {
+    return ErrorHandler.guardAsync(() async {
+      final slotResult = await _slotRepository.getById(slotId);
+
+      if (slotResult.isFailure) {
+        throw slotResult.error;
+      }
+
+      if (slotResult.data == null) {
+        throw 'Slot not found';
+      }
+
+      final updatedSlot = slotResult.data!.cancelAppointment(appointmentId);
+      final updateResult = await _slotRepository.update(updatedSlot);
+
+      if (updateResult.isFailure) {
+        throw updateResult.error;
+      }
+    }, 'cancelling slot booking');
   }
 
   /// Remove an appointment reference from a patient
-  Future<void> _removeAppointmentFromPatient(
+  Future<Result<void>> _removeAppointmentFromPatient(
     String patientId,
     String appointmentId,
   ) async {
-    final patient = await _patientRepository.getById(patientId);
-    if (patient != null) {
-      final updatedPatient = patient.copyWith(
-        appointmentIds: patient.appointmentIds..remove(appointmentId),
+    return ErrorHandler.guardAsync(() async {
+      final patientResult = await _patientRepository.getById(patientId);
+
+      if (patientResult.isFailure) {
+        throw patientResult.error;
+      }
+
+      if (patientResult.data == null) {
+        throw 'Patient not found';
+      }
+
+      // Create a new list to avoid modifying the original
+      List<String> updatedAppointmentIds = List.from(
+        patientResult.data!.appointmentIds,
       );
-      await _patientRepository.update(updatedPatient);
-    }
+      updatedAppointmentIds.remove(appointmentId);
+
+      final updatedPatient = patientResult.data!.copyWith(
+        appointmentIds: updatedAppointmentIds,
+      );
+
+      final updateResult = await _patientRepository.update(updatedPatient);
+
+      if (updateResult.isFailure) {
+        throw updateResult.error;
+      }
+    }, 'removing appointment from patient');
   }
 
   /// Attach patient and doctor data to a list of appointments
-  Future<List<Map<String, dynamic>>> _attachRelatedData(
+  Future<Result<List<Map<String, dynamic>>>> _attachRelatedData(
     List<Appointment> appointments,
   ) async {
-    List<Map<String, dynamic>> result = [];
+    return ErrorHandler.guardAsync(() async {
+      List<Map<String, dynamic>> result = [];
 
-    for (final appointment in appointments) {
-      final patient = await _patientRepository.getById(appointment.patientId);
-      final doctor = await _doctorRepository.getById(appointment.doctorId);
+      for (final appointment in appointments) {
+        final patientResult = await _patientRepository.getById(
+          appointment.patientId,
+        );
+        final doctorResult = await _doctorRepository.getById(
+          appointment.doctorId,
+        );
 
-      result.add({
-        'appointment': appointment,
-        'patient': patient,
-        'doctor': doctor,
-      });
-    }
+        // Log errors but don't fail the entire operation
+        if (patientResult.isFailure) {
+          print(
+            'Warning: Failed to load patient data - ${patientResult.error}',
+          );
+        }
 
-    return result;
+        if (doctorResult.isFailure) {
+          print('Warning: Failed to load doctor data - ${doctorResult.error}');
+        }
+
+        result.add({
+          'appointment': appointment,
+          'patient': patientResult.isSuccess ? patientResult.data : null,
+          'doctor': doctorResult.isSuccess ? doctorResult.data : null,
+        });
+      }
+
+      return result;
+    }, 'attaching related data to appointments');
   }
 }
 

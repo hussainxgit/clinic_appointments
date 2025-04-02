@@ -78,7 +78,7 @@ class PaymentHistoryNotifier extends StateNotifier<PaymentHistoryState> {
 
     try {
       final payments = await _repository.getAllPayments();
-      state = state.copyWith(payments: payments, isLoading: false);
+      state = state.copyWith(payments: payments.data, isLoading: false);
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
@@ -89,7 +89,7 @@ class PaymentHistoryNotifier extends StateNotifier<PaymentHistoryState> {
 
     try {
       final payments = await _repository.getPaymentsByPatient(patientId);
-      state = state.copyWith(payments: payments, isLoading: false);
+      state = state.copyWith(payments: payments.data, isLoading: false);
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
@@ -100,7 +100,7 @@ class PaymentHistoryNotifier extends StateNotifier<PaymentHistoryState> {
 
     try {
       final payments = await _repository.getPaymentsByAppointment(appointmentId);
-      state = state.copyWith(payments: payments, isLoading: false);
+      state = state.copyWith(payments: payments.data, isLoading: false);
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
