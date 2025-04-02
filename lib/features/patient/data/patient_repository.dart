@@ -1,16 +1,18 @@
 // lib/features/patient/data/patient_repository.dart
 import '../../../core/data/firebase_repository.dart';
+import '../../../core/utils/error_handler.dart';
+import '../../../core/utils/result.dart';
 import '../domain/entities/patient.dart';
 
 abstract class PatientRepository {
-  Future<List<Patient>> getAll();
-  Future<Patient?> getById(String id);
-  Future<Patient> create(Patient patient);
-  Future<Patient> update(Patient patient);
-  Future<bool> delete(String id);
-  Future<Patient?> findByPhone(String phone);
-  Future<List<Patient>> searchByName(String name);
-  Future<List<Patient>> getActivePatients();
+  Future<Result<List<Patient>>> getAll();
+  Future<Result<Patient?>> getById(String id);
+  Future<Result<Patient>> create(Patient patient);
+  Future<Result<Patient>> update(Patient patient);
+  Future<Result<bool>> delete(String id);
+  Future<Result<Patient?>> findByPhone(String phone);
+  Future<Result<List<Patient>>> searchByName(String name);
+  Future<Result<List<Patient>>> getActivePatients();
 }
 
 class PatientRepositoryImpl extends FirebaseRepository<Patient>
@@ -45,48 +47,55 @@ class PatientRepositoryImpl extends FirebaseRepository<Patient>
   }
 
   @override
-  Future<Patient?> findByPhone(String phone) async {
-    final snapshot =
-        await firestore
-            .collection(collection)
-            .where('phone', isEqualTo: phone)
-            .limit(1)
-            .get();
+  Future<Result<Patient?>> findByPhone(String phone) async {
+    return ErrorHandler.guardAsync(() async {
+      final snapshot =
+          await firestore
+              .collection(collection)
+              .where('phone', isEqualTo: phone)
+              .limit(1)
+              .get();
 
-    if (snapshot.docs.isEmpty) {
-      return null;
-    }
+      if (snapshot.docs.isEmpty) {
+        return null;
+      }
 
-    final doc = snapshot.docs.first;
-    return fromMap(doc.data(), doc.id);
+      final doc = snapshot.docs.first;
+      return fromMap(doc.data(), doc.id);
+    }, 'finding patient by phone');
   }
 
   @override
-  Future<List<Patient>> searchByName(String name) async {
-    // Firebase doesn't support direct contains queries, so we'll do a simple startsWith
-    final lowerName = name.toLowerCase();
-    final upperName =
-        lowerName.substring(0, lowerName.length - 1) +
-        String.fromCharCode(lowerName.codeUnitAt(lowerName.length - 1) + 1);
+  Future<Result<List<Patient>>> searchByName(String name) async {
+    return ErrorHandler.guardAsync(() async {
+      if (name.isEmpty) return [];
 
-    final snapshot =
-        await firestore
-            .collection(collection)
-            .where('name', isGreaterThanOrEqualTo: lowerName)
-            .where('name', isLessThan: upperName)
-            .get();
+      // Firebase doesn't support direct contains queries, so we'll use startAt/endAt
+      final searchName = name.toLowerCase();
 
-    return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
+      final snapshot =
+          await firestore
+              .collection(collection)
+              .orderBy('name')
+              .startAt([searchName])
+              .endAt(['$searchName\uf8ff'])
+              .limit(20)
+              .get();
+
+      return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
+    }, 'searching patients by name');
   }
 
   @override
-  Future<List<Patient>> getActivePatients() async {
-    final snapshot =
-        await firestore
-            .collection(collection)
-            .where('status', isEqualTo: 'active')
-            .get();
+  Future<Result<List<Patient>>> getActivePatients() async {
+    return ErrorHandler.guardAsync(() async {
+      final snapshot =
+          await firestore
+              .collection(collection)
+              .where('status', isEqualTo: 'active')
+              .get();
 
-    return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
+      return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
+    }, 'fetching active patients');
   }
 }

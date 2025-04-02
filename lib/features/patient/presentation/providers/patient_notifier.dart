@@ -38,14 +38,16 @@ class PatientNotifier extends _$PatientNotifier {
 
   Future<void> loadPatients() async {
     state = state.copyWith(isLoading: true, error: null);
-
-    try {
-      final repository = ref.read(patientRepositoryProvider);
-      final patients = await repository.getAll();
-      state = state.copyWith(patients: patients, isLoading: false);
-    } catch (e) {
-      state = state.copyWith(error: e.toString(), isLoading: false);
-    }
+    final repository = ref.read(patientRepositoryProvider);
+    final result = await repository.getAll();
+    result.when(
+      success: (patients) {
+        state = state.copyWith(patients: patients, isLoading: false);
+      },
+      failure: (error) {
+        state = state.copyWith(error: error, isLoading: false);
+      },
+    );
   }
 
   Future<void> refreshPatients() async {
@@ -67,58 +69,64 @@ class PatientNotifier extends _$PatientNotifier {
   }
 
   Future<Result<Patient>> addPatient(Patient patient) async {
-    try {
-      final repository = ref.read(patientRepositoryProvider);
+    state = state.copyWith(isLoading: true, error: null);
 
-      // Check for existing patient with same phone
-      final existingPatient = await repository.findByPhone(patient.phone);
-      if (existingPatient != null) {
-        return Result.failure(
-          'A patient with this phone number already exists',
-        );
-      }
+    final repository = ref.read(patientRepositoryProvider);
 
-      final savedPatient = await repository.create(patient);
+    // Check for existing patient with same phone
+    final existingPatientResult = await repository.findByPhone(patient.phone);
 
-      // Update local state directly instead of reloading all patients
-      state = state.copyWith(patients: [...state.patients, savedPatient]);
-
-      return Result.success(savedPatient);
-    } catch (e) {
-      return Result.failure(e.toString());
+    if (existingPatientResult.isSuccess && existingPatientResult.data != null) {
+      state = state.copyWith(isLoading: false);
+      return Result.failure('A patient with this phone number already exists');
     }
+
+    final result = await repository.create(patient);
+
+    state = state.copyWith(isLoading: false);
+
+    if (result.isSuccess) {
+      // Update local state directly
+      state = state.copyWith(patients: [...state.patients, result.data]);
+    }
+
+    return result;
   }
 
   Future<Result<Patient>> updatePatient(Patient patient) async {
-    try {
-      final repository = ref.read(patientRepositoryProvider);
+    state = state.copyWith(isLoading: true, error: null);
 
-      final index = state.patients.indexWhere((p) => p.id == patient.id);
-      if (index == -1) {
-        return Result.failure('Patient not found');
-      }
+    final repository = ref.read(patientRepositoryProvider);
 
-      // Check for phone uniqueness (excluding current patient)
-      final samePhone = state.patients.firstWhere(
-        (p) => p.phone == patient.phone && p.id != patient.id,
-        orElse: () => patient, // Return same patient if not found
-      );
+    final index = state.patients.indexWhere((p) => p.id == patient.id);
+    if (index == -1) {
+      state = state.copyWith(isLoading: false);
+      return Result.failure('Patient not found');
+    }
 
-      if (samePhone.id != patient.id) {
-        return Result.failure('Phone number already in use');
-      }
+    // Check for phone uniqueness (excluding current patient)
+    final samePhone = state.patients.firstWhere(
+      (p) => p.phone == patient.phone && p.id != patient.id,
+      orElse: () => patient, // Return same patient if not found
+    );
 
-      final updatedPatient = await repository.update(patient);
+    if (samePhone.id != patient.id) {
+      state = state.copyWith(isLoading: false);
+      return Result.failure('Phone number already in use');
+    }
 
+    final result = await repository.update(patient);
+
+    state = state.copyWith(isLoading: false);
+
+    if (result.isSuccess) {
       // Update the specific patient in the state
       final updatedPatients = [...state.patients];
-      updatedPatients[index] = updatedPatient;
+      updatedPatients[index] = result.data;
       state = state.copyWith(patients: updatedPatients);
-
-      return Result.success(updatedPatient);
-    } catch (e) {
-      return Result.failure(e.toString());
     }
+
+    return result;
   }
 
   Future<Result<bool>> deletePatient(String id) async {
@@ -132,14 +140,14 @@ class PatientNotifier extends _$PatientNotifier {
 
       final result = await repository.delete(id);
 
-      if (result) {
+      if (result.isSuccess) {
         // Remove the patient from local state
         final updatedPatients = [...state.patients];
         updatedPatients.removeAt(index);
         state = state.copyWith(patients: updatedPatients);
       }
 
-      return Result.success(result);
+      return Result.success(true);
     } catch (e) {
       return Result.failure(e.toString());
     }
@@ -165,10 +173,10 @@ class PatientNotifier extends _$PatientNotifier {
 
       // Update the patient in the local state
       final updatedPatients = [...state.patients];
-      updatedPatients[index] = result;
+      updatedPatients[index] = result.data;
       state = state.copyWith(patients: updatedPatients);
 
-      return Result.success(result);
+      return Result.success(result.data);
     } catch (e) {
       return Result.failure(e.toString());
     }
@@ -205,10 +213,10 @@ class PatientNotifier extends _$PatientNotifier {
 
       // Update local state
       final updatedPatients = [...state.patients];
-      updatedPatients[index] = savedPatient;
+      updatedPatients[index] = savedPatient.data;
       state = state.copyWith(patients: updatedPatients);
 
-      return Result.success(savedPatient);
+      return Result.success(savedPatient.data);
     } catch (e) {
       return Result.failure(e.toString());
     }
@@ -245,10 +253,10 @@ class PatientNotifier extends _$PatientNotifier {
 
       // Update local state
       final updatedPatients = [...state.patients];
-      updatedPatients[index] = savedPatient;
+      updatedPatients[index] = savedPatient.data;
       state = state.copyWith(patients: updatedPatients);
 
-      return Result.success(savedPatient);
+      return Result.success(savedPatient.data);
     } catch (e) {
       return Result.failure(e.toString());
     }

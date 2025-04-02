@@ -6,7 +6,7 @@ part of 'patient_notifier.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$patientNotifierHash() => r'0bab4f46d24d565a9cdccf8523a74cbae0a63ffd';
+String _$patientNotifierHash() => r'906312f1f71f1636e1577a1c1219295f99193d37';
 
 /// See also [PatientNotifier].
 @ProviderFor(PatientNotifier)

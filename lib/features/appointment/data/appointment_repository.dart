@@ -1,18 +1,20 @@
 // lib/features/appointment/data/appointment_repository.dart
 import '../../../core/data/firebase_repository.dart';
+import '../../../core/utils/error_handler.dart';
+import '../../../core/utils/result.dart';
 import '../domain/entities/appointment.dart';
 import '../domain/exceptions/appointment_exception.dart';
 
 abstract class AppointmentRepository {
-  Future<List<Appointment>> getAll();
-  Future<Appointment?> getById(String id);
-  Future<Appointment> create(Appointment appointment);
-  Future<Appointment> update(Appointment appointment);
-  Future<bool> delete(String id);
-  Future<List<Appointment>> getByPatientId(String patientId);
-  Future<List<Appointment>> getByDoctorId(String doctorId);
-  Future<List<Appointment>> getByDate(DateTime date);
-  Future<List<Appointment>> getByStatus(String status);
+  Future<Result<List<Appointment>>> getAll();
+  Future<Result<Appointment?>> getById(String id);
+  Future<Result<Appointment>> create(Appointment appointment);
+  Future<Result<Appointment>> update(Appointment appointment);
+  Future<Result<bool>> delete(String id);
+  Future<Result<List<Appointment>>> getByPatientId(String patientId);
+  Future<Result<List<Appointment>>> getByDoctorId(String doctorId);
+  Future<Result<List<Appointment>>> getByDate(DateTime date);
+  Future<Result<List<Appointment>>> getByStatus(String status);
 }
 
 class AppointmentRepositoryImpl extends FirebaseRepository<Appointment>
@@ -33,75 +35,73 @@ class AppointmentRepositoryImpl extends FirebaseRepository<Appointment>
   }
 
   @override
-  Future<List<Appointment>> getAll() async {
-    try {
-      final snapshot = await firestore.collection(collection).get();
-      return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
-    } catch (e) {
-      throw Exception('Failed to get appointments: ${e.toString()}');
-    }
-  }
-
-  @override
   String getId(Appointment entity) {
     return entity.id;
   }
 
   @override
-  Future<List<Appointment>> getByPatientId(String patientId) async {
-    final snapshot =
-        await firestore
-            .collection(collection)
-            .where('patientId', isEqualTo: patientId)
-            .get();
+  Future<Result<List<Appointment>>> getByPatientId(String patientId) async {
+    return ErrorHandler.guardAsync(() async {
+      final snapshot =
+          await firestore
+              .collection(collection)
+              .where('patientId', isEqualTo: patientId)
+              .get();
 
-    return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
+      return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
+    }, 'fetching appointments by patient ID');
   }
 
   @override
-  Future<List<Appointment>> getByDoctorId(String doctorId) async {
-    final snapshot =
-        await firestore
-            .collection(collection)
-            .where('doctorId', isEqualTo: doctorId)
-            .get();
+  Future<Result<List<Appointment>>> getByDoctorId(String doctorId) async {
+    return ErrorHandler.guardAsync(() async {
+      final snapshot =
+          await firestore
+              .collection(collection)
+              .where('doctorId', isEqualTo: doctorId)
+              .get();
 
-    return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
+      return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
+    }, 'fetching appointments by doctor ID');
   }
 
   @override
-  Future<List<Appointment>> getByDate(DateTime date) async {
-    // Format the date consistently for Firestore queries
-    final startDate = DateTime(date.year, date.month, date.day);
-    final endDate = startDate.add(const Duration(days: 1));
+  Future<Result<List<Appointment>>> getByDate(DateTime date) async {
+    return ErrorHandler.guardAsync(() async {
+      // Format the date consistently for Firestore queries
+      final startDate = DateTime(date.year, date.month, date.day);
+      final endDate = startDate.add(const Duration(days: 1));
 
-    final snapshot =
-        await firestore
-            .collection(collection)
-            .where(
-              'dateTime',
-              isGreaterThanOrEqualTo: startDate.toIso8601String(),
-            )
-            .where('dateTime', isLessThan: endDate.toIso8601String())
-            .get();
+      final snapshot =
+          await firestore
+              .collection(collection)
+              .where(
+                'dateTime',
+                isGreaterThanOrEqualTo: startDate.toIso8601String(),
+              )
+              .where('dateTime', isLessThan: endDate.toIso8601String())
+              .get();
 
-    return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
+      return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
+    }, 'fetching appointments by date');
   }
 
   @override
-  Future<List<Appointment>> getByStatus(String status) async {
-    final snapshot =
-        await firestore
-            .collection(collection)
-            .where('status', isEqualTo: status)
-            .get();
+  Future<Result<List<Appointment>>> getByStatus(String status) async {
+    return ErrorHandler.guardAsync(() async {
+      final snapshot =
+          await firestore
+              .collection(collection)
+              .where('status', isEqualTo: status)
+              .get();
 
-    return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
+      return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
+    }, 'fetching appointments by status');
   }
 
   @override
-  Future<Appointment> create(Appointment entity) async {
-    try {
+  Future<Result<Appointment>> create(Appointment entity) async {
+    return ErrorHandler.guardAsync(() async {
       // Validate appointment
       _validateAppointment(entity);
 
@@ -112,14 +112,12 @@ class AppointmentRepositoryImpl extends FirebaseRepository<Appointment>
 
       // Return appointment with generated ID
       return Appointment.fromMap({...data, 'id': docRef.id});
-    } catch (e) {
-      throw Exception('Failed to create appointment: ${e.toString()}');
-    }
+    }, 'creating appointment');
   }
 
   @override
-  Future<Appointment> update(Appointment entity) async {
-    try {
+  Future<Result<Appointment>> update(Appointment entity) async {
+    return ErrorHandler.guardAsync(() async {
       // Validate appointment
       _validateAppointment(entity);
 
@@ -130,19 +128,15 @@ class AppointmentRepositoryImpl extends FirebaseRepository<Appointment>
           .update(toMap(entity));
 
       return entity;
-    } catch (e) {
-      throw Exception('Failed to update appointment: ${e.toString()}');
-    }
+    }, 'updating appointment');
   }
 
   @override
-  Future<bool> delete(String id) async {
-    try {
+  Future<Result<bool>> delete(String id) async {
+    return ErrorHandler.guardAsync(() async {
       await firestore.collection(collection).doc(id).delete();
       return true;
-    } catch (e) {
-      throw Exception('Failed to delete appointment: ${e.toString()}');
-    }
+    }, 'deleting appointment');
   }
 
   // Helper method to validate appointment data

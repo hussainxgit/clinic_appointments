@@ -1,4 +1,7 @@
+// lib/features/payment/data/repositories/payment_repository_impl.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/result.dart';
 import '../models/payment_record.dart';
 import '../../domain/repositories/payment_repository.dart';
 
@@ -10,134 +13,159 @@ class PaymentRepositoryImpl implements PaymentRepository {
     : _firestore = firestore;
 
   @override
-  Future<List<PaymentRecord>> getAllPayments() async {
-    final snapshot =
-        await _firestore
-            .collection(_collection)
-            .orderBy('createdAt', descending: true)
-            .get();
+  Future<Result<List<PaymentRecord>>> getAllPayments() async {
+    return ErrorHandler.guardAsync(() async {
+      final snapshot =
+          await _firestore
+              .collection(_collection)
+              .orderBy('createdAt', descending: true)
+              .get();
 
-    return snapshot.docs
-        .map((doc) => PaymentRecord.fromFirestore(doc))
-        .toList();
+      return snapshot.docs
+          .map((doc) => PaymentRecord.fromFirestore(doc))
+          .toList();
+    }, 'fetching all payments');
   }
 
   @override
-  Future<List<PaymentRecord>> getPaymentsByAppointment(
+  Future<Result<List<PaymentRecord>>> getPaymentsByAppointment(
     String appointmentId,
   ) async {
-    final snapshot =
-        await _firestore
-            .collection(_collection)
-            .where('appointmentId', isEqualTo: appointmentId)
-            .get();
+    return ErrorHandler.guardAsync(() async {
+      final snapshot =
+          await _firestore
+              .collection(_collection)
+              .where('appointmentId', isEqualTo: appointmentId)
+              .get();
 
-    return snapshot.docs
-        .map((doc) => PaymentRecord.fromFirestore(doc))
-        .toList();
+      return snapshot.docs
+          .map((doc) => PaymentRecord.fromFirestore(doc))
+          .toList();
+    }, 'fetching payments by appointment');
   }
 
   @override
-  Future<List<PaymentRecord>> getPaymentsByPatient(String patientId) async {
-    final snapshot =
-        await _firestore
-            .collection(_collection)
-            .where('patientId', isEqualTo: patientId)
-            .orderBy('createdAt', descending: true)
-            .get();
+  Future<Result<List<PaymentRecord>>> getPaymentsByPatient(
+    String patientId,
+  ) async {
+    return ErrorHandler.guardAsync(() async {
+      final snapshot =
+          await _firestore
+              .collection(_collection)
+              .where('patientId', isEqualTo: patientId)
+              .orderBy('createdAt', descending: true)
+              .get();
 
-    return snapshot.docs
-        .map((doc) => PaymentRecord.fromFirestore(doc))
-        .toList();
+      return snapshot.docs
+          .map((doc) => PaymentRecord.fromFirestore(doc))
+          .toList();
+    }, 'fetching payments by patient');
   }
 
   @override
-  Future<PaymentRecord?> getPaymentById(String id) async {
-    final doc = await _firestore.collection(_collection).doc(id).get();
-    return doc.exists ? PaymentRecord.fromFirestore(doc) : null;
+  Future<Result<PaymentRecord?>> getPaymentById(String id) async {
+    return ErrorHandler.guardAsync(() async {
+      final doc = await _firestore.collection(_collection).doc(id).get();
+      return doc.exists ? PaymentRecord.fromFirestore(doc) : null;
+    }, 'fetching payment by ID');
   }
 
   @override
-  Future<PaymentRecord?> getPaymentByInvoice(String invoiceId) async {
-    final snapshot =
-        await _firestore
-            .collection(_collection)
-            .where('invoiceId', isEqualTo: invoiceId)
-            .limit(1)
-            .get();
+  Future<Result<PaymentRecord?>> getPaymentByInvoice(String invoiceId) async {
+    return ErrorHandler.guardAsync(() async {
+      final snapshot =
+          await _firestore
+              .collection(_collection)
+              .where('invoiceId', isEqualTo: invoiceId)
+              .limit(1)
+              .get();
 
-    return snapshot.docs.isNotEmpty
-        ? PaymentRecord.fromFirestore(snapshot.docs.first)
-        : null;
+      return snapshot.docs.isNotEmpty
+          ? PaymentRecord.fromFirestore(snapshot.docs.first)
+          : null;
+    }, 'fetching payment by invoice');
   }
 
   @override
-  Future<PaymentRecord> createPayment(PaymentRecord payment) async {
-    final docRef = _firestore.collection(_collection).doc();
-    final data = payment.toMap();
+  Future<Result<PaymentRecord>> createPayment(PaymentRecord payment) async {
+    return ErrorHandler.guardAsync(() async {
+      final docRef = _firestore.collection(_collection).doc();
+      final data = payment.toMap();
 
-    await docRef.set({
-      ...data,
-      'createdAt': FieldValue.serverTimestamp(),
-      'lastUpdated': FieldValue.serverTimestamp(),
-    });
+      await docRef.set({
+        ...data,
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
 
-    final newDoc = await docRef.get();
-    return PaymentRecord.fromFirestore(newDoc);
+      final newDoc = await docRef.get();
+      return PaymentRecord.fromFirestore(newDoc);
+    }, 'creating payment');
   }
 
   @override
-  Future<PaymentRecord> updatePayment(PaymentRecord payment) async {
-    final docRef = _firestore.collection(_collection).doc(payment.id);
+  Future<Result<PaymentRecord>> updatePayment(PaymentRecord payment) async {
+    return ErrorHandler.guardAsync(() async {
+      final docRef = _firestore.collection(_collection).doc(payment.id);
 
-    await docRef.update({
-      ...payment.toMap(),
-      'lastUpdated': FieldValue.serverTimestamp(),
-    });
+      await docRef.update({
+        ...payment.toMap(),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
 
-    final updatedDoc = await docRef.get();
-    return PaymentRecord.fromFirestore(updatedDoc);
+      final updatedDoc = await docRef.get();
+      return PaymentRecord.fromFirestore(updatedDoc);
+    }, 'updating payment');
   }
 
   @override
-  Future<bool> deletePayment(String id) async {
-    await _firestore.collection(_collection).doc(id).delete();
-    return true;
+  Future<Result<bool>> deletePayment(String id) async {
+    return ErrorHandler.guardAsync(() async {
+      await _firestore.collection(_collection).doc(id).delete();
+      return true;
+    }, 'deleting payment');
   }
 
   @override
-  Future<List<PaymentRecord>> getPendingPayments() async {
-    final snapshot =
-        await _firestore
-            .collection(_collection)
-            .where('status', isEqualTo: PaymentStatus.pending.toStorageString())
-            .orderBy('createdAt', descending: true)
-            .get();
+  Future<Result<List<PaymentRecord>>> getPendingPayments() async {
+    return ErrorHandler.guardAsync(() async {
+      final snapshot =
+          await _firestore
+              .collection(_collection)
+              .where(
+                'status',
+                isEqualTo: PaymentStatus.pending.toStorageString(),
+              )
+              .orderBy('createdAt', descending: true)
+              .get();
 
-    return snapshot.docs
-        .map((doc) => PaymentRecord.fromFirestore(doc))
-        .toList();
+      return snapshot.docs
+          .map((doc) => PaymentRecord.fromFirestore(doc))
+          .toList();
+    }, 'fetching pending payments');
   }
 
   @override
-  Future<void> updatePaymentStatus(
+  Future<Result<void>> updatePaymentStatus(
     String id,
     PaymentStatus status, {
     String? transactionId,
   }) async {
-    final updateData = <String, dynamic>{
-      'status': status.toStorageString(),
-      'lastUpdated': FieldValue.serverTimestamp(),
-    };
+    return ErrorHandler.guardAsync(() async {
+      final updateData = <String, dynamic>{
+        'status': status.toStorageString(),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      };
 
-    if (status == PaymentStatus.successful) {
-      updateData['completedAt'] = FieldValue.serverTimestamp();
-    }
+      if (status == PaymentStatus.successful) {
+        updateData['completedAt'] = FieldValue.serverTimestamp();
+      }
 
-    if (transactionId != null) {
-      updateData['transactionId'] = transactionId;
-    }
+      if (transactionId != null) {
+        updateData['transactionId'] = transactionId;
+      }
 
-    await _firestore.collection(_collection).doc(id).update(updateData);
+      await _firestore.collection(_collection).doc(id).update(updateData);
+    }, 'updating payment status');
   }
 }

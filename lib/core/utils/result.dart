@@ -34,4 +34,33 @@ class Result<T> {
     if (isSuccess) throw Exception("Cannot get error from success result");
     return _error!;
   }
+  
+  // Add some useful methods
+  void when({
+    required Function(T data) success,
+    required Function(String error) failure,
+  }) {
+    if (isSuccess) {
+      success(data);
+    } else {
+      failure(error);
+    }
+  }
+  
+  Result<R> map<R>(R Function(T data) transform) {
+    if (isSuccess) {
+      return Result.success(transform(data));
+    } else {
+      return Result.failure(error);
+    }
+  }
+  
+  // Useful for chaining operations
+  Result<R> flatMap<R>(Result<R> Function(T data) transform) {
+    if (isSuccess) {
+      return transform(data);
+    } else {
+      return Result.failure(error);
+    }
+  }
 }

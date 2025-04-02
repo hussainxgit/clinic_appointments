@@ -99,11 +99,11 @@ class AppointmentNotifier extends _$AppointmentNotifier {
   }
 
   // Add helper methods to get related data
-  Future<Patient?> _getPatient(String id) async {
+  Future<Result<Patient?>> _getPatient(String id) async {
     return ref.read(patientRepositoryProvider).getById(id);
   }
 
-  Future<Doctor?> _getDoctor(String id) async {
+  Future<Result<Doctor?>> _getDoctor(String id) async {
     return ref.read(doctorRepositoryProvider).getById(id);
   }
 

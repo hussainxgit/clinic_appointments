@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:io';
 
 import '../../../../core/di/core_providers.dart';
+import '../../../../core/ui/error_display.dart';
 import '../../../../core/ui/widgets/loading_button.dart';
 import '../../../../core/ui/theme/app_theme.dart';
 import '../../../doctor/domain/entities/doctor.dart';
@@ -11,9 +12,9 @@ import '../provider/doctor_notifier.dart';
 
 class DoctorFormScreen extends ConsumerStatefulWidget {
   final bool isEditing;
-  
+
   const DoctorFormScreen({super.key, this.isEditing = false});
-  
+
   @override
   ConsumerState<DoctorFormScreen> createState() => _DoctorFormScreenState();
 }
@@ -24,7 +25,7 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
   File? _imageFile;
   bool _isLoading = false;
   final bool _isUploading = false;
-  
+
   // Form controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _specialtyController = TextEditingController();
@@ -32,7 +33,7 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   bool _isAvailable = true;
-  
+
   // Dropdown options
   final List<String> _specialties = [
     'General Ophthalmology',
@@ -43,19 +44,19 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
     'Oculoplastics',
     'Neuro-Ophthalmology',
     'Vision Therapy',
-    'Low Vision Specialist'
+    'Low Vision Specialist',
   ];
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     if (widget.isEditing) {
       // Initialize with existing doctor data
       final args = ModalRoute.of(context)!.settings.arguments;
       if (args is Doctor) {
         _doctor = args;
-        
+
         _nameController.text = _doctor.name;
         _specialtyController.text = _doctor.specialty;
         _phoneController.text = _doctor.phoneNumber;
@@ -80,7 +81,7 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
       );
     }
   }
-  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -90,22 +91,22 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
     _bioController.dispose();
     super.dispose();
   }
-  
+
   // Future<void> _pickImage() async {
   //   try {
   //     final picker = ImagePicker();
   //     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-      
+
   //     if (pickedFile != null) {
   //       setState(() {
   //         _imageFile = File(pickedFile.path);
   //         _isUploading = true;
   //       });
-        
+
   //       // In a real app, you would upload the image to storage
   //       // and get back a URL to store with the doctor
   //       await Future.delayed(const Duration(seconds: 1)); // Simulate upload
-        
+
   //       setState(() {
   //         _isUploading = false;
   //       });
@@ -119,19 +120,19 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
   //     });
   //   }
   // }
-  
+
   Future<void> _saveDoctor() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       final doctorNotifier = ref.read(doctorNotifierProvider.notifier);
-      
+
       // Prepare updated doctor
       final updatedDoctor = Doctor(
         id: _doctor.id,
@@ -141,53 +142,45 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
         email: _emailController.text.isNotEmpty ? _emailController.text : null,
         bio: _bioController.text.isNotEmpty ? _bioController.text : null,
         isAvailable: _isAvailable,
-        imageUrl: _doctor.imageUrl, // In a real app, update this if a new image was uploaded
+        imageUrl: _doctor.imageUrl,
         socialMedia: _doctor.socialMedia,
       );
-      
+
       // Save doctor
-      final result = widget.isEditing
-          ? await doctorNotifier.updateDoctor(updatedDoctor)
-          : await doctorNotifier.addDoctor(updatedDoctor);
-      
+      final result =
+          widget.isEditing
+              ? await doctorNotifier.updateDoctor(updatedDoctor)
+              : await doctorNotifier.addDoctor(updatedDoctor);
+
       setState(() {
         _isLoading = false;
       });
-      
-      if (result.isSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.isEditing 
-                  ? 'Doctor updated successfully' 
-                  : 'Doctor added successfully'
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
-        // Navigate back
-        ref.read(navigationServiceProvider).goBack();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${result.error}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+
+      if (!mounted) return;
+
+      // Process the result
+      ErrorDisplay.handleResult(
+        context: context,
+        result: result,
+        successMessage:
+            widget.isEditing
+                ? 'Doctor updated successfully'
+                : 'Doctor added successfully',
+        onSuccess: () {
+          // Navigate back
+          ref.read(navigationServiceProvider).goBack();
+        },
+      );
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (!mounted) return;
+
+      ErrorDisplay.showError(context, 'Unexpected error occurred');
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -232,7 +225,7 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
       ),
     );
   }
-  
+
   Widget _buildProfileImageSection() {
     return Center(
       child: Column(
@@ -279,7 +272,7 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
       ),
     );
   }
-  
+
   Widget _buildProfileImage() {
     if (_imageFile != null) {
       return ClipRRect(
@@ -299,7 +292,9 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
           width: 120,
           height: 120,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 60, color: Colors.grey),
+          errorBuilder:
+              (_, __, ___) =>
+                  const Icon(Icons.person, size: 60, color: Colors.grey),
         ),
       );
     } else {
@@ -309,17 +304,14 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
       );
     }
   }
-  
+
   Widget _buildBasicInfoSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Basic Information',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -338,18 +330,22 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
-          value: _specialtyController.text.isNotEmpty ? _specialtyController.text : null,
+          value:
+              _specialtyController.text.isNotEmpty
+                  ? _specialtyController.text
+                  : null,
           decoration: const InputDecoration(
             labelText: 'Specialty',
             prefixIcon: Icon(Icons.medical_services),
             border: OutlineInputBorder(),
           ),
-          items: _specialties.map((specialty) {
-            return DropdownMenuItem<String>(
-              value: specialty,
-              child: Text(specialty),
-            );
-          }).toList(),
+          items:
+              _specialties.map((specialty) {
+                return DropdownMenuItem<String>(
+                  value: specialty,
+                  child: Text(specialty),
+                );
+              }).toList(),
           onChanged: (value) {
             if (value != null) {
               _specialtyController.text = value;
@@ -365,17 +361,14 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
       ],
     );
   }
-  
+
   Widget _buildContactInfoSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Contact Information',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         TextFormField(
@@ -416,24 +409,22 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
       ],
     );
   }
-  
+
   Widget _buildBioSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Professional Information',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         TextFormField(
           controller: _bioController,
           decoration: const InputDecoration(
             labelText: 'Professional Bio',
-            hintText: 'Brief description of professional experience and qualifications',
+            hintText:
+                'Brief description of professional experience and qualifications',
             prefixIcon: Icon(Icons.description),
             border: OutlineInputBorder(),
           ),
@@ -443,28 +434,23 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
       ],
     );
   }
-  
+
   Widget _buildAvailabilitySection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Availability',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         SwitchListTile(
           title: const Text('Available for appointments'),
           subtitle: Text(
-            _isAvailable 
-                ? 'Doctor can receive new appointments' 
+            _isAvailable
+                ? 'Doctor can receive new appointments'
                 : 'Doctor cannot receive new appointments',
-            style: TextStyle(
-              color: _isAvailable ? Colors.green : Colors.red,
-            ),
+            style: TextStyle(color: _isAvailable ? Colors.green : Colors.red),
           ),
           value: _isAvailable,
           activeColor: AppTheme.primaryColor,
@@ -477,40 +463,43 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
       ],
     );
   }
-  
+
   Future<void> _confirmDelete() async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Doctor'),
-        content: Text('Are you sure you want to delete ${_doctor.name}? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Delete Doctor'),
+            content: Text(
+              'Are you sure you want to delete ${_doctor.name}? This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
-    
+
     if (result == true) {
       setState(() {
         _isLoading = true;
       });
-      
+
       try {
         final doctorNotifier = ref.read(doctorNotifierProvider.notifier);
         final deleteResult = await doctorNotifier.deleteDoctor(_doctor.id);
-        
+
         setState(() {
           _isLoading = false;
         });
-        
+
         if (deleteResult.isSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -532,10 +521,7 @@ class _DoctorFormScreenState extends ConsumerState<DoctorFormScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
