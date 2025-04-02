@@ -13,7 +13,7 @@ class PaymentModule implements FeatureModule {
   String get moduleName => 'Payments';
 
   @override
-  String? get moduleDescription => 'Process and manage payments via WhatsApp';
+  String? get moduleDescription => 'Process and manage payments via Payment Links';
 
   @override
   List<String> get dependsOn => ['appointment', 'messaging'];

@@ -37,7 +37,7 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
   @override
   AppointmentSlotState build() {
     // Return an initial state without loading
-    state =  AppointmentSlotState(slots: [], isLoading: false);
+    state = AppointmentSlotState(slots: [], isLoading: false);
     loadSlots();
     return state;
   }
@@ -102,6 +102,7 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
 
       final savedSlot = await repository.create(slot);
 
+      // Add the new slot to local state
       state = state.copyWith(slots: [...state.slots, savedSlot]);
 
       return Result.success(savedSlot);
@@ -195,6 +196,7 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
       final result = await repository.delete(slotId);
 
       if (result) {
+        // Update local state by removing the slot
         final updatedSlots = [...state.slots];
         updatedSlots.removeAt(index);
         state = state.copyWith(slots: updatedSlots);
@@ -226,17 +228,26 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
       }
 
       bool allSuccessful = true;
+      final idsToRemove = <String>[];
+
       for (final slot in slotsToRemove) {
         try {
           await repository.delete(slot.id);
+          idsToRemove.add(slot.id);
         } catch (e) {
           allSuccessful = false;
           print('Failed to delete slot ${slot.id}: $e');
         }
       }
 
-      // Refresh slots
-      await loadSlots();
+      // Update local state in one go by filtering out deleted slots
+      if (idsToRemove.isNotEmpty) {
+        final updatedSlots =
+            state.slots
+                .where((slot) => !idsToRemove.contains(slot.id))
+                .toList();
+        state = state.copyWith(slots: updatedSlots);
+      }
 
       return Result.success(allSuccessful);
     } catch (e) {

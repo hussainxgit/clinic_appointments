@@ -2,6 +2,7 @@
 import 'package:clinic_appointments/features/dashboard/dashboard_module.dart';
 import 'package:clinic_appointments/features/payment/payment_module.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'features/messaging/messaging_module.dart';
@@ -16,7 +17,8 @@ import 'features/appointment_slot/appointment_slot_module.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
   // Initialize Firebase
   try {
     await Firebase.initializeApp(

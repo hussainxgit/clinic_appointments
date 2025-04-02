@@ -25,7 +25,7 @@ class PatientDetailsScreen extends ConsumerWidget {
             onPressed: () {
               _sendWhatsAppTemplateMessage(patient, ref);
             },
-            tooltip: 'Send WhatsApp Message',
+            tooltip: 'Send Message',
           ),
           IconButton(
             icon: const Icon(Icons.edit),
@@ -118,8 +118,8 @@ class PatientDetailsScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               color:
                   patient.status == PatientStatus.active
-                      ? Colors.green.withOpacity(0.1)
-                      : Colors.grey.withOpacity(0.1),
+                      ? Colors.green.withValues(alpha: 0.1)
+                      : Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -314,7 +314,7 @@ class PatientDetailsScreen extends ConsumerWidget {
                               decoration: BoxDecoration(
                                 color: _getAppointmentStatusColor(
                                   appointment.status,
-                                ).withOpacity(0.1),
+                                ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(

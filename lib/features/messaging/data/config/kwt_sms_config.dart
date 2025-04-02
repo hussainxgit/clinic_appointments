@@ -1,12 +1,14 @@
 // This file contains configuration for the KWT SMS API
 // For production, these values should be loaded from secure storage or environment variables
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class KwtSmsConfig {
   // API credentials
-  static const String apiUsername =
-      'hussainsk'; // API username
-  static const String apiPassword =
-      '-W6SNJpXzT'; // API password
+  static String apiUsername =
+      dotenv.env['KWT_SMS_USERNAME'] ?? ''; // API username
+  static String apiPassword =
+      dotenv.env['KWT_SMS_PASSWORD'] ?? ''; // API password
 
   // Sender ID (11 characters max, case-sensitive)
   static const String defaultSenderId = 'KWT-SMS';

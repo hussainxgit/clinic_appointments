@@ -188,11 +188,11 @@ class AppointmentService {
       }
 
       // Validate current status
-      if (appointment.status == 'completed') {
+      if (appointment.status == AppointmentStatus.completed) {
         return Result.failure('Appointment is already completed');
       }
 
-      if (appointment.status == 'cancelled') {
+      if (appointment.status == AppointmentStatus.cancelled) {
         return Result.failure('Cannot complete a cancelled appointment');
       }
 

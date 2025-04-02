@@ -198,7 +198,7 @@ class _AppointmentDetailsScreenState
                   ),
                 ),
                 Text(
-                  'Payment: ${appointment.paymentStatus == 'paid' ? 'Paid' : 'Unpaid'}',
+                  'Payment: ${appointment.paymentStatus == PaymentStatus.paid ? 'Paid' : 'Unpaid'}',
                   style: const TextStyle(color: Colors.white),
                 ),
               ],
@@ -259,9 +259,9 @@ class _AppointmentDetailsScreenState
           _buildDetailRow(
             icon: Icons.payment,
             label: 'Payment Status',
-            value: appointment.paymentStatus == 'paid' ? 'Paid' : 'Unpaid',
+            value: appointment.paymentStatus == PaymentStatus.paid ? 'Paid' : 'Unpaid',
             valueColor:
-                appointment.paymentStatus == 'paid'
+                appointment.paymentStatus == PaymentStatus.paid
                     ? Colors.green
                     : Colors.orange,
           ),

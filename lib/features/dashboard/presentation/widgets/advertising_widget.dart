@@ -15,7 +15,7 @@ class AdvertisingWidget extends StatelessWidget {
         ), // Slightly larger radius for modern feel
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 4), // Subtle shadow for depth
           ),

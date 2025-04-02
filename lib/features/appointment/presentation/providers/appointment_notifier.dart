@@ -1,6 +1,10 @@
 // lib/features/appointment/presentation/providers/appointment_notifier.dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/utils/result.dart';
+import '../../../doctor/data/doctor_provider.dart';
+import '../../../doctor/domain/entities/doctor.dart';
+import '../../../patient/data/patient_providers.dart';
+import '../../../patient/domain/entities/patient.dart';
 import '../../domain/entities/appointment.dart';
 import '../../services/appointment_service.dart';
 
@@ -62,32 +66,45 @@ class AppointmentNotifier extends _$AppointmentNotifier {
     await loadAppointments();
   }
 
+  // In appointment_notifier.dart - Update the createAppointment method
   Future<Result<Appointment>> createAppointment(Appointment appointment) async {
-    // Update loading state
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final appointmentService = ref.read(appointmentServiceProvider);
       final result = await appointmentService.createAppointment(appointment);
 
-      // Always refresh appointments after creation attempt, even if it failed
-      await loadAppointments();
+      if (result.isSuccess) {
+        // Add the new appointment to the state instead of reloading all
+        final updatedAppointments = [...state.appointments];
+        updatedAppointments.add({
+          'appointment': result.data,
+          'patient': await _getPatient(result.data.patientId),
+          'doctor': await _getDoctor(result.data.doctorId),
+        });
+
+        state = state.copyWith(
+          appointments: updatedAppointments,
+          isLoading: false,
+        );
+      } else {
+        state = state.copyWith(error: result.error, isLoading: false);
+      }
 
       return result;
     } catch (e) {
-      // Handle errors and refresh data anyway
-      final errorMsg = e.toString();
-      state = state.copyWith(isLoading: false, error: errorMsg);
-
-      // Try to refresh appointments even after error
-      try {
-        await loadAppointments();
-      } catch (_) {
-        // Ignore refresh errors after creation error
-      }
-
-      return Result.failure(errorMsg);
+      state = state.copyWith(error: e.toString(), isLoading: false);
+      return Result.failure(e.toString());
     }
+  }
+
+  // Add helper methods to get related data
+  Future<Patient?> _getPatient(String id) async {
+    return ref.read(patientRepositoryProvider).getById(id);
+  }
+
+  Future<Doctor?> _getDoctor(String id) async {
+    return ref.read(doctorRepositoryProvider).getById(id);
   }
 
   Future<Result<Appointment>> updateAppointment(Appointment appointment) async {
@@ -162,7 +179,7 @@ class AppointmentNotifier extends _$AppointmentNotifier {
 
   // Filter appointments by different criteria
   List<Map<String, dynamic>> getFilteredAppointments({
-    String? status,
+    AppointmentStatus? status,
     String? patientId,
     String? doctorId,
     DateTime? date,

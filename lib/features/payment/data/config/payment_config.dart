@@ -1,18 +1,22 @@
-import '../../../../.my_secrets.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PaymentConfig {
   // MyFatoorah Configuration
   static const bool testMode = true;
 
   static String get apiKey =>
-      testMode ? myfatoorahApiKey : myfatoorahProductionApiKey;
+      testMode
+          ? dotenv.env['MYFATOORAH_API_KEY'] ?? ''
+          : dotenv.env['MYFATOORAH_API_KEY'] ?? '';
 
   static String get baseUrl =>
-      testMode
+      dotenv.env['MYFATOORAH_BASE_URL'] ??
+      (testMode
           ? 'https://apitest.myfatoorah.com'
-          : 'https://api.myfatoorah.com';
+          : 'https://api.myfatoorah.com');
 
   static String get webhookUrl =>
+      dotenv.env['MYFATOORAH_WEBHOOK_URL'] ??
       'https://myfatoorahwebhook-45g5y5hrca-uc.a.run.app';
 
   // Default payment settings

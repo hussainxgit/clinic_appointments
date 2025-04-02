@@ -96,7 +96,7 @@ class AppointmentPaymentScreen extends ConsumerWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed:
-                    appointment.paymentStatus == 'paid'
+                    appointment.paymentStatus == PaymentStatus.paid
                         ? null
                         : () => _navigateToPayment(
                           context,
@@ -107,7 +107,7 @@ class AppointmentPaymentScreen extends ConsumerWidget {
                         ),
                 icon: const Icon(Icons.payment),
                 label: Text(
-                  appointment.paymentStatus == 'paid'
+                  appointment.paymentStatus == PaymentStatus.paid
                       ? 'Already Paid'
                       : 'Process Payment',
                 ),
@@ -119,7 +119,7 @@ class AppointmentPaymentScreen extends ConsumerWidget {
 
             const SizedBox(height: 16),
 
-            if (appointment.paymentStatus == 'paid')
+            if (appointment.paymentStatus == PaymentStatus.paid)
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(

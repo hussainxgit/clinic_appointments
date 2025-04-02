@@ -107,7 +107,7 @@ class PaymentProcessingNotifier extends StateNotifier<PaymentProcessingState> {
       state = state.copyWith(isGeneratingLink: false, payment: linkResult.data);
     }
 
-    // Step 3: Send WhatsApp message
+    // Step 3: Send Message
     state = state.copyWith(isSendingLink: true);
 
     final sendResult = await _paymentService.sendPaymentLinkViaWhatsApp(
@@ -208,9 +208,9 @@ class _PaymentLinkScreenState extends ConsumerState<PaymentLinkScreen> {
                         children: [
                           const ListTile(
                             leading: Icon(Icons.message, color: Colors.green),
-                            title: Text('WhatsApp Payment Link'),
+                            title: Text('Message Payment Link'),
                             subtitle: Text(
-                              'We will send a payment link to the patient\'s WhatsApp',
+                              'We will send a payment link to the patient\'s Phone',
                             ),
                             trailing: Icon(
                               Icons.check_circle,
@@ -267,7 +267,7 @@ class _PaymentLinkScreenState extends ConsumerState<PaymentLinkScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: LoadingButton(
-                        text: 'Send Payment Link via WhatsApp',
+                        text: 'Send Payment Link via SMS Message',
                         icon: Icons.send,
                         isLoading: processingState.isLoading,
                         onPressed:
@@ -304,7 +304,7 @@ class _PaymentLinkScreenState extends ConsumerState<PaymentLinkScreen> {
           isInProgress: state.isGeneratingLink,
         ),
         _buildProcessStep(
-          title: 'Send WhatsApp Message',
+          title: 'Send Message',
           isCompleted: state.isCompleted,
           isInProgress: state.isSendingLink,
         ),
@@ -368,7 +368,7 @@ class _PaymentLinkScreenState extends ConsumerState<PaymentLinkScreen> {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 32),
             child: Text(
-              'A WhatsApp message with payment link has been sent to the patient\'s phone number.',
+              'A Message with payment link has been sent to the patient\'s phone number.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16),
             ),
@@ -470,7 +470,7 @@ class _PaymentLinkScreenState extends ConsumerState<PaymentLinkScreen> {
           Icon(Icons.lock, size: 16),
           SizedBox(height: 4),
           Text(
-            'Payment will be processed securely via WhatsApp',
+            'Payment will be processed securely via SMS Messageing',
             style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],

@@ -101,24 +101,24 @@ class AppointmentSlotRepositoryImpl extends FirebaseRepository<AppointmentSlot>
   }
 
   @override
-  Future<AppointmentSlot> create(AppointmentSlot slot) async {
+  Future<AppointmentSlot> create(AppointmentSlot entity) async {
     // Validate slot before creating
-    _validateSlot(slot);
+    _validateSlot(entity);
     
     // Check for duplicates
-    final existingSlots = await getByDoctorAndDate(slot.doctorId, slot.date);
+    final existingSlots = await getByDoctorAndDate(entity.doctorId, entity.date);
     if (existingSlots.isNotEmpty) {
-      throw SameDaySlotException(slot.doctorId, slot.date);
+      throw SameDaySlotException(entity.doctorId, entity.date);
     }
     
-    return super.create(slot);
+    return super.create(entity);
   }
 
   @override
-  Future<AppointmentSlot> update(AppointmentSlot slot) async {
+  Future<AppointmentSlot> update(AppointmentSlot entity) async {
     // Validate slot before updating
-    _validateSlot(slot);
-    return super.update(slot);
+    _validateSlot(entity);
+    return super.update(entity);
   }
 
   @override

@@ -6,6 +6,7 @@ import '../../../../core/di/core_providers.dart';
 import '../../../../features/appointment/domain/entities/appointment.dart';
 import '../../../../features/appointment/presentation/providers/appointment_notifier.dart';
 import '../../../../features/doctor/domain/entities/doctor.dart';
+import '../../../patient/domain/entities/patient.dart';
 
 class UpcomingAppointmentsWidget extends ConsumerStatefulWidget {
   const UpcomingAppointmentsWidget({super.key});
@@ -34,13 +35,12 @@ class _UpcomingAppointmentsWidgetState
     final appointmentState = ref.watch(appointmentNotifierProvider);
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 0,
             blurRadius: 4,
             offset: const Offset(0, 1),
@@ -165,20 +165,19 @@ class _UpcomingAppointmentsWidgetState
         final item = appointments[index];
         final appointment = item['appointment'] as Appointment;
         final doctor = item['doctor'] as Doctor?;
+        final patient = item['patient'] as Patient?;
 
-        return _buildAppointmentItem(appointment, doctor);
+        return _buildAppointmentItem(appointment, doctor, patient);
       },
     );
   }
 
-  Widget _buildAppointmentItem(Appointment appointment, Doctor? doctor) {
+  Widget _buildAppointmentItem(
+    Appointment appointment,
+    Doctor? doctor,
+    Patient? patient,
+  ) {
     final timeFormat = DateFormat('h:mm a');
-    final startTime = timeFormat.format(appointment.dateTime);
-
-    // Calculate end time (assumed 45 minutes duration)
-    final endTime = timeFormat.format(
-      appointment.dateTime.add(const Duration(minutes: 45)),
-    );
 
     // Determine background color based on time
     final hour = appointment.dateTime.hour;
@@ -216,17 +215,17 @@ class _UpcomingAppointmentsWidgetState
             const SizedBox(width: 16),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: backgroundColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   children: [
-                    if (doctor?.imageUrl != null)
+                    if (patient?.avatarUrl != null)
                       CircleAvatar(
                         radius: 20,
-                        backgroundImage: NetworkImage(doctor!.imageUrl!),
+                        backgroundImage: NetworkImage(patient!.avatarUrl!),
                         onBackgroundImageError:
                             (_, __) => const Icon(Icons.person),
                       )
@@ -235,11 +234,11 @@ class _UpcomingAppointmentsWidgetState
                         radius: 20,
                         backgroundColor: Colors.white,
                         child: Text(
-                          doctor?.name.isNotEmpty == true
-                              ? doctor!.name[0]
-                              : 'D',
+                          patient?.name.isNotEmpty == true
+                              ? patient!.name[0]
+                              : 'P',
                           style: TextStyle(
-                            color: backgroundColor.withOpacity(0.8),
+                            color: backgroundColor.withValues(alpha: 0.8),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -250,7 +249,7 @@ class _UpcomingAppointmentsWidgetState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Meet with dr.${doctor?.name.split(' ').last ?? 'Unknown'}',
+                            patient!.name,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -258,7 +257,7 @@ class _UpcomingAppointmentsWidgetState
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '$startTime - $endTime',
+                            'with Dr. ${doctor?.name ?? 'N/A'}',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Colors.white,

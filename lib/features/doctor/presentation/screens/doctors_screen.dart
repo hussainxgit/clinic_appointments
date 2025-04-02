@@ -5,6 +5,7 @@ import 'package:intl/intl.dart'; // Import intl
 
 import '../../../../core/di/core_providers.dart';
 import '../../../../core/navigation/navigation_service.dart';
+import '../../../../core/ui/theme/app_colors.dart';
 import '../../domain/entities/doctor.dart';
 import '../../presentation/provider/doctor_notifier.dart';
 
@@ -132,7 +133,7 @@ class DoctorsAppBar extends StatelessWidget implements PreferredSizeWidget {
             style: TextStyle(color: Colors.white),
           ),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepOrange,
+            backgroundColor: AppColors.primary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -461,7 +462,7 @@ class _DoctorAvatarWithStatus extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: avatarRadius,
-          backgroundColor: Colors.blueGrey[300], // Fallback background
+          backgroundColor: AppColors.accent, // Fallback background
           backgroundImage: backgroundImage,
           // Handle image loading errors if needed
           onBackgroundImageError: backgroundImage != null ? (_, __) {} : null,

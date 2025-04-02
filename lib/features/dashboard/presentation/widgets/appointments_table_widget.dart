@@ -173,11 +173,11 @@ class AppointmentsTableWidget extends ConsumerWidget {
   (String, Color, Color) _getStatusInfo(AppointmentStatus status) {
     switch (status) {
       case AppointmentStatus.scheduled:
-        return ('Pending', Colors.amber[700]!, Colors.amber.withOpacity(0.2));
+        return ('Pending', Colors.amber[700]!, Colors.amber.withValues(alpha: 0.2));
       case AppointmentStatus.completed:
-        return ('Completed', Colors.blue[700]!, Colors.blue.withOpacity(0.2));
+        return ('Completed', Colors.blue[700]!, Colors.blue.withValues(alpha: 0.2));
       default:
-        return ('Cancelled', Colors.red[700]!, Colors.red.withOpacity(0.2));
+        return ('Cancelled', Colors.red[700]!, Colors.red.withValues(alpha: 0.2));
     }
   }
 

@@ -1,15 +1,18 @@
 import * as functions from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { Request, Response } from 'express';
+import { defineString } from 'firebase-functions/params';
 import axios from 'axios';
 
 // Initialize Firebase Admin
 admin.initializeApp();
 
 // MyFatoorah API configuration
-const MYFATOORAH_API_KEY = 'A6mb_CU9MDQuG3bSpC591IMS1UtAQU40Hyt6ba-tlkvxiaWVejiZGDvvyot2X6m4pQsukf6BZsvRxl8qyBWXIbZ-FsmozNRmbLEV5XyvBWC9KNU1Ao3LgTvxIj_lf_RJAiAWfiYch9EV3XI7EE5tEh-V5zCx9GQheS0f40LcCZLSTkxqom0CeeODy65sucz9ae6MxtBOUNszOaevajNNAVMxTNns3mhoxedCnaBqLU-KlbQHUxHfmtIYV8jsG1i2p7mvHSo0NhXTvLbdwuzXldxa0lPWmx4cJiyZzonkf12en6yCiIW_1Yh4mGoMZHTnUIj-25-s4RO153Akvj0d8kmTWXeq5kr_XPAf_icbVkKtFiaSpj9WvrdsEAwBIjqCs-1pqwzWxdHuk9K-i5NjM4wJunv6XmeL85mIH0DHPyscTRAQ28luX_X08Y5P2Dowmg55ER-QNdPt__ip_BCKM4SNeOsyIPsOxaFLI8nukZ-w9SBH4iMgrJ7BefsN64RZ-z_RUqgRMjGcTR4wsinodhG4YghJ-8iNh8LXRTIaQI4Tna_hMIPeDhQlH4D6vHzpL9qqe8RujhAY5JA6RveR8Dsm3zJ8YpEnMU8gfVMHJYDzBhwEZeuZjybPFElf8y5tx203g-HMo6gkxwWz3bdvNI2Nn3alnYt35Z7qhZTKoTIW5EriiwBdTzB4moqWg506GnUcng';
-const MYFATOORAH_BASE_URL = "https://apitest.myfatoorah.com"; // Use production URL in production
-
+// MyFatoorah API configuration using params
+const MYFATOORAH_API_KEY = defineString('MYFATOORAH_API_KEY');
+const MYFATOORAH_BASE_URL = defineString('MYFATOORAH_BASE_URL', {
+  default: 'https://apitest.myfatoorah.com'
+});
 // Define types for our payment record
 interface PaymentRecord {
   id: string;
@@ -122,11 +125,11 @@ export const myFatoorahWebhook = functions.onRequest(
 async function getPaymentStatusFromMyFatoorah(key: string, keyType: string) {
   try {
     const response = await axios.post(
-      `${MYFATOORAH_BASE_URL}/v2/GetPaymentStatus`,
+      `${MYFATOORAH_BASE_URL.value()}/v2/GetPaymentStatus`,
       { Key: key, KeyType: keyType },
       {
         headers: {
-          'Authorization': `Bearer ${MYFATOORAH_API_KEY}`,
+          'Authorization': `Bearer ${MYFATOORAH_API_KEY.value()}`,
           'Content-Type': 'application/json'
         }
       }
@@ -390,3 +393,4 @@ export const checkPaymentStatus = functions.onRequest(
     }
   }
 );
+

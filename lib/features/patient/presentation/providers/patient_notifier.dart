@@ -79,7 +79,10 @@ class PatientNotifier extends _$PatientNotifier {
       }
 
       final savedPatient = await repository.create(patient);
+
+      // Update local state directly instead of reloading all patients
       state = state.copyWith(patients: [...state.patients, savedPatient]);
+
       return Result.success(savedPatient);
     } catch (e) {
       return Result.failure(e.toString());
@@ -107,6 +110,7 @@ class PatientNotifier extends _$PatientNotifier {
 
       final updatedPatient = await repository.update(patient);
 
+      // Update the specific patient in the state
       final updatedPatients = [...state.patients];
       updatedPatients[index] = updatedPatient;
       state = state.copyWith(patients: updatedPatients);
@@ -129,6 +133,7 @@ class PatientNotifier extends _$PatientNotifier {
       final result = await repository.delete(id);
 
       if (result) {
+        // Remove the patient from local state
         final updatedPatients = [...state.patients];
         updatedPatients.removeAt(index);
         state = state.copyWith(patients: updatedPatients);
@@ -158,6 +163,7 @@ class PatientNotifier extends _$PatientNotifier {
       final updatedPatient = patient.copyWith(status: newStatus);
       final result = await repository.update(updatedPatient);
 
+      // Update the patient in the local state
       final updatedPatients = [...state.patients];
       updatedPatients[index] = result;
       state = state.copyWith(patients: updatedPatients);

@@ -64,7 +64,10 @@ class DoctorNotifier extends _$DoctorNotifier {
       }
 
       final savedDoctor = await repository.create(doctor);
+
+      // Update local state directly
       state = state.copyWith(doctors: [...state.doctors, savedDoctor]);
+
       return Result.success(savedDoctor);
     } catch (e) {
       return Result.failure(e.toString());
@@ -88,6 +91,7 @@ class DoctorNotifier extends _$DoctorNotifier {
 
       final updatedDoctor = await repository.update(doctor);
 
+      // Update the specific doctor in the state
       final updatedDoctors = [...state.doctors];
       updatedDoctors[index] = updatedDoctor;
       state = state.copyWith(doctors: updatedDoctors);
@@ -109,6 +113,7 @@ class DoctorNotifier extends _$DoctorNotifier {
 
       await repository.delete(doctorId);
 
+      // Update local state by removing the doctor
       final updatedDoctors = [...state.doctors];
       updatedDoctors.removeAt(index);
       state = state.copyWith(doctors: updatedDoctors);
