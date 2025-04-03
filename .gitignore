@@ -43,6 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Project secrets
 firebase/functions/node_modules
 firebase/functions/src/.my_js_secrets.ts
 .env
