@@ -156,3 +156,8 @@ class AppointmentCompletedEvent implements AppEvent {
   @override
   String get eventType => 'AppointmentCompletedEvent';
 }
+
+class SlotsGeneratedEvent {
+  final List<AppointmentSlot> slots;
+  SlotsGeneratedEvent(this.slots);
+}

@@ -4,6 +4,7 @@ import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/result.dart';
 import '../domain/entities/appointment_slot.dart';
 import '../domain/exceptions/slot_exception.dart';
+import '../domain/exceptions/slot_exceptions.dart';
 
 abstract class AppointmentSlotRepository {
   Future<Result<List<AppointmentSlot>>> getAll();
@@ -82,23 +83,21 @@ class AppointmentSlotRepositoryImpl extends FirebaseRepository<AppointmentSlot>
     DateTime date,
   ) async {
     return ErrorHandler.guardAsync(() async {
-      // Format the date consistently for Firestore queries
-      final startDate = DateTime(date.year, date.month, date.day);
-      final endDate = startDate.add(const Duration(days: 1));
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
 
-      final snapshot =
+      final querySnapshot =
           await firestore
               .collection(collection)
               .where('doctorId', isEqualTo: doctorId)
-              .where(
-                'date',
-                isGreaterThanOrEqualTo: startDate.toIso8601String(),
-              )
-              .where('date', isLessThan: endDate.toIso8601String())
+              .where('date', isGreaterThanOrEqualTo: startOfDay)
+              .where('date', isLessThan: endOfDay)
               .get();
 
-      return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
-    }, 'fetching slots by doctor and date');
+      return querySnapshot.docs
+          .map((doc) => fromMap(doc.data(), doc.id))
+          .toList();
+    }, 'getting slots by doctor and date');
   }
 
   @override
@@ -137,15 +136,30 @@ class AppointmentSlotRepositoryImpl extends FirebaseRepository<AppointmentSlot>
       // Validate slot before creating
       _validateSlot(entity);
 
-      // Check for duplicates
-      final existingSlotsResult = await getByDoctorAndDate(
-        entity.doctorId,
-        entity.date,
+      // Check for duplicates - use start of day for comparison
+      final slotDate = DateTime(
+        entity.date.year,
+        entity.date.month,
+        entity.date.day,
+        entity.date.hour,
+        entity.date.minute,
       );
 
-      if (existingSlotsResult.isSuccess &&
-          existingSlotsResult.data.isNotEmpty) {
-        throw SameDaySlotException(entity.doctorId, entity.date);
+      final existingSlotsResult = await getByDoctorAndDate(
+        entity.doctorId,
+        slotDate,
+      );
+
+      if (existingSlotsResult.isFailure) {
+        throw existingSlotsResult.error;
+      }
+
+      // Check if there's any overlapping slot
+      final existingSlots = existingSlotsResult.data;
+      for (final existingSlot in existingSlots) {
+        if (_slotsOverlap(existingSlot, entity)) {
+          throw SlotOverlapException(entity.doctorId, entity.date);
+        }
       }
 
       // Use the base implementation to create the slot
@@ -213,5 +227,15 @@ class AppointmentSlotRepositoryImpl extends FirebaseRepository<AppointmentSlot>
         'Booked patients cannot exceed max patients',
       );
     }
+  }
+
+  bool _slotsOverlap(AppointmentSlot slot1, AppointmentSlot slot2) {
+    // Consider slots of same duration for simplicity
+    const duration = Duration(minutes: 30);
+
+    final slot1End = slot1.date.add(duration);
+    final slot2End = slot2.date.add(duration);
+
+    return slot1.date.isBefore(slot2End) && slot2.date.isBefore(slot1End);
   }
 }

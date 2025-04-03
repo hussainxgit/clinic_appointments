@@ -1,5 +1,6 @@
 // lib/features/appointment_slot/appointment_slot_module.dart
 import 'package:clinic_appointments/features/appointment_slot/data/appointment_slot_providers.dart';
+import 'package:clinic_appointments/features/appointment_slot/presentation/pages/slot_management_page.dart';
 import 'package:clinic_appointments/features/appointment_slot/presentation/providers/appointment_slot_notifier.dart';
 import 'package:clinic_appointments/features/appointment_slot/presentation/screens/appointment_slot_details_screen.dart';
 import 'package:flutter/material.dart';
@@ -30,10 +31,8 @@ class AppointmentSlotModule implements FeatureModule {
   @override
   Map<String, WidgetBuilder> get routes => {
     '/appointment-slot/list': (_) => const AppointmentSlotsScreen(),
-    '/appointment-slot/add':
-        (_) => const AppointmentSlotFormScreen(isEditing: false),
-    '/appointment-slot/edit':
-        (_) => const AppointmentSlotFormScreen(isEditing: true),
+    '/appointment-slot/add': (_) => const SlotManagementPage(),
+    '/appointment-slot/edit': (_) => const SlotManagementPage(),
     '/appointment-slot/details': (_) => const AppointmentSlotDetailsScreen(),
   };
 
