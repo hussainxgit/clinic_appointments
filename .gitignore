@@ -47,5 +47,5 @@ app.*.map.json
 # Project secrets
 firebase/functions/node_modules
 firebase/functions/src/.my_js_secrets.ts
-lib/firabse_options.dart
+lib/firebase_options.dart
 .env

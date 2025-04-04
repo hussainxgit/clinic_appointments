@@ -77,7 +77,9 @@ class SlotGenerationService {
           config: config,
           date: currentDate,
         );
-        allSlots.addAll(daySlots.data);
+        if (daySlots.isSuccess && daySlots.data.isNotEmpty) {
+          allSlots.add(daySlots.data[0]);
+        }
       }
       currentDate = currentDate.add(const Duration(days: 1));
     }
@@ -94,88 +96,77 @@ class SlotGenerationService {
       final weekDay = WeekDay.values[date.weekday - 1];
       final customHours = config.customHours?[weekDay];
 
+      List<TimeSlot> dayTimeSlots = [];
+
       if (customHours != null && customHours.isNotEmpty) {
-        return _generateSlotsForCustomHours(
+        // Generate time slots for custom hours
+        for (final timeRange in customHours) {
+          final rangeTimeSlots = _generateTimeSlots(
+            config: config,
+            date: date,
+            startTime: timeRange.start,
+            endTime: timeRange.end,
+          );
+          dayTimeSlots.addAll(rangeTimeSlots);
+        }
+      } else {
+        // Generate time slots for standard hours
+        final standardTimeSlots = _generateTimeSlots(
           config: config,
           date: date,
-          customHours: customHours,
+          startTime: config.workDayStart,
+          endTime: config.workDayEnd,
         );
+        dayTimeSlots.addAll(standardTimeSlots);
       }
 
-      return _generateSlotsForStandardHours(config: config, date: date);
+      // Create a single AppointmentSlot for the entire day containing all time slots
+      if (dayTimeSlots.isNotEmpty) {
+        final appointmentSlot = AppointmentSlot(
+          id: '',
+          doctorId: config.doctorId,
+          date: DateTime(date.year, date.month, date.day),
+          timeSlots: dayTimeSlots,
+          isActive: true,
+        );
+
+        return [appointmentSlot];
+      }
+
+      return [];
     }, 'generating day slots');
   }
 
-  /// Generates slots for custom working hours
-  List<AppointmentSlot> _generateSlotsForCustomHours({
-    required SlotGenerationConfig config,
-    required DateTime date,
-    required List<TimeRange> customHours,
-  }) {
-    List<AppointmentSlot> slots = [];
-    for (final timeRange in customHours) {
-      slots.addAll(
-        _generateTimeRangeSlots(
-          config: config,
-          date: date,
-          startTime: timeRange.start,
-          endTime: timeRange.end,
-        ),
-      );
-    }
-    return slots;
-  }
-
-  /// Generates slots for standard working hours
-  List<AppointmentSlot> _generateSlotsForStandardHours({
-    required SlotGenerationConfig config,
-    required DateTime date,
-  }) {
-    return _generateTimeRangeSlots(
-      config: config,
-      date: date,
-      startTime: config.workDayStart,
-      endTime: config.workDayEnd,
-    );
-  }
-
-  /// Generates slots for a specific time range
-  List<AppointmentSlot> _generateTimeRangeSlots({
+  /// Generates time slots for a specific time range
+  List<TimeSlot> _generateTimeSlots({
     required SlotGenerationConfig config,
     required DateTime date,
     required TimeOfDay startTime,
     required TimeOfDay endTime,
   }) {
-    List<AppointmentSlot> slots = [];
+    List<TimeSlot> timeSlots = [];
     DateTime currentStart = _createDateTime(date, startTime);
     final rangeEnd = _createDateTime(date, endTime);
 
     while (_canCreateSlot(currentStart, rangeEnd, config.slotDuration)) {
-      slots.add(
-        AppointmentSlot(
-          id: '',
-          doctorId: config.doctorId,
-          date: currentStart,
-          timeSlots: [
-            TimeSlot(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              startTime: TimeOfDay(
-                hour: currentStart.hour,
-                minute: currentStart.minute,
-              ),
-              duration: config.slotDuration,
-              maxPatients: 1, // Default to 1 patient per slot
-              bookedPatients: 0,
-              isActive: true,
-            ),
-          ],
+      timeSlots.add(
+        TimeSlot(
+          id:
+              '${date.toIso8601String()}_${currentStart.hour}_${currentStart.minute}',
+          startTime: TimeOfDay(
+            hour: currentStart.hour,
+            minute: currentStart.minute,
+          ),
+          duration: config.slotDuration,
+          maxPatients: config.maxPatientsPerSlot,
+          bookedPatients: 0,
           isActive: true,
         ),
       );
       currentStart = currentStart.add(config.slotDuration);
     }
 
-    return slots;
+    return timeSlots;
   }
 
   /// Saves generated slots after validation
@@ -193,8 +184,8 @@ class SlotGenerationService {
       }
     }
 
-    if (savedSlots.isEmpty) {
-      throw 'No slots were generated. All slots already exist or failed to save.';
+    if (savedSlots.isEmpty && slots.isNotEmpty) {
+      throw 'No slots were saved. All slots already exist or failed to save.';
     }
 
     return savedSlots;
@@ -207,7 +198,16 @@ class SlotGenerationService {
       slot.date,
     );
 
-    return existingSlots.isSuccess && existingSlots.data.isEmpty;
+    if (existingSlots.isFailure) {
+      return false;
+    }
+
+    // Check if there is already a slot for this doctor on this day
+    if (existingSlots.data.isNotEmpty) {
+      return false;
+    }
+
+    return true;
   }
 
   /// Checks if the given date is a working day
@@ -268,7 +268,7 @@ class SlotGenerationConfig {
   final TimeOfDay workDayEnd;
   final List<DateTime>? excludeDates;
   final Map<WeekDay, List<TimeRange>>? customHours;
-  final int maxPatientsPerSlot; // New parameter
+  final int maxPatientsPerSlot;
 
   const SlotGenerationConfig({
     required this.doctorId,
@@ -280,7 +280,7 @@ class SlotGenerationConfig {
     required this.workDayEnd,
     this.excludeDates,
     this.customHours,
-    this.maxPatientsPerSlot = 1, // Default to 1
+    this.maxPatientsPerSlot = 1,
   });
 
   void validate() {

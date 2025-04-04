@@ -5,13 +5,16 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../../../core/di/core_providers.dart';
 import '../../../../core/ui/widgets/app_card.dart';
 import '../../../../core/ui/theme/app_theme.dart';
+import '../../../../core/ui/widgets/empty_state.dart';
 import '../../../appointment/presentation/providers/appointment_notifier.dart';
 import '../../../appointment_slot/domain/entities/appointment_slot.dart';
+import '../../../appointment_slot/domain/entities/time_slot.dart';
 import '../../../appointment_slot/presentation/providers/appointment_slot_notifier.dart';
 import '../../../patient/domain/entities/patient.dart';
 import '../../domain/entities/doctor.dart';
 import '../provider/doctor_notifier.dart';
 
+// DoctorDetailScreen - Simplified
 class DoctorDetailScreen extends ConsumerStatefulWidget {
   const DoctorDetailScreen({super.key});
 
@@ -30,7 +33,6 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
     super.initState();
     _selectedDay = _focusedDay;
 
-    // Preload doctor's slots
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDoctorSlots();
     });
@@ -94,57 +96,54 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
             ),
           ),
 
-          // Right side - Calendar
+          // Right side - Calendar and Slots
           Expanded(
             flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: AppCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Appointment Schedule',
-                            style: Theme.of(context).textTheme.titleLarge,
+            child: AppCard(
+              margin: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Appointment Schedule',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.add),
+                          label: const Text('Add Slot'),
+                          onPressed: () => _addNewSlot(doctor),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
                           ),
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.add),
-                            label: const Text('Add Slot'),
-                            onPressed: () => _addNewSlot(doctor),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    _buildCalendar(doctor),
-                    const Divider(),
-                    Expanded(
-                      child:
-                          _isLoading
-                              ? const Center(child: CircularProgressIndicator())
-                              : AppointmentSlotsList(
-                                doctor: doctor,
-                                selectedDay: _selectedDay,
-                                onEditSlot: _editSlot,
-                                onDeleteSlot: _deleteSlot,
-                                onViewDetails:
-                                    (slot) =>
-                                        _viewAppointmentDetails(slot, ref),
-                                onAddSlot:
-                                    () =>
-                                        _addNewSlot(doctor, date: _selectedDay),
+                  ),
+                  _buildCalendar(doctor),
+                  const Divider(),
+                  Expanded(
+                    child:
+                        _isLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : SingleChildScrollView(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: AppointmentSlotListWidget(
+                                  doctorId: doctor.id,
+                                  showAddButton: false,
+                                  onSlotTap:
+                                      (slot) => _viewAppointmentDetails(slot),
+                                ),
                               ),
-                    ),
-                  ],
-                ),
+                            ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -165,20 +164,16 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
     final eventDates = <DateTime, List<String>>{};
     for (final slot in slots) {
       final date = DateTime(slot.date.year, slot.date.month, slot.date.day);
-      // Add to date events map - create list if not exists, otherwise append
-      if (!eventDates.containsKey(date)) {
-        eventDates[date] = ['hasSlots'];
-      }
+      eventDates.putIfAbsent(date, () => []).add('hasSlots');
     }
 
     return TableCalendar(
-      firstDay: DateTime.now().subtract(const Duration(days: 365)),
+      firstDay: DateTime.now().subtract(const Duration(days: 30)),
       lastDay: DateTime.now().add(const Duration(days: 365)),
       focusedDay: _focusedDay,
       calendarFormat: _calendarFormat,
       selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
       eventLoader: (day) {
-        // Convert day to the same format as stored keys
         final date = DateTime(day.year, day.month, day.day);
         return eventDates[date] ?? [];
       },
@@ -204,7 +199,7 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
           shape: BoxShape.circle,
         ),
         todayDecoration: BoxDecoration(
-          color: AppTheme.primaryColor.withValues(alpha: 0.5),
+          color: AppTheme.primaryColor.withOpacity(0.5),
           shape: BoxShape.circle,
         ),
       ),
@@ -212,7 +207,7 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
     );
   }
 
-  void _viewAppointmentDetails(AppointmentSlot slot, WidgetRef ref) {
+  void _viewAppointmentDetails(AppointmentSlot slot) {
     final navigationService = ref.read(navigationServiceProvider);
     navigationService.navigateTo(
       '/appointment-slot/details',
@@ -229,64 +224,6 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
         'date': date ?? _selectedDay ?? DateTime.now(),
       },
     );
-  }
-
-  void _editSlot(AppointmentSlot slot) {
-    final navigationService = ref.read(navigationServiceProvider);
-    navigationService.navigateTo('/appointment-slot/edit', arguments: slot);
-  }
-
-  Future<void> _deleteSlot(AppointmentSlot slot) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Delete Slot'),
-            content: Text(
-              'Are you sure you want to delete this slot on ${DateFormat('MMM d, h:mm a').format(slot.date)}?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-    );
-
-    if (confirmed == true) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      try {
-        final slotNotifier = ref.read(appointmentSlotNotifierProvider.notifier);
-        final result = await slotNotifier.removeSlot(slot.id);
-
-        if (mounted) {
-          if (result.isFailure) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Error: ${result.error}')));
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Slot deleted successfully')),
-            );
-          }
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      }
-    }
   }
 
   void _viewAppointments(Doctor doctor) {
@@ -731,294 +668,308 @@ class DoctorContactInfoCard extends StatelessWidget {
   }
 }
 
-// Appointment Slots List Widget
-class AppointmentSlotsList extends ConsumerWidget {
-  final Doctor doctor;
-  final DateTime? selectedDay;
-  final Function(AppointmentSlot) onEditSlot;
-  final Function(AppointmentSlot) onDeleteSlot;
-  final Function(AppointmentSlot) onViewDetails;
-  final VoidCallback onAddSlot;
+// Appointment Slots List Widget - Refactored
+class AppointmentSlotListWidget extends ConsumerWidget {
+  final String doctorId;
+  final bool showAddButton;
+  final VoidCallback? onAddPressed;
+  final Function(AppointmentSlot)? onSlotTap;
 
-  const AppointmentSlotsList({
+  const AppointmentSlotListWidget({
     super.key,
-    required this.doctor,
-    required this.selectedDay,
-    required this.onEditSlot,
-    required this.onDeleteSlot,
-    required this.onViewDetails,
-    required this.onAddSlot,
+    required this.doctorId,
+    this.showAddButton = true,
+    this.onAddPressed,
+    this.onSlotTap,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (selectedDay == null) return const SizedBox.shrink();
-
-    // Use watch instead of read to react to state changes
     final slotState = ref.watch(appointmentSlotNotifierProvider);
+    final filteredSlots =
+        slotState.slots
+            .where(
+              (slot) =>
+                  slot.doctorId == doctorId &&
+                  slot.date.isAfter(
+                    DateTime.now().subtract(const Duration(days: 1)),
+                  ),
+            )
+            .toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
 
-    if (slotState.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHeader(context),
+        const SizedBox(height: 12),
+        if (filteredSlots.isEmpty)
+          const EmptyState(
+            message: 'No available appointment slots',
+            icon: Icons.calendar_today_outlined,
+          )
+        else
+          _buildGroupedSlots(context, filteredSlots),
+      ],
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Upcoming Slots',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        if (showAddButton)
+          TextButton.icon(
+            onPressed: onAddPressed,
+            icon: const Icon(Icons.add),
+            label: const Text('Add Slots'),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).primaryColor,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildGroupedSlots(BuildContext context, List<AppointmentSlot> slots) {
+    // Group slots by date
+    final groupedSlots = <DateTime, List<AppointmentSlot>>{};
+    for (final slot in slots) {
+      final date = DateTime(slot.date.year, slot.date.month, slot.date.day);
+      groupedSlots.putIfAbsent(date, () => []).add(slot);
     }
 
-    final slots =
-        slotState.slots.where((slot) {
-          return slot.doctorId == doctor.id &&
-              _isSameDate(slot.date, selectedDay!);
-        }).toList();
-
-    if (slots.isEmpty) {
-      return EmptySlotList(selectedDay: selectedDay!, onAddSlot: onAddSlot);
-    }
-
-    // Sort slots by time
-    slots.sort((a, b) => a.date.compareTo(b.date));
-
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: slots.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 8),
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: groupedSlots.length,
       itemBuilder: (context, index) {
-        final slot = slots[index];
-        return AppointmentSlotItem(
-          slot: slot,
-          onEdit: () => onEditSlot(slot),
-          onDelete: () => onDeleteSlot(slot),
-          onViewDetails: () => onViewDetails(slot),
+        final date = groupedSlots.keys.toList()[index];
+        final dateSlots = groupedSlots[date]!;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                DateFormat('EEEE, MMMM d, yyyy').format(date),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ),
+            AppCard(
+              padding: EdgeInsets.zero,
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: dateSlots.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final slot = dateSlots[index];
+                  return AppointmentSlotItem(
+                    slot: slot,
+                    onTap: onSlotTap != null ? () => onSlotTap!(slot) : null,
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
         );
       },
     );
   }
-
-  // Helper function to check if two dates are the same day
-  bool _isSameDate(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
 }
 
-// Empty Slot List Widget
-class EmptySlotList extends StatelessWidget {
-  final DateTime selectedDay;
-  final VoidCallback onAddSlot;
-
-  const EmptySlotList({
-    super.key,
-    required this.selectedDay,
-    required this.onAddSlot,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'No slots for ${DateFormat('MMMM d, yyyy').format(selectedDay)}',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.add),
-            label: const Text('Add Slot'),
-            onPressed: onAddSlot,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Appointment Slot Item Widget
-class AppointmentSlotItem extends ConsumerWidget {
+// Appointment Slot Item Widget - Simplified
+class AppointmentSlotItem extends StatelessWidget {
   final AppointmentSlot slot;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback onViewDetails;
+  final VoidCallback? onTap;
+  final bool showDoctorInfo;
 
   const AppointmentSlotItem({
     super.key,
     required this.slot,
-    required this.onEdit,
-    required this.onDelete,
-    required this.onViewDetails,
+    this.onTap,
+    this.showDoctorInfo = false,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final time = DateFormat('h:mm a').format(slot.date);
-    final isAvailable = !slot.isFullyBooked;
-
-    // Determine status info
-    String statusText;
-    Color statusColor;
-    IconData statusIcon;
-
-    if (isAvailable) {
-      statusText = 'Available';
-      statusColor = AppTheme.successColor;
-      statusIcon = Icons.check_circle;
-    } else {
-      statusText = 'Fully Booked';
-      statusColor = AppTheme.warningColor;
-      statusIcon = Icons.event_busy;
-    }
-
-    return Card(
-      elevation: 3,
-      shadowColor: Colors.black26,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: LinearGradient(
-            colors: [
-              isAvailable
-                  ? AppTheme.successColor.withValues(alpha: 0.08)
-                  : AppTheme.warningColor.withValues(alpha: 0.08),
-              Colors.white,
-            ],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onViewDetails,
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Top row with time and actions
-                Row(
-                  children: [
-                    // Time section with border
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(Icons.access_time, color: AppTheme.primaryColor),
-                          const SizedBox(height: 4),
-                          Text(
-                            time,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(width: 16),
-
-                    // Slot details
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Status indicator
-                            Row(
-                              children: [
-                                Icon(statusIcon, size: 16, color: statusColor),
-                                const SizedBox(width: 6),
-                                Text(
-                                  statusText,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: statusColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            // Capacity progress indicator
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Actions column
-                    Column(
-                      children: [
-                        Material(
-                          color: AppTheme.infoColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: onEdit,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              child: Icon(
-                                Icons.edit,
-                                size: 20,
-                                color: AppTheme.infoColor,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Material(
-                          color:
-                              slot.timeSlots.isNotEmpty
-                                  ? Colors.grey.shade200
-                                  : AppTheme.errorColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: slot.timeSlots.isNotEmpty ? null : onDelete,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              child: Icon(
-                                Icons.delete,
-                                size: 20,
-                                color:
-                                    slot.timeSlots.isNotEmpty
-                                        ? Colors.grey.shade400
-                                        : AppTheme.errorColor,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                Text(
+                  DateFormat('h:mm a').format(slot.date),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-
-                // Patient avatars section - only if there are booked patients
-                if (slot.timeSlots.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  const Divider(height: 1),
-                  const SizedBox(height: 12),
-                  PatientAvatarSection(slot: slot),
-                ],
+                _buildAvailabilityChip(context),
               ],
             ),
-          ),
+            const SizedBox(height: 8),
+            _buildTimeSlots(context),
+            if (showDoctorInfo && slot.hasBookedPatients) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.people_outline,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${slot.totalBookedPatients} booked / ${_calculateTotalCapacity()} capacity',
+                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                  ),
+                ],
+              ),
+            ],
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildAvailabilityChip(BuildContext context) {
+    final isAvailable = slot.canAcceptBookings;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isAvailable ? Colors.green[50] : Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isAvailable ? Colors.green[300]! : Colors.grey[300]!,
+        ),
+      ),
+      child: Text(
+        isAvailable
+            ? 'Available (${slot.availableSpots})'
+            : slot.isFullyBooked
+            ? 'Fully Booked'
+            : 'Unavailable',
+        style: TextStyle(
+          fontSize: 12,
+          color: isAvailable ? Colors.green[700] : Colors.grey[700],
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeSlots(BuildContext context) {
+    // Sort time slots by start time
+    final sortedSlots = List<TimeSlot>.from(slot.timeSlots)..sort(
+      (a, b) => (a.startTime.hour * 60 + a.startTime.minute).compareTo(
+        b.startTime.hour * 60 + b.startTime.minute,
+      ),
+    );
+
+    // Show first 3 time slots
+    final visibleSlots = sortedSlots.take(3).toList();
+    final hasMoreSlots = sortedSlots.length > 3;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children:
+              visibleSlots
+                  .map((timeSlot) => _buildTimeSlotChip(context, timeSlot))
+                  .toList(),
+        ),
+        if (hasMoreSlots) ...[
+          const SizedBox(height: 4),
+          Text(
+            '+ ${sortedSlots.length - 3} more time slots',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTimeSlotChip(BuildContext context, TimeSlot timeSlot) {
+    final startFormat = TimeOfDay(
+      hour: timeSlot.startTime.hour,
+      minute: timeSlot.startTime.minute,
+    ).format(context);
+    final endFormat = TimeOfDay(
+      hour: timeSlot.endTime.hour,
+      minute: timeSlot.endTime.minute,
+    ).format(context);
+    final isAvailable = timeSlot.isAvailable;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isAvailable ? Colors.blue[50] : Colors.grey[100],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isAvailable ? Colors.blue[300]! : Colors.grey[300]!,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$startFormat - $endFormat',
+            style: TextStyle(
+              fontSize: 13,
+              color: isAvailable ? Colors.blue[700] : Colors.grey[500],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          if (timeSlot.maxPatients > 1) ...[
+            const SizedBox(width: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: isAvailable ? Colors.blue[100] : Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '${timeSlot.bookedPatients}/${timeSlot.maxPatients}',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isAvailable ? Colors.blue[800] : Colors.grey[600],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  int _calculateTotalCapacity() {
+    return slot.timeSlots.fold(0, (sum, slot) => sum + slot.maxPatients);
   }
 }
 
@@ -1034,9 +985,7 @@ class PatientAvatarSection extends ConsumerWidget {
     final appointmentState = ref.watch(appointmentNotifierProvider);
     final appointments =
         appointmentState.appointments
-            .where(
-              (item) => slot.timeSlots.contains(item['appointment'].id),
-            )
+            .where((item) => slot.timeSlots.contains(item['appointment'].id))
             .toList();
 
     // No appointments found
