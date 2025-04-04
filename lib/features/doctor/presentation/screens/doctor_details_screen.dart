@@ -853,12 +853,6 @@ class AppointmentSlotItem extends ConsumerWidget {
     final time = DateFormat('h:mm a').format(slot.date);
     final isAvailable = !slot.isFullyBooked;
 
-    // Calculate availability percentage
-    final availabilityPercentage =
-        slot.maxPatients > 0
-            ? (1 - (slot.bookedPatients / slot.maxPatients)) * 100
-            : 0.0;
-
     // Determine status info
     String statusText;
     Color statusColor;
@@ -885,8 +879,8 @@ class AppointmentSlotItem extends ConsumerWidget {
           gradient: LinearGradient(
             colors: [
               isAvailable
-                  ? AppTheme.successColor.withValues(alpha:0.08)
-                  : AppTheme.warningColor.withValues(alpha:0.08),
+                  ? AppTheme.successColor.withValues(alpha: 0.08)
+                  : AppTheme.warningColor.withValues(alpha: 0.08),
               Colors.white,
             ],
             begin: Alignment.centerLeft,
@@ -960,49 +954,6 @@ class AppointmentSlotItem extends ConsumerWidget {
                             const SizedBox(height: 8),
 
                             // Capacity progress indicator
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Capacity: ${slot.bookedPatients}/${slot.maxPatients}',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    Text(
-                                      '${availabilityPercentage.toInt()}% available',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(4),
-                                  child: LinearProgressIndicator(
-                                    value:
-                                        slot.bookedPatients / slot.maxPatients,
-                                    backgroundColor: Colors.grey.shade200,
-                                    valueColor: AlwaysStoppedAnimation(
-                                      slot.bookedPatients / slot.maxPatients <
-                                              0.8
-                                          ? AppTheme.successColor
-                                          : slot.bookedPatients ==
-                                              slot.maxPatients
-                                          ? AppTheme.errorColor
-                                          : AppTheme.warningColor,
-                                    ),
-                                    minHeight: 6,
-                                  ),
-                                ),
-                              ],
-                            ),
                           ],
                         ),
                       ),
@@ -1030,20 +981,20 @@ class AppointmentSlotItem extends ConsumerWidget {
                         const SizedBox(height: 8),
                         Material(
                           color:
-                              slot.bookedPatients > 0
+                              slot.timeSlots.isNotEmpty
                                   ? Colors.grey.shade200
                                   : AppTheme.errorColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(20),
-                            onTap: slot.bookedPatients > 0 ? null : onDelete,
+                            onTap: slot.timeSlots.isNotEmpty ? null : onDelete,
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               child: Icon(
                                 Icons.delete,
                                 size: 20,
                                 color:
-                                    slot.bookedPatients > 0
+                                    slot.timeSlots.isNotEmpty
                                         ? Colors.grey.shade400
                                         : AppTheme.errorColor,
                               ),
@@ -1056,7 +1007,7 @@ class AppointmentSlotItem extends ConsumerWidget {
                 ),
 
                 // Patient avatars section - only if there are booked patients
-                if (slot.bookedPatients > 0) ...[
+                if (slot.timeSlots.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   const Divider(height: 1),
                   const SizedBox(height: 12),
@@ -1084,7 +1035,7 @@ class PatientAvatarSection extends ConsumerWidget {
     final appointments =
         appointmentState.appointments
             .where(
-              (item) => slot.appointmentIds.contains(item['appointment'].id),
+              (item) => slot.timeSlots.contains(item['appointment'].id),
             )
             .toList();
 
@@ -1145,7 +1096,9 @@ class PatientAvatarSection extends ConsumerWidget {
                     vertical: 0,
                   ),
                   minimumSize: const Size(0, 32),
-                  side: BorderSide(color: AppTheme.infoColor.withValues(alpha: 0.5)),
+                  side: BorderSide(
+                    color: AppTheme.infoColor.withValues(alpha: 0.5),
+                  ),
                   foregroundColor: AppTheme.infoColor,
                 ),
               ),

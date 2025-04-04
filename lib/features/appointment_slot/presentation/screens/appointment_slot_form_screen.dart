@@ -40,14 +40,13 @@ class _AppointmentSlotFormScreenState
       _selectedDoctorId = _slot.doctorId;
       _selectedDate = _slot.date;
       _selectedTime = TimeOfDay.fromDateTime(_slot.date);
-      _maxPatientsController.text = _slot.maxPatients.toString();
     } else {
       // Generate a unique ID for the new slot
       _slot = AppointmentSlot(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         doctorId: '',
         date: DateTime.now().add(const Duration(days: 1)),
-        maxPatients: 10,
+        timeSlots: [],
       );
     }
   }
@@ -71,8 +70,8 @@ class _AppointmentSlotFormScreenState
           if (widget.isEditing)
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: _slot.bookedPatients > 0 ? null : _confirmDelete,
-              color: _slot.bookedPatients > 0 ? Colors.grey : Colors.red,
+              onPressed: _slot.hasBookedPatients ? null : _confirmDelete,
+              color: _slot.hasBookedPatients ? Colors.grey : Colors.red,
             ),
         ],
       ),
@@ -107,8 +106,8 @@ class _AppointmentSlotFormScreenState
                     return 'Please enter a valid number greater than 0';
                   }
 
-                  if (widget.isEditing && patients < _slot.bookedPatients) {
-                    return 'Cannot be less than booked patients (${_slot.bookedPatients})';
+                  if (widget.isEditing && patients < _slot.timeSlots.length) {
+                    return 'Cannot be less than booked patients (${_slot.timeSlots.length})';
                   }
 
                   return null;
@@ -119,7 +118,7 @@ class _AppointmentSlotFormScreenState
 
                 // Read-only field for booked patients
                 TextFormField(
-                  initialValue: _slot.bookedPatients.toString(),
+                  initialValue: _slot.timeSlots.length.toString(),
                   decoration: const InputDecoration(
                     labelText: 'Currently Booked Patients',
                     border: OutlineInputBorder(),
@@ -297,9 +296,7 @@ class _AppointmentSlotFormScreenState
                 : DateTime.now().millisecondsSinceEpoch.toString(),
         doctorId: _selectedDoctorId,
         date: _combineDateAndTime(),
-        maxPatients: int.parse(_maxPatientsController.text),
-        bookedPatients: widget.isEditing ? _slot.bookedPatients : 0,
-        appointmentIds: widget.isEditing ? _slot.appointmentIds : [],
+        timeSlots: [],
       );
 
       // Save the slot

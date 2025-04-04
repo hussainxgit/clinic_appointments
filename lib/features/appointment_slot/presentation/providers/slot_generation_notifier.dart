@@ -5,10 +5,10 @@ import '../../services/slot_generation_service.dart';
 import '../../../../core/utils/result.dart';
 import '../../domain/entities/appointment_slot.dart';
 
-part 'slot_generation_controller.g.dart';
+part 'slot_generation_notifier.g.dart';
 
 @riverpod
-class SlotGenerationController extends _$SlotGenerationController {
+class SlotGenerationNotifier extends _$SlotGenerationNotifier {
   @override
   FutureOr<void> build() async {}
 
@@ -28,15 +28,15 @@ class SlotGenerationController extends _$SlotGenerationController {
     final result = await ref
         .read(slotGenerationServiceProvider)
         .generateSlots(
-          doctorId: doctorId,
-          startDate: startDate,
-          endDate: endDate,
-          slotDuration: slotDuration,
-          workingDays: workingDays,
-          workDayStart: workDayStart,
-          workDayEnd: workDayEnd,
-          excludeDates: excludeDates,
-          customHours: customHours,
+          SlotGenerationConfig(
+            doctorId: doctorId,
+            startDate: startDate,
+            endDate: endDate,
+            slotDuration: slotDuration,
+            workingDays: workingDays,
+            workDayStart: workDayStart,
+            workDayEnd: workDayEnd,
+          ),
         );
 
     state = AsyncData(null);

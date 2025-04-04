@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import '../../domain/entities/appointment_slot.dart';
 import '../widgets/slot_generation_form.dart';
 
-class SlotManagementPage extends StatefulWidget {
-  const SlotManagementPage({super.key});
+class SlotManagementScreen extends StatefulWidget {
+  const SlotManagementScreen({super.key});
 
   @override
-  State<SlotManagementPage> createState() => _SlotManagementPageState();
+  State<SlotManagementScreen> createState() => _SlotManagementScreenState();
 }
 
-class _SlotManagementPageState extends State<SlotManagementPage> {
+class _SlotManagementScreenState extends State<SlotManagementScreen> {
   String? _doctorId;
-  DateTime? _initialDate;
   AppointmentSlot? _existingSlot;
 
   @override
@@ -24,13 +23,11 @@ class _SlotManagementPageState extends State<SlotManagementPage> {
       if (args is Map<String, dynamic>) {
         // Handle map arguments
         _doctorId = args['doctorId'] as String?;
-        _initialDate = args['date'] as DateTime?;
         _existingSlot = args['slot'] as AppointmentSlot?;
       } else if (args is AppointmentSlot) {
         // Handle direct slot argument
         _existingSlot = args;
         _doctorId = args.doctorId;
-        _initialDate = args.date;
       }
     }
   }
@@ -49,8 +46,27 @@ class _SlotManagementPageState extends State<SlotManagementPage> {
         padding: const EdgeInsets.all(16),
         child: SlotGenerationForm(
           doctorId: _doctorId ?? '',
-          initialDate: _initialDate,
           existingSlot: _existingSlot,
+          onGenerationComplete: (result) {
+            if (result.isSuccess && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Successfully generated ${result.data.length} slots',
+                  ),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              Navigator.of(context).pop();
+            } else if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Error: ${result.error}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
         ),
       ),
     );

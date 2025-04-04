@@ -77,7 +77,7 @@ class AppointmentSlotDetailsState
                     id: '',
                     doctorId: '',
                     date: DateTime.now(),
-                    maxPatients: 0,
+                    timeSlots: [],
                   ),
             )
             : null;

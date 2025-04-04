@@ -1,9 +1,11 @@
 // lib/features/appointment_slot/data/appointment_slot_repository.dart
+import 'package:flutter/material.dart';
+
 import '../../../core/data/firebase_repository.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/result.dart';
 import '../domain/entities/appointment_slot.dart';
-import '../domain/exceptions/slot_exception.dart';
+import '../domain/entities/time_slot.dart';
 import '../domain/exceptions/slot_exceptions.dart';
 
 abstract class AppointmentSlotRepository {
@@ -28,14 +30,30 @@ class AppointmentSlotRepositoryImpl extends FirebaseRepository<AppointmentSlot>
 
   @override
   AppointmentSlot fromMap(Map<String, dynamic> map, String id) {
-    return AppointmentSlot.fromMap({...map, 'id': id});
+    // Ensure timeSlots is properly deserialized from the map
+    final timeSlots =
+        (map['timeSlots'] as List<dynamic>?)
+            ?.map((slot) => TimeSlot.fromMap(slot as Map<String, dynamic>))
+            .toList() ??
+        [];
+
+    return AppointmentSlot(
+      id: id,
+      doctorId: map['doctorId'] as String,
+      date: DateTime.parse(map['date'] as String),
+      timeSlots: timeSlots,
+      isActive: map['isActive'] as bool? ?? true,
+    );
   }
 
   @override
   Map<String, dynamic> toMap(AppointmentSlot entity) {
-    final map = entity.toMap();
-    map.remove('id'); // Firestore handles ID
-    return map;
+    return {
+      'doctorId': entity.doctorId,
+      'date': entity.date.toIso8601String(),
+      'timeSlots': entity.timeSlots.map((slot) => slot.toMap()).toList(),
+      'isActive': entity.isActive,
+    };
   }
 
   @override
@@ -105,7 +123,6 @@ class AppointmentSlotRepositoryImpl extends FirebaseRepository<AppointmentSlot>
     DateTime? fromDate,
   ) async {
     return ErrorHandler.guardAsync(() async {
-      // If no date provided, use current date
       final startDate =
           fromDate != null
               ? DateTime(fromDate.year, fromDate.month, fromDate.day)
@@ -118,6 +135,7 @@ class AppointmentSlotRepositoryImpl extends FirebaseRepository<AppointmentSlot>
                 'date',
                 isGreaterThanOrEqualTo: startDate.toIso8601String(),
               )
+              .where('isActive', isEqualTo: true)
               .get();
 
       final slots =
@@ -141,8 +159,6 @@ class AppointmentSlotRepositoryImpl extends FirebaseRepository<AppointmentSlot>
         entity.date.year,
         entity.date.month,
         entity.date.day,
-        entity.date.hour,
-        entity.date.minute,
       );
 
       final existingSlotsResult = await getByDoctorAndDate(
@@ -197,7 +213,7 @@ class AppointmentSlotRepositoryImpl extends FirebaseRepository<AppointmentSlot>
         throw SlotNotFoundException(id);
       }
 
-      if (slot.bookedPatients > 0) {
+      if (slot.hasBookedPatients){
         throw SlotHasBookingsException(id);
       }
 
@@ -216,26 +232,60 @@ class AppointmentSlotRepositoryImpl extends FirebaseRepository<AppointmentSlot>
     if (slot.doctorId.isEmpty) {
       throw InvalidSlotDataException('Doctor ID cannot be empty');
     }
-    if (slot.maxPatients <= 0) {
-      throw InvalidSlotDataException('Max patients must be greater than 0');
+    if (slot.timeSlots.isEmpty) {
+      throw InvalidSlotDataException('Slot must have at least one time slot');
     }
-    if (slot.bookedPatients < 0) {
-      throw InvalidSlotDataException('Booked patients cannot be negative');
-    }
-    if (slot.bookedPatients > slot.maxPatients) {
-      throw InvalidSlotDataException(
-        'Booked patients cannot exceed max patients',
-      );
+    // Validate each time slot
+    for (final timeSlot in slot.timeSlots) {
+      if (timeSlot.maxPatients <= 0) {
+        throw InvalidSlotDataException('Max patients must be greater than 0');
+      }
+      if (timeSlot.bookedPatients < 0) {
+        throw InvalidSlotDataException('Booked patients cannot be negative');
+      }
+      if (timeSlot.bookedPatients > timeSlot.maxPatients) {
+        throw InvalidSlotDataException(
+          'Booked patients cannot exceed max patients',
+        );
+      }
     }
   }
 
   bool _slotsOverlap(AppointmentSlot slot1, AppointmentSlot slot2) {
-    // Consider slots of same duration for simplicity
-    const duration = Duration(minutes: 30);
+    // Only check for overlap if slots are on the same day
+    if (!_isSameDay(slot1.date, slot2.date)) {
+      return false;
+    }
 
-    final slot1End = slot1.date.add(duration);
-    final slot2End = slot2.date.add(duration);
+    // Check if any time slots overlap
+    for (final timeSlot1 in slot1.timeSlots) {
+      for (final timeSlot2 in slot2.timeSlots) {
+        if (_timeSlotOverlap(timeSlot1, timeSlot2)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 
-    return slot1.date.isBefore(slot2End) && slot2.date.isBefore(slot1End);
+  bool _timeSlotOverlap(TimeSlot slot1, TimeSlot slot2) {
+    final slot1End =
+        _timeOfDayToMinutes(slot1.startTime) + slot1.duration.inMinutes;
+    final slot2End =
+        _timeOfDayToMinutes(slot2.startTime) + slot2.duration.inMinutes;
+    final slot1Start = _timeOfDayToMinutes(slot1.startTime);
+    final slot2Start = _timeOfDayToMinutes(slot2.startTime);
+
+    return slot1Start < slot2End && slot2Start < slot1End;
+  }
+
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
+  }
+
+  int _timeOfDayToMinutes(TimeOfDay time) {
+    return time.hour * 60 + time.minute;
   }
 }

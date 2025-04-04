@@ -72,7 +72,12 @@ class AppointmentNotifier extends _$AppointmentNotifier {
 
     try {
       final appointmentService = ref.read(appointmentServiceProvider);
-      final result = await appointmentService.createAppointment(appointment);
+      final result = await appointmentService.createAppointment(
+        patientId: appointment.patientId,
+        doctorId: appointment.doctorId,
+        slotId: appointment.appointmentSlotId,
+        timeSlotId: appointment.timeSlotId,
+      );
 
       if (result.isSuccess) {
         // Add the new appointment to the state instead of reloading all
@@ -112,7 +117,9 @@ class AppointmentNotifier extends _$AppointmentNotifier {
 
     try {
       final appointmentService = ref.read(appointmentServiceProvider);
-      final result = await appointmentService.updateAppointment(appointment);
+      final result = await appointmentService.updateAppointment(
+        appointmentId: appointment.id,
+      );
 
       // Always refresh after attempt
       await loadAppointments();
@@ -132,27 +139,28 @@ class AppointmentNotifier extends _$AppointmentNotifier {
   }
 
   Future<Result<bool>> cancelAppointment(String appointmentId) async {
-    state = state.copyWith(isLoading: true, error: null);
+    // state = state.copyWith(isLoading: true, error: null);
 
-    try {
-      final appointmentService = ref.read(appointmentServiceProvider);
-      final result = await appointmentService.cancelAppointment(appointmentId);
+    // try {
+    //   final appointmentService = ref.read(appointmentServiceProvider);
+    //   final result = await appointmentService.cancelAppointment(appointmentId);
 
-      // Always refresh after attempt
-      await loadAppointments();
+    //   // Always refresh after attempt
+    //   await loadAppointments();
 
-      return result;
-    } catch (e) {
-      final errorMsg = e.toString();
-      state = state.copyWith(isLoading: false, error: errorMsg);
+    //   return result;
+    // } catch (e) {
+    //   final errorMsg = e.toString();
+    //   state = state.copyWith(isLoading: false, error: errorMsg);
 
-      // Try to refresh anyway
-      try {
-        await loadAppointments();
-      } catch (_) {}
+    //   // Try to refresh anyway
+    //   try {
+    //     await loadAppointments();
+    //   } catch (_) {}
 
-      return Result.failure(errorMsg);
-    }
+    //   return Result.failure(errorMsg);
+    // }
+    return Result.failure('errorMsg');
   }
 
   Future<Result<Appointment>> completeAppointment(
@@ -164,7 +172,7 @@ class AppointmentNotifier extends _$AppointmentNotifier {
       final appointmentService = ref.read(appointmentServiceProvider);
       final result = await appointmentService.completeAppointment(
         appointmentId,
-        notes: notes,
+        completionNotes: notes,
         paymentStatus: paymentStatus,
       );
 

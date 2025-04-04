@@ -32,7 +32,7 @@ class AppointmentModule implements FeatureModule {
   Map<String, WidgetBuilder> get routes => {
     '/appointment/list': (_) => const AppointmentsScreen(),
     '/appointment/create': (_) => const AppointmentFormScreen(),
-    '/appointment/edit': (_) => const AppointmentFormScreen(isEditing: true),
+    '/appointment/edit': (_) => const AppointmentFormScreen(),
     '/appointment/details': (_) => const AppointmentDetailsScreen(),
     '/appointment/payment': (_) => const AppointmentPaymentScreen(),
   };

@@ -2,9 +2,11 @@
 import 'package:clinic_appointments/features/doctor/presentation/provider/doctor_notifier.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/utils/result.dart';
+import '../../../appointment/domain/exceptions/appointment_exception.dart';
 import '../../data/appointment_slot_providers.dart';
 import '../../domain/entities/appointment_slot.dart';
-import '../../domain/exceptions/slot_exception.dart';
+import '../../domain/exceptions/slot_exceptions.dart';
+import '../../domain/exceptions/time_slot_exceptions.dart';
 
 part 'appointment_slot_notifier.g.dart';
 
@@ -36,7 +38,6 @@ class AppointmentSlotState {
 class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
   @override
   AppointmentSlotState build() {
-    // Return an initial state without loading
     state = AppointmentSlotState(slots: [], isLoading: false);
     loadSlots();
     return state;
@@ -62,13 +63,12 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
     return state.slots.where((slot) {
       final doctorMatch = doctorId == null || slot.doctorId == doctorId;
       final dateMatch = date == null || _isSameDate(slot.date, date);
-      return doctorMatch && dateMatch;
+      return doctorMatch && dateMatch && slot.isActive;
     }).toList();
   }
 
   Future<Result<AppointmentSlot>> addSlot(AppointmentSlot slot) async {
     try {
-      // Validate slot data
       _validateSlot(slot);
 
       final repository = ref.read(appointmentSlotRepositoryProvider);
@@ -78,14 +78,7 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
         throw DuplicateSlotIdException(slot.id);
       }
 
-      // Check for same day slot
-      if (state.slots.any(
-        (s) => s.doctorId == slot.doctorId && _isSameDate(s.date, slot.date),
-      )) {
-        throw SameDaySlotException(slot.doctorId, slot.date);
-      }
-
-      // Check if doctor exists
+      // Check if doctor exists and is available
       final doctorNotifier = ref.read(doctorNotifierProvider);
       final doctor = doctorNotifier.doctors.firstWhere(
         (d) => d.id == slot.doctorId,
@@ -101,8 +94,6 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
       }
 
       final savedSlot = await repository.create(slot);
-
-      // Add the new slot to local state
       state = state.copyWith(slots: [...state.slots, savedSlot.data]);
 
       return Result.success(savedSlot.data);
@@ -123,16 +114,11 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
         throw SlotNotFoundException(slotId);
       }
 
-      // Apply update
       final updatedSlot = update(state.slots[index]);
-
-      // Validate updated slot
       _validateSlot(updatedSlot);
 
-      // Save to repository
       final savedSlot = await repository.update(updatedSlot);
 
-      // Update local state
       final updatedSlots = [...state.slots];
       updatedSlots[index] = savedSlot.data;
       state = state.copyWith(slots: updatedSlots);
@@ -143,35 +129,59 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
     }
   }
 
-  Future<Result<AppointmentSlot>> bookSlot(
+  Future<Result<AppointmentSlot>> bookTimeSlot(
     String slotId,
+    String timeSlotId,
     String appointmentId,
   ) async {
     return updateSlot(slotId, (slot) {
-      if (slot.isFullyBooked) {
-        throw SlotFullyBookedException(slotId);
+      final timeSlotIndex = slot.timeSlots.indexWhere(
+        (ts) => ts.id == timeSlotId,
+      );
+      if (timeSlotIndex == -1) {
+        throw TimeSlotNotFoundException(timeSlotId);
       }
+
+      final timeSlot = slot.timeSlots[timeSlotIndex];
+      if (timeSlot.isFullyBooked) {
+        throw TimeSlotFullyBookedException(timeSlotId);
+      }
+
       if (slot.date.isBefore(DateTime.now())) {
         throw SlotDateInPastException(slot.date);
       }
 
-      return slot.bookAppointment(appointmentId);
+      final updatedTimeSlots = [...slot.timeSlots];
+      updatedTimeSlots[timeSlotIndex] = timeSlot.bookAppointment(appointmentId);
+
+      return slot.copyWith(timeSlots: updatedTimeSlots);
     });
   }
 
-  Future<Result<AppointmentSlot>> cancelSlot(
+  Future<Result<AppointmentSlot>> cancelTimeSlot(
     String slotId,
+    String timeSlotId,
     String appointmentId,
   ) async {
     return updateSlot(slotId, (slot) {
-      if (slot.bookedPatients <= 0) {
-        throw SlotNotBookedException(slotId);
-      }
-      if (!slot.appointmentIds.contains(appointmentId)) {
-        throw Exception('Appointment $appointmentId not found in slot $slotId');
+      final timeSlotIndex = slot.timeSlots.indexWhere(
+        (ts) => ts.id == timeSlotId,
+      );
+      if (timeSlotIndex == -1) {
+        throw TimeSlotNotFoundException(timeSlotId);
       }
 
-      return slot.cancelAppointment(appointmentId);
+      final timeSlot = slot.timeSlots[timeSlotIndex];
+      if (!timeSlot.appointmentIds.contains(appointmentId)) {
+        throw AppointmentNotFoundException(appointmentId);
+      }
+
+      final updatedTimeSlots = [...slot.timeSlots];
+      updatedTimeSlots[timeSlotIndex] = timeSlot.cancelAppointment(
+        appointmentId,
+      );
+
+      return slot.copyWith(timeSlots: updatedTimeSlots);
     });
   }
 
@@ -185,7 +195,7 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
       }
 
       final slot = state.slots[index];
-      if (slot.bookedPatients > 0) {
+      if (slot.hasBookedPatients) {
         throw SlotHasBookingsException(slotId);
       }
 
@@ -196,7 +206,6 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
       final result = await repository.delete(slotId);
 
       if (result.isSuccess) {
-        // Update local state by removing the slot
         final updatedSlots = [...state.slots];
         updatedSlots.removeAt(index);
         state = state.copyWith(slots: updatedSlots);
@@ -219,7 +228,7 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
                 (slot) =>
                     slot.doctorId == doctorId &&
                     !slot.date.isBefore(now) &&
-                    slot.bookedPatients == 0,
+                    !slot.hasBookedPatients,
               )
               .toList();
 
@@ -240,7 +249,6 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
         }
       }
 
-      // Update local state in one go by filtering out deleted slots
       if (idsToRemove.isNotEmpty) {
         final updatedSlots =
             state.slots
@@ -266,16 +274,22 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
     if (slot.doctorId.isEmpty) {
       throw InvalidSlotDataException('Doctor ID cannot be empty');
     }
-    if (slot.maxPatients <= 0) {
-      throw InvalidSlotDataException('Max patients must be greater than 0');
+    if (slot.timeSlots.isEmpty) {
+      throw InvalidSlotDataException('Slot must have at least one time slot');
     }
-    if (slot.bookedPatients < 0) {
-      throw InvalidSlotDataException('Booked patients cannot be negative');
-    }
-    if (slot.bookedPatients > slot.maxPatients) {
-      throw InvalidSlotDataException(
-        'Booked patients cannot exceed max patients',
-      );
+
+    for (final timeSlot in slot.timeSlots) {
+      if (timeSlot.maxPatients <= 0) {
+        throw InvalidSlotDataException('Max patients must be greater than 0');
+      }
+      if (timeSlot.bookedPatients < 0) {
+        throw InvalidSlotDataException('Booked patients cannot be negative');
+      }
+      if (timeSlot.bookedPatients > timeSlot.maxPatients) {
+        throw InvalidSlotDataException(
+          'Booked patients cannot exceed max patients',
+        );
+      }
     }
   }
 

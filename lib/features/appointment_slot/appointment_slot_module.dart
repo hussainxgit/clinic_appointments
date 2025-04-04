@@ -1,12 +1,11 @@
 // lib/features/appointment_slot/appointment_slot_module.dart
 import 'package:clinic_appointments/features/appointment_slot/data/appointment_slot_providers.dart';
-import 'package:clinic_appointments/features/appointment_slot/presentation/pages/slot_management_page.dart';
+import 'package:clinic_appointments/features/appointment_slot/presentation/screens/slot_management_screen.dart';
 import 'package:clinic_appointments/features/appointment_slot/presentation/providers/appointment_slot_notifier.dart';
 import 'package:clinic_appointments/features/appointment_slot/presentation/screens/appointment_slot_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/module/feature_module.dart';
-import 'presentation/screens/appointment_slot_form_screen.dart';
 import 'presentation/screens/appointment_slots_screen.dart';
 
 class AppointmentSlotModule implements FeatureModule {
@@ -31,8 +30,8 @@ class AppointmentSlotModule implements FeatureModule {
   @override
   Map<String, WidgetBuilder> get routes => {
     '/appointment-slot/list': (_) => const AppointmentSlotsScreen(),
-    '/appointment-slot/add': (_) => const SlotManagementPage(),
-    '/appointment-slot/edit': (_) => const SlotManagementPage(),
+    '/appointment-slot/add': (_) => const SlotManagementScreen(),
+    '/appointment-slot/edit': (_) => const SlotManagementScreen(),
     '/appointment-slot/details': (_) => const AppointmentSlotDetailsScreen(),
   };
 

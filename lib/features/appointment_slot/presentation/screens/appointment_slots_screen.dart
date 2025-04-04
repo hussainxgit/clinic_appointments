@@ -22,26 +22,20 @@ class AppointmentSlotsScreen extends ConsumerStatefulWidget {
 class _AppointmentSlotsScreenState
     extends ConsumerState<AppointmentSlotsScreen> {
   String? _selectedDoctorId;
-  DateTime _selectedDate = DateTime.now();
-  final DateFormat _dateFormat = DateFormat('EEE, MMM d, yyyy');
+  DateTime? _selectedDate;
 
   @override
   Widget build(BuildContext context) {
-    final navigationService = ref.read(navigationServiceProvider);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Appointment Slots'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.calendar_today),
-            onPressed: () => _selectDate(context),
-          ),
-          IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              navigationService.navigateTo('/appointment-slot/add');
-            },
+            onPressed:
+                () => ref
+                    .read(navigationServiceProvider)
+                    .navigateTo('/appointment-slot/add'),
           ),
         ],
       ),
@@ -50,12 +44,14 @@ class _AppointmentSlotsScreenState
           // Filter section
           Container(
             padding: const EdgeInsets.all(16),
-            color: Theme.of(context).primaryColor.withAlpha((0.1 * 255).toInt()),
+            color: Theme.of(
+              context,
+            ).primaryColor.withAlpha((0.1 * 255).toInt()),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Date: ${_dateFormat.format(_selectedDate)}',
+                  'Date: ${_selectedDate != null ? DateFormat('EEE, MMM d').format(_selectedDate!) : 'Select Date'}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
@@ -93,7 +89,7 @@ class _AppointmentSlotsScreenState
         heroTag: null, // Disables Hero animations
         child: const Icon(Icons.add),
         onPressed: () {
-          navigationService.navigateTo('/appointment-slot/add');
+          // navigationService.navigateTo('/appointment-slot/add');
         },
       ),
     );
@@ -237,8 +233,10 @@ class _AppointmentSlotsScreenState
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  '${slot.bookedPatients}/${slot.maxPatients} booked',
-                  style: TextStyle(color: availabilityColor.withAlpha((1.0 * 255).toInt())),
+                  '${slot.timeSlots.length} booked',
+                  style: TextStyle(
+                    color: availabilityColor.withAlpha((1.0 * 255).toInt()),
+                  ),
                 ),
               ],
             ),
@@ -259,8 +257,8 @@ class _AppointmentSlotsScreenState
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed:
-                  slot.bookedPatients > 0 ? null : () => _confirmDelete(slot),
-              color: slot.bookedPatients > 0 ? Colors.grey : Colors.red,
+                  slot.hasBookedPatients ? null : () => _confirmDelete(slot),
+              color: slot.hasBookedPatients ? Colors.grey : Colors.red,
             ),
           ],
         ),
@@ -295,21 +293,6 @@ class _AppointmentSlotsScreenState
         },
       ),
     );
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
   }
 
   Future<void> _confirmDelete(AppointmentSlot slot) async {
