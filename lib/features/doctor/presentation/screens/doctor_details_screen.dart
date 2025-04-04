@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:table_calendar/table_calendar.dart';
 import '../../../../core/di/core_providers.dart';
 import '../../../../core/ui/widgets/app_card.dart';
 import '../../../../core/ui/theme/app_theme.dart';
@@ -21,15 +20,11 @@ class DoctorDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
-  final CalendarFormat _calendarFormat = CalendarFormat.month;
-  final DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _selectedDay = _focusedDay;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadDoctorSlots();
@@ -85,7 +80,7 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
             flex: 1,
             child: DoctorProfileSection(
               doctor: doctor,
-              onAddSlot: () => _addNewSlot(doctor),
+              onAddSlot: () => {},
               onViewAppointments: () => _viewAppointments(doctor),
               onCall: () => _callDoctor(doctor),
               onMessage: () => _messageDoctor(doctor),
@@ -99,65 +94,19 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
             flex: 2,
             child: AppCard(
               margin: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Appointment Schedule',
-                          style: Theme.of(context).textTheme.titleLarge,
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : SingleChildScrollView(
+                        child: AppointmentSlotSelector(
+                          doctorId: doctor.id,
+                          onTimeSlotSelected: (slot, timeSlot) {},
                         ),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.add),
-                          label: const Text('Add Slot'),
-                          onPressed: () => _addNewSlot(doctor),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(),
-                  Expanded(
-                    child:
-                        _isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : AppointmentSlotSelector(
-                              doctorId: doctor.id,
-                              onTimeSlotSelected: (slot, timeSlot) {},
-                            ),
-                  ),
-                ],
-              ),
+                      ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  void _viewAppointmentDetails(AppointmentSlot slot) {
-    final navigationService = ref.read(navigationServiceProvider);
-    navigationService.navigateTo(
-      '/appointment-slot/details',
-      arguments: {'slotId': slot.id},
-    );
-  }
-
-  void _addNewSlot(Doctor doctor, {DateTime? date}) {
-    final navigationService = ref.read(navigationServiceProvider);
-    navigationService.navigateTo(
-      '/appointment-slot/add',
-      arguments: {
-        'doctorId': doctor.id,
-        'date': date ?? _selectedDay ?? DateTime.now(),
-      },
     );
   }
 

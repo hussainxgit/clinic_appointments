@@ -1,8 +1,7 @@
+import 'package:clinic_appointments/features/appointment/domain/entities/appointment.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-
-import '../../../../core/ui/base_screen.dart';
 import '../../../../core/ui/widgets/empty_state.dart';
 import '../../../../core/ui/widgets/loading_button.dart';
 import '../../../../core/ui/error_display.dart';
@@ -133,7 +132,17 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
       // Create the appointment
       final result = await ref
           .read(appointmentNotifierProvider.notifier)
-          .createAppointment(await _buildAppointment());
+          .createAppointment(
+            Appointment(
+              id: '',
+              patientId: _selectedPatientId!,
+              doctorId: _selectedDoctorId!,
+              appointmentSlotId: _selectedSlot!.id,
+              timeSlotId: _selectedTimeSlot!.id,
+              notes: _notesController.text.trim(),
+              dateTime: _selectedDate!,
+            ),
+          );
 
       if (result.isSuccess) {
         if (!mounted) return;
@@ -159,18 +168,6 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
         });
       }
     }
-  }
-
-  Future<dynamic> _buildAppointment() async {
-    // The appointment notifier expects an appointment object with these fields set
-    return {
-      'id': '', // Will be set by repository
-      'patientId': _selectedPatientId!,
-      'doctorId': _selectedDoctorId!,
-      'appointmentSlotId': _selectedSlot!.id,
-      'timeSlotId': _selectedTimeSlot!.id,
-      'notes': _notesController.text,
-    };
   }
 
   @override
@@ -227,8 +224,11 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
               child: LoadingButton(
                 text: 'Create Appointment',
                 isLoading: _isLoading,
-                onPressed:
-                    () => _canSubmit() ? () => _createAppointment() : null,
+                onPressed: () {
+                  if (_canSubmit()) {
+                    _createAppointment();
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(200, 50),
                   backgroundColor: Theme.of(context).primaryColor,
