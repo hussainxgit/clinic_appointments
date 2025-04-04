@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../../core/di/core_providers.dart';
 import '../../../../core/ui/widgets/app_card.dart';
 import '../../../../core/ui/theme/app_theme.dart';
-import '../../../../core/ui/widgets/empty_state.dart';
 import '../../../appointment/presentation/providers/appointment_notifier.dart';
 import '../../../appointment_slot/domain/entities/appointment_slot.dart';
-import '../../../appointment_slot/domain/entities/time_slot.dart';
 import '../../../appointment_slot/presentation/providers/appointment_slot_notifier.dart';
 import '../../../patient/domain/entities/patient.dart';
 import '../../domain/entities/doctor.dart';
 import '../provider/doctor_notifier.dart';
+import 'appointment_slot_selector.dart';
 
 // DoctorDetailScreen - Simplified
 class DoctorDetailScreen extends ConsumerStatefulWidget {
@@ -23,8 +21,8 @@ class DoctorDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
-  CalendarFormat _calendarFormat = CalendarFormat.month;
-  DateTime _focusedDay = DateTime.now();
+  final CalendarFormat _calendarFormat = CalendarFormat.month;
+  final DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   bool _isLoading = false;
 
@@ -125,22 +123,14 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
                       ],
                     ),
                   ),
-                  _buildCalendar(doctor),
                   const Divider(),
                   Expanded(
                     child:
                         _isLoading
                             ? const Center(child: CircularProgressIndicator())
-                            : SingleChildScrollView(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: AppointmentSlotListWidget(
-                                  doctorId: doctor.id,
-                                  showAddButton: false,
-                                  onSlotTap:
-                                      (slot) => _viewAppointmentDetails(slot),
-                                ),
-                              ),
+                            : AppointmentSlotSelector(
+                              doctorId: doctor.id,
+                              onTimeSlotSelected: (slot, timeSlot) {},
                             ),
                   ),
                 ],
@@ -149,61 +139,6 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildCalendar(Doctor doctor) {
-    final slots =
-        ref
-            .watch(appointmentSlotNotifierProvider)
-            .slots
-            .where((slot) => slot.doctorId == doctor.id)
-            .toList();
-
-    // Get dates that have slots
-    final eventDates = <DateTime, List<String>>{};
-    for (final slot in slots) {
-      final date = DateTime(slot.date.year, slot.date.month, slot.date.day);
-      eventDates.putIfAbsent(date, () => []).add('hasSlots');
-    }
-
-    return TableCalendar(
-      firstDay: DateTime.now().subtract(const Duration(days: 30)),
-      lastDay: DateTime.now().add(const Duration(days: 365)),
-      focusedDay: _focusedDay,
-      calendarFormat: _calendarFormat,
-      selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-      eventLoader: (day) {
-        final date = DateTime(day.year, day.month, day.day);
-        return eventDates[date] ?? [];
-      },
-      onDaySelected: (selectedDay, focusedDay) {
-        setState(() {
-          _selectedDay = selectedDay;
-          _focusedDay = focusedDay;
-        });
-      },
-      onFormatChanged: (format) {
-        setState(() {
-          _calendarFormat = format;
-        });
-      },
-      calendarStyle: CalendarStyle(
-        markersMaxCount: 1,
-        markerDecoration: BoxDecoration(
-          color: AppTheme.primaryColor,
-          shape: BoxShape.circle,
-        ),
-        selectedDecoration: BoxDecoration(
-          color: AppTheme.accentColor,
-          shape: BoxShape.circle,
-        ),
-        todayDecoration: BoxDecoration(
-          color: AppTheme.primaryColor.withOpacity(0.5),
-          shape: BoxShape.circle,
-        ),
-      ),
-      headerStyle: const HeaderStyle(formatButtonShowsNext: false),
     );
   }
 
@@ -665,311 +600,6 @@ class DoctorContactInfoCard extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-// Appointment Slots List Widget - Refactored
-class AppointmentSlotListWidget extends ConsumerWidget {
-  final String doctorId;
-  final bool showAddButton;
-  final VoidCallback? onAddPressed;
-  final Function(AppointmentSlot)? onSlotTap;
-
-  const AppointmentSlotListWidget({
-    super.key,
-    required this.doctorId,
-    this.showAddButton = true,
-    this.onAddPressed,
-    this.onSlotTap,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final slotState = ref.watch(appointmentSlotNotifierProvider);
-    final filteredSlots =
-        slotState.slots
-            .where(
-              (slot) =>
-                  slot.doctorId == doctorId &&
-                  slot.date.isAfter(
-                    DateTime.now().subtract(const Duration(days: 1)),
-                  ),
-            )
-            .toList()
-          ..sort((a, b) => a.date.compareTo(b.date));
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildHeader(context),
-        const SizedBox(height: 12),
-        if (filteredSlots.isEmpty)
-          const EmptyState(
-            message: 'No available appointment slots',
-            icon: Icons.calendar_today_outlined,
-          )
-        else
-          _buildGroupedSlots(context, filteredSlots),
-      ],
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Upcoming Slots',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        if (showAddButton)
-          TextButton.icon(
-            onPressed: onAddPressed,
-            icon: const Icon(Icons.add),
-            label: const Text('Add Slots'),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).primaryColor,
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildGroupedSlots(BuildContext context, List<AppointmentSlot> slots) {
-    // Group slots by date
-    final groupedSlots = <DateTime, List<AppointmentSlot>>{};
-    for (final slot in slots) {
-      final date = DateTime(slot.date.year, slot.date.month, slot.date.day);
-      groupedSlots.putIfAbsent(date, () => []).add(slot);
-    }
-
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: groupedSlots.length,
-      itemBuilder: (context, index) {
-        final date = groupedSlots.keys.toList()[index];
-        final dateSlots = groupedSlots[date]!;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Text(
-                DateFormat('EEEE, MMMM d, yyyy').format(date),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey[700],
-                ),
-              ),
-            ),
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: dateSlots.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final slot = dateSlots[index];
-                  return AppointmentSlotItem(
-                    slot: slot,
-                    onTap: onSlotTap != null ? () => onSlotTap!(slot) : null,
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        );
-      },
-    );
-  }
-}
-
-// Appointment Slot Item Widget - Simplified
-class AppointmentSlotItem extends StatelessWidget {
-  final AppointmentSlot slot;
-  final VoidCallback? onTap;
-  final bool showDoctorInfo;
-
-  const AppointmentSlotItem({
-    super.key,
-    required this.slot,
-    this.onTap,
-    this.showDoctorInfo = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  DateFormat('h:mm a').format(slot.date),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                _buildAvailabilityChip(context),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _buildTimeSlots(context),
-            if (showDoctorInfo && slot.hasBookedPatients) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.people_outline,
-                    size: 16,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${slot.totalBookedPatients} booked / ${_calculateTotalCapacity()} capacity',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAvailabilityChip(BuildContext context) {
-    final isAvailable = slot.canAcceptBookings;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: isAvailable ? Colors.green[50] : Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isAvailable ? Colors.green[300]! : Colors.grey[300]!,
-        ),
-      ),
-      child: Text(
-        isAvailable
-            ? 'Available (${slot.availableSpots})'
-            : slot.isFullyBooked
-            ? 'Fully Booked'
-            : 'Unavailable',
-        style: TextStyle(
-          fontSize: 12,
-          color: isAvailable ? Colors.green[700] : Colors.grey[700],
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimeSlots(BuildContext context) {
-    // Sort time slots by start time
-    final sortedSlots = List<TimeSlot>.from(slot.timeSlots)..sort(
-      (a, b) => (a.startTime.hour * 60 + a.startTime.minute).compareTo(
-        b.startTime.hour * 60 + b.startTime.minute,
-      ),
-    );
-
-    // Show first 3 time slots
-    final visibleSlots = sortedSlots.take(3).toList();
-    final hasMoreSlots = sortedSlots.length > 3;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children:
-              visibleSlots
-                  .map((timeSlot) => _buildTimeSlotChip(context, timeSlot))
-                  .toList(),
-        ),
-        if (hasMoreSlots) ...[
-          const SizedBox(height: 4),
-          Text(
-            '+ ${sortedSlots.length - 3} more time slots',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildTimeSlotChip(BuildContext context, TimeSlot timeSlot) {
-    final startFormat = TimeOfDay(
-      hour: timeSlot.startTime.hour,
-      minute: timeSlot.startTime.minute,
-    ).format(context);
-    final endFormat = TimeOfDay(
-      hour: timeSlot.endTime.hour,
-      minute: timeSlot.endTime.minute,
-    ).format(context);
-    final isAvailable = timeSlot.isAvailable;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: isAvailable ? Colors.blue[50] : Colors.grey[100],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isAvailable ? Colors.blue[300]! : Colors.grey[300]!,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '$startFormat - $endFormat',
-            style: TextStyle(
-              fontSize: 13,
-              color: isAvailable ? Colors.blue[700] : Colors.grey[500],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          if (timeSlot.maxPatients > 1) ...[
-            const SizedBox(width: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              decoration: BoxDecoration(
-                color: isAvailable ? Colors.blue[100] : Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '${timeSlot.bookedPatients}/${timeSlot.maxPatients}',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isAvailable ? Colors.blue[800] : Colors.grey[600],
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  int _calculateTotalCapacity() {
-    return slot.timeSlots.fold(0, (sum, slot) => sum + slot.maxPatients);
   }
 }
 
