@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/ui/theme/app_theme.dart';
-import '../../../../core/ui/theme/app_colors.dart';
 import '../../domain/entities/doctor.dart';
 
 class DoctorProfileSection extends StatelessWidget {

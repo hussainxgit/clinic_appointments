@@ -95,7 +95,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           // Collapsible Side Navigation
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: _isExpanded ? 200 : 70,
+            width: _isExpanded ? 180 : 70,
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
               boxShadow: [

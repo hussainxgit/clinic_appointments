@@ -57,7 +57,6 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
                           (value) => _toggleAvailability(doctor, value),
                     ),
                   ),
-
                   // Right side - Calendar and Slots
                   Expanded(
                     flex: 2,
@@ -75,9 +74,9 @@ class _DoctorDetailScreenState extends ConsumerState<DoctorDetailScreen> {
                                       setState(() => _selectedDate = date),
                               onAddSlot: (doctorId) => _addSlot(doctorId),
                             ),
-
-                            const SizedBox(height: 16),
-
+                            const SizedBox(height: 8),
+                            Divider(thickness: 0.5),
+                            const SizedBox(height: 8),
                             // Appointment slots display
                             AppointmentSlotDisplay(
                               doctorId: doctor.id,

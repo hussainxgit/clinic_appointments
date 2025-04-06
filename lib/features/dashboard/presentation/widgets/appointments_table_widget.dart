@@ -69,7 +69,7 @@ class AppointmentsTableWidget extends ConsumerWidget {
         dataRowMaxHeight: 60,
         columns: const [
           DataColumn(label: Text('PATIENT NAME')),
-          DataColumn(label: Text('PHONE NUMBER')),
+          DataColumn(label: Text('PHONE')),
           DataColumn(label: Text('DATE')),
           DataColumn(label: Text('TIME')),
           DataColumn(label: Text('STATUS')),

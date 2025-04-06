@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/di/core_providers.dart';
 import '../../../../core/ui/theme/app_colors.dart';
 import '../../../../core/ui/widgets/empty_state.dart';
 import '../../../appointment_slot/domain/entities/appointment_slot.dart';
@@ -78,13 +79,13 @@ class AppointmentSlotDisplay extends ConsumerWidget {
   }
 }
 
-class _SlotStats extends StatelessWidget {
+class _SlotStats extends ConsumerWidget {
   final AppointmentSlot slot;
 
   const _SlotStats({required this.slot});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       children: [
         Row(
@@ -106,10 +107,19 @@ class _SlotStats extends StatelessWidget {
               value: !slot.isFullyBooked ? 'Available' : 'Fully Booked',
               color: !slot.isFullyBooked ? Colors.green : Colors.red,
             ),
+            ElevatedButton(
+              onPressed: () {
+                // Navigate to slot details or perform any action
+                final navigationService = ref.read(navigationServiceProvider);
+                navigationService.navigateTo(
+                  '/appointment-slot/details',
+                  arguments: {'slotId': slot.id},
+                );
+              },
+              child: Text('View Details'),
+            ),
           ],
         ),
-        const SizedBox(height: 8),
-        _AvailabilityIndicator(slot: slot),
       ],
     );
   }
@@ -141,35 +151,6 @@ class _StatItem extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-class _AvailabilityIndicator extends StatelessWidget {
-  final AppointmentSlot slot;
-
-  const _AvailabilityIndicator({required this.slot});
-
-  @override
-  Widget build(BuildContext context) {
-    final bookedSlots =
-        slot.timeSlots.where((slot) => slot.isFullyBooked).length;
-
-    return LinearProgressIndicator(
-      value: bookedSlots / slot.timeSlots.length,
-      backgroundColor: Colors.grey[200],
-      color: _getAvailabilityColor(),
-      minHeight: 6,
-      borderRadius: BorderRadius.circular(3),
-    );
-  }
-
-  Color _getAvailabilityColor() {
-    if (slot.isFullyBooked) {
-      return Colors.red;
-    } else if (slot.hasBookedPatients) {
-      return Colors.orange;
-    }
-    return Colors.green;
   }
 }
 
