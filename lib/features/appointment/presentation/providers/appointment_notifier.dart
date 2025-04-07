@@ -66,7 +66,6 @@ class AppointmentNotifier extends _$AppointmentNotifier {
     await loadAppointments();
   }
 
-  // In appointment_notifier.dart - Update the createAppointment method
   Future<Result<Appointment>> createAppointment(Appointment appointment) async {
     state = state.copyWith(isLoading: true, error: null);
 
@@ -80,12 +79,19 @@ class AppointmentNotifier extends _$AppointmentNotifier {
       );
 
       if (result.isSuccess) {
-        // Add the new appointment to the state instead of reloading all
+        // Get related patient and doctor
+        final patientFuture = _getPatient(result.data.patientId);
+        final doctorFuture = _getDoctor(result.data.doctorId);
+
+        final patient = (await patientFuture).data;
+        final doctor = (await doctorFuture).data;
+
+        // Add the new appointment to the state
         final updatedAppointments = [...state.appointments];
         updatedAppointments.add({
           'appointment': result.data,
-          'patient': await _getPatient(result.data.patientId),
-          'doctor': await _getDoctor(result.data.doctorId),
+          'patient': patient,
+          'doctor': doctor,
         });
 
         state = state.copyWith(

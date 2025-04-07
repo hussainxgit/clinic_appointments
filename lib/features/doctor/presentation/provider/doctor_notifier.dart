@@ -58,29 +58,34 @@ class DoctorNotifier extends _$DoctorNotifier {
   Future<Result<Doctor>> addDoctor(Doctor doctor) async {
     state = state.copyWith(isLoading: true, error: null);
 
-    // Validate business rules
-    if (state.doctors.any((d) => d.id == doctor.id)) {
+    try {
+      // Validate business rules
+      if (state.doctors.any((d) => d.id == doctor.id)) {
+        return Result.failure('A doctor with this ID already exists');
+      }
+
+      if (state.doctors.any((d) => d.name == doctor.name)) {
+        return Result.failure('A doctor with this name already exists');
+      }
+
+      // Perform operation
+      final repository = ref.read(doctorRepositoryProvider);
+      final result = await repository.create(doctor);
+
+      // Update state if successful
+      if (result.isSuccess) {
+        state = state.copyWith(doctors: [...state.doctors, result.data]);
+      } else {
+        state = state.copyWith(error: result.error);
+      }
+
+      return result;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return Result.failure('Unexpected error: ${e.toString()}');
+    } finally {
       state = state.copyWith(isLoading: false);
-      return Result.failure('A doctor with this ID already exists');
     }
-
-    if (state.doctors.any((d) => d.name == doctor.name)) {
-      state = state.copyWith(isLoading: false);
-      return Result.failure('A doctor with this name already exists');
-    }
-
-    // Perform operation
-    final repository = ref.read(doctorRepositoryProvider);
-    final result = await repository.create(doctor);
-
-    state = state.copyWith(isLoading: false);
-
-    // Update state if successful
-    if (result.isSuccess) {
-      state = state.copyWith(doctors: [...state.doctors, result.data]);
-    }
-
-    return result;
   }
 
   Future<Result<Doctor>> updateDoctor(Doctor doctor) async {

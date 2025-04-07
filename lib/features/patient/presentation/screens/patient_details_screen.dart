@@ -209,21 +209,29 @@ class PatientDetailsScreen extends ConsumerWidget {
   }
 
   Widget _buildAppointmentsList(WidgetRef ref, Patient patient) {
-    final appointmentState = ref.watch(appointmentNotifierProvider);
+    // Only watch appointments for this specific patient
+    final appointments = ref.watch(
+      appointmentNotifierProvider.select(
+        (state) =>
+            state.appointments
+                .where((item) => (item['appointment'].patientId == patient.id))
+                .toList(),
+      ),
+    );
+    final isLoading = ref.watch(
+      appointmentNotifierProvider.select((state) => state.isLoading),
+    );
+    final error = ref.watch(
+      appointmentNotifierProvider.select((state) => state.error),
+    );
 
-    if (appointmentState.isLoading) {
+    if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (appointmentState.error != null) {
-      return Center(child: Text('Error: ${appointmentState.error}'));
+    if (error != null) {
+      return Center(child: Text('Error: $error'));
     }
-
-    // Filter appointments for this patient
-    final appointments =
-        appointmentState.appointments
-            .where((item) => (item['appointment'].patientId == patient.id))
-            .toList();
 
     if (appointments.isEmpty) {
       return AppCard(

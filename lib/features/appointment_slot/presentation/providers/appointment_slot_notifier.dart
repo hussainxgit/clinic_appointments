@@ -1,6 +1,8 @@
 // lib/features/appointment_slot/presentation/providers/appointment_slot_notifier.dart
 import 'package:clinic_appointments/features/doctor/presentation/provider/doctor_notifier.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../../core/di/core_providers.dart';
+import '../../../../core/events/domain_events.dart';
 import '../../../../core/utils/result.dart';
 import '../../../appointment/domain/exceptions/appointment_exception.dart';
 import '../../data/appointment_slot_providers.dart';
@@ -67,40 +69,41 @@ class AppointmentSlotNotifier extends _$AppointmentSlotNotifier {
     }).toList();
   }
 
-  Future<Result<AppointmentSlot>> addSlot(AppointmentSlot slot) async {
-    try {
-      _validateSlot(slot);
+Future<Result<AppointmentSlot>> addSlot(AppointmentSlot slot) async {
+  try {
+    _validateSlot(slot);
 
-      final repository = ref.read(appointmentSlotRepositoryProvider);
+    final repository = ref.read(appointmentSlotRepositoryProvider);
 
-      // Check for duplicate ID
-      if (state.slots.any((s) => s.id == slot.id)) {
-        throw DuplicateSlotIdException(slot.id);
-      }
-
-      // Check if doctor exists and is available
-      final doctorNotifier = ref.read(doctorNotifierProvider);
-      final doctor = doctorNotifier.doctors.firstWhere(
-        (d) => d.id == slot.doctorId,
-        orElse:
-            () =>
-                throw InvalidSlotDataException(
-                  'Doctor with ID ${slot.doctorId} not found',
-                ),
-      );
-
-      if (!doctor.isAvailable) {
-        throw InvalidSlotDataException('Doctor is not available');
-      }
-
-      final savedSlot = await repository.create(slot);
-      state = state.copyWith(slots: [...state.slots, savedSlot.data]);
-
-      return Result.success(savedSlot.data);
-    } catch (e) {
-      return Result.failure(e.toString());
+    // Check for duplicate ID
+    if (state.slots.any((s) => s.id == slot.id)) {
+      throw DuplicateSlotIdException(slot.id);
     }
+
+    // Check if doctor exists and is available
+    final doctorNotifier = ref.read(doctorNotifierProvider);
+    final doctor = doctorNotifier.doctors.firstWhere(
+      (d) => d.id == slot.doctorId,
+      orElse: () => throw InvalidSlotDataException(
+        'Doctor with ID ${slot.doctorId} not found',
+      ),
+    );
+
+    if (!doctor.isAvailable) {
+      throw InvalidSlotDataException('Doctor is not available');
+    }
+
+    final savedSlot = await repository.create(slot);
+    state = state.copyWith(slots: [...state.slots, savedSlot.data]);
+
+    // Publish event
+    ref.read(eventBusProvider).publish(SlotCreatedEvent(savedSlot.data));
+    
+    return Result.success(savedSlot.data);
+  } catch (e) {
+    return Result.failure(e.toString());
   }
+}
 
   Future<Result<AppointmentSlot>> updateSlot(
     String slotId,

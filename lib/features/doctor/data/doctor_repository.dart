@@ -62,4 +62,16 @@ class DoctorRepositoryImpl extends FirebaseRepository<Doctor>
       return snapshot.docs.map((doc) => fromMap(doc.data(), doc.id)).toList();
     }, 'fetching available doctors');
   }
+
+  @override
+  Future<Result<Doctor?>> getById(String id) async {
+    return ErrorHandler.guardAsync(() async {
+      final doc = await firestore.collection(collection).doc(id).get();
+      if (doc.exists) {
+        return fromMap(doc.data()!, doc.id);
+      } else {
+        return null;
+      }
+    }, 'fetching doctor by ID');
+  }
 }

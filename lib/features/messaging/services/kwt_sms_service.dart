@@ -55,7 +55,15 @@ class KwtSmsService {
     String? sender,
     int? languageCode,
     bool isTest = false,
-  }) {
+  }) async {
+    if (phoneNumber.isEmpty) {
+      return Result.failure('Phone number cannot be empty');
+    }
+
+    if (message.isEmpty) {
+      return Result.failure('Message content cannot be empty');
+    }
+
     return sendBulkSms(
       phoneNumbers: [phoneNumber],
       message: message,

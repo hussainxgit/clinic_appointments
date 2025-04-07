@@ -1,3 +1,4 @@
+import 'package:clinic_appointments/core/utils/boali_date_extenstions.dart';
 import 'package:clinic_appointments/features/appointment/domain/entities/appointment.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -173,21 +174,24 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
   @override
   Widget build(BuildContext context) {
     // Get providers state
-    final patientsState = ref.watch(patientNotifierProvider);
-    final doctorsState = ref.watch(doctorNotifierProvider);
-    final slotsState = ref.watch(appointmentSlotNotifierProvider);
+    final patients = ref.watch(
+      patientNotifierProvider.select(
+        (state) =>
+            state.patients
+                .where((p) => p.status == PatientStatus.active)
+                .toList(),
+      ),
+    );
 
-    // Filter slots for the selected doctor and date
-    final availableSlots =
-        _selectedDoctorId != null && _selectedDate != null
-            ? slotsState.slots
-                .where(
-                  (slot) =>
-                      slot.doctorId == _selectedDoctorId &&
-                      _isSameDay(slot.date, _selectedDate!),
-                )
-                .toList()
-            : <AppointmentSlot>[];
+    final doctors = ref.watch(
+      doctorNotifierProvider.select(
+        (state) => state.doctors.where((d) => d.isAvailable).toList(),
+      ),
+    );
+
+    // Filter slots based on selection conditions
+    final availableSlots = _getFilteredSlots(ref);
+
     return Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -195,11 +199,11 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Patient Selection
-            _buildPatientSelection(patientsState.patients),
+            _buildPatientSelection(patients),
             const SizedBox(height: 20),
 
             // 2. Doctor Selection
-            _buildDoctorSelection(doctorsState.doctors),
+            _buildDoctorSelection(doctors),
             const SizedBox(height: 20),
 
             // 3. Date Selection
@@ -550,8 +554,21 @@ class _AppointmentFormScreenState extends ConsumerState<AppointmentFormScreen> {
         !_isLoading;
   }
 
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
+  List<AppointmentSlot> _getFilteredSlots(WidgetRef ref) {
+    if (_selectedDoctorId == null || _selectedDate == null) return [];
+
+    return ref.read(
+      appointmentSlotNotifierProvider.select(
+        (state) =>
+            state.slots
+                .where(
+                  (slot) =>
+                      slot.doctorId == _selectedDoctorId &&
+                      slot.date.isSameDate(_selectedDate!),
+                )
+                .toList(),
+      ),
+    );
   }
 
   @override

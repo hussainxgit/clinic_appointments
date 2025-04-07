@@ -64,3 +64,30 @@ class Result<T> {
     }
   }
 }
+
+// In result.dart
+extension ResultExtensions<T> on Result<T> {
+  // Allows easily mapping success values while preserving error state
+  Result<R> mapSuccess<R>(R Function(T data) transform) {
+    return isSuccess ? Result.success(transform(data)) : Result.failure(error);
+  }
+  
+  // Executes side effects based on success/failure
+  void fold({
+    required Function(T data) onSuccess,
+    required Function(String error) onFailure,
+  }) {
+    if (isSuccess) {
+      onSuccess(data);
+    } else {
+      onFailure(error);
+    }
+  }
+  
+  // Combines with another result, returning the first error or combined success
+  Result<(T, R)> and<R>(Result<R> other) {
+    if (isFailure) return Result.failure(error);
+    if (other.isFailure) return Result.failure(other.error);
+    return Result.success((data, other.data));
+  }
+}

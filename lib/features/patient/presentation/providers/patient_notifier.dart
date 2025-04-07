@@ -1,5 +1,7 @@
 // lib/features/patient/presentation/providers/patient_notifier.dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../../core/di/core_providers.dart';
+import '../../../../core/events/domain_events.dart';
 import '../../../../core/utils/result.dart';
 import '../../data/patient_providers.dart';
 import '../../domain/entities/patient.dart';
@@ -71,26 +73,35 @@ class PatientNotifier extends _$PatientNotifier {
   Future<Result<Patient>> addPatient(Patient patient) async {
     state = state.copyWith(isLoading: true, error: null);
 
-    final repository = ref.read(patientRepositoryProvider);
+    try {
+      final repository = ref.read(patientRepositoryProvider);
 
-    // Check for existing patient with same phone
-    final existingPatientResult = await repository.findByPhone(patient.phone);
+      // Check for existing patient with same phone
+      final existingPatientResult = await repository.findByPhone(patient.phone);
 
-    if (existingPatientResult.isSuccess && existingPatientResult.data != null) {
+      if (existingPatientResult.isSuccess &&
+          existingPatientResult.data != null) {
+        return Result.failure(
+          'A patient with this phone number already exists',
+        );
+      }
+
+      final result = await repository.create(patient);
+
+      if (result.isSuccess) {
+        // Update local state directly
+        state = state.copyWith(patients: [...state.patients, result.data]);
+      } else {
+        state = state.copyWith(error: result.error);
+      }
+
+      return result;
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return Result.failure('Unexpected error: ${e.toString()}');
+    } finally {
       state = state.copyWith(isLoading: false);
-      return Result.failure('A patient with this phone number already exists');
     }
-
-    final result = await repository.create(patient);
-
-    state = state.copyWith(isLoading: false);
-
-    if (result.isSuccess) {
-      // Update local state directly
-      state = state.copyWith(patients: [...state.patients, result.data]);
-    }
-
-    return result;
   }
 
   Future<Result<Patient>> updatePatient(Patient patient) async {
@@ -124,6 +135,9 @@ class PatientNotifier extends _$PatientNotifier {
       final updatedPatients = [...state.patients];
       updatedPatients[index] = result.data;
       state = state.copyWith(patients: updatedPatients);
+
+      // Publish patient updated event
+      ref.read(eventBusProvider).publish(PatientUpdatedEvent(result.data));
     }
 
     return result;

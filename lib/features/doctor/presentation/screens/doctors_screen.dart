@@ -30,12 +30,21 @@ class _DoctorsScreenState extends ConsumerState<DoctorsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final doctorState = ref.watch(doctorNotifierProvider);
+    final doctors = ref.watch(
+      doctorNotifierProvider.select((state) => state.doctors),
+    );
+    final isLoading = ref.watch(
+      doctorNotifierProvider.select((state) => state.isLoading),
+    );
+    final error = ref.watch(
+      doctorNotifierProvider.select((state) => state.error),
+    );
+
     final navigationService = ref.read(navigationServiceProvider);
 
     // Filter doctors based on the search query
     final filteredDoctors =
-        doctorState.doctors
+        doctors
             .where(
               (doctor) =>
                   _searchQuery.isEmpty ||
@@ -63,12 +72,12 @@ class _DoctorsScreenState extends ConsumerState<DoctorsScreen> {
               // Handle loading, error, and data states
               Expanded(
                 child:
-                    doctorState.isLoading
+                    isLoading
                         ? const Center(child: CircularProgressIndicator())
-                        : doctorState.error != null
+                        : error != null
                         // Use the extracted Error View widget
                         ? ErrorView(
-                          error: doctorState.error!,
+                          error: error,
                           onRetry:
                               () =>
                                   ref
@@ -256,8 +265,7 @@ class DoctorCard extends ConsumerWidget {
   }
 
   // Placeholder for getting a role - ideally from Doctor model
-  String get _doctorRole =>
-      doctor.specialty;
+  String get _doctorRole => doctor.specialty;
 
   // Placeholder for contact info - use doctor data primarily
   String get _doctorEmail =>
