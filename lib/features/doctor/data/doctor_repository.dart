@@ -21,7 +21,7 @@ class DoctorRepositoryImpl extends FirebaseRepository<Doctor>
 
   @override
   Doctor fromMap(Map<String, dynamic> map, String id) {
-    return Doctor.fromJson({...map, 'id': id});
+    return Doctor.fromMap({...map, 'id': id});
   }
 
   @override

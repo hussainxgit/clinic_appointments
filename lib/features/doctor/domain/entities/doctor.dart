@@ -1,4 +1,6 @@
 // lib/features/doctor/domain/entities/doctor.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Doctor {
   final String id;
   final String name;
@@ -50,21 +52,28 @@ class Doctor {
     );
   }
 
-  factory Doctor.fromJson(Map<String, dynamic> json) {
+  // In your doctor repository implementation or doctor entity mapping
+  factory Doctor.fromMap(Map<String, dynamic> map) {
     return Doctor(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      specialty: json['specialty'] ?? '',
-      phoneNumber: json['phoneNumber'] ?? '',
-      email: json['email'],
-      imageUrl: json['imageUrl'],
-      isAvailable: json['isAvailable'] ?? true,
-      bio: json['bio'],
+      id: map['id'],
+      name: map['name'] ?? '', // Add null check
+      specialty: map['specialty'] ?? '', // Add null check
+      phoneNumber: map['phoneNumber'] ?? '', // Add null check
+      email: map['email'], // Already nullable in model
+      imageUrl: map['imageUrl'], // Already nullable in model
+      isAvailable: map['isAvailable'] ?? true, // Default to true if null
+      bio: map['bio'],
       socialMedia:
-          json['socialMedia'] != null
-              ? Map<String, String>.from(json['socialMedia'])
+          map['socialMedia'] != null
+              ? Map<String, String>.from(map['socialMedia'])
               : null,
-      createdAt: DateTime.parse(json['createdAt']),
+      // Be careful with dates - they often cause issues
+      createdAt:
+          map['createdAt'] != null
+              ? (map['createdAt'] is Timestamp
+                  ? (map['createdAt'] as Timestamp).toDate()
+                  : DateTime.parse(map['createdAt']))
+              : DateTime.now(),
     );
   }
 
